@@ -2244,8 +2244,9 @@ function renderDeepWork() {
       // Currently running
       const elapsed = activeTimer ? Math.round(getTimerElapsed() / 60000) : Math.round((Date.now() - block.startedAt) / 60000);
       totalMins += elapsed;
-      html += '<div class="dw-block-row" style="border-color:var(--blue);"><span class="dw-block-num">Block ' + (i+1) + '</span>' +
-        '<span class="dw-block-time" style="color:var(--blue);">' + elapsed + ' min (running)</span></div>';
+      html += '<div class="dw-block-row" style="border-color:var(--blue);cursor:pointer;" onclick="showTimerActions()"><span class="dw-block-num">Block ' + (i+1) + '</span>' +
+        '<span class="dw-block-time" style="color:var(--blue);">' + elapsed + ' min ' + (activeTimer && activeTimer.paused ? '(paused)' : '(running)') + '</span>' +
+        '<span style="font-size:10px;color:var(--text-dim);margin-left:auto;">click to pause/stop</span></div>';
     }
     // Show planned tasks for this block number
     const blockTasks = planned.filter(t => t.blockNum === (i + 1));
@@ -2799,31 +2800,7 @@ function renderTimeline() {
     });
   });
 
-  // 3. Catch-up block at 2 PM
-  items.push({
-    type: 'flow',
-    time: 14 * 60,
-    endTime: 15 * 60,
-    label: 'Clearing Hour',
-    icon: 'ph-checks',
-    color: 'var(--amber)',
-    done: false,
-    virtual: true
-  });
-
-  // 4. Shutdown at 5:45 PM
-  items.push({
-    type: 'flow',
-    time: 17 * 60 + 45,
-    endTime: 18 * 60,
-    label: 'Shutdown Ritual',
-    icon: 'ph-moon-stars',
-    color: 'var(--purple)',
-    done: !!APP.shutdowns[d],
-    virtual: true
-  });
-
-  // 5. Calendar events
+  // 3. Calendar events (Clearing and Shutdown are in Daily Routine, not here)
   const calEvents = getEventsForDate(calendarEvents, d);
   calEvents.forEach(evt => {
     if (evt.dtstart.allDay) {
@@ -2950,14 +2927,16 @@ function renderTimelineItem(item, isToday, nowMin) {
     html += '<button class="silence-btn" onclick="toggleSilence(\'' + esc(item.uid) + '\')" title="' + (item.silenced ? 'Unsilence' : 'Silence') + '"><i class="ph ' + (item.silenced ? 'ph-bell-slash' : 'ph-bell') + '"></i></button>';
     html += '</div></div>';
   } else if (item.type === 'flow' || item.type === 'deepwork') {
+    const isRunning = item.type === 'deepwork' && !item.done && activeTimer && activeTimer.type === 'deep-work';
     const cls = 'flow-event' + (item.done ? ' done-event' : '') +
       (isToday && item.time <= nowMin && item.endTime > nowMin && !item.done ? ' current-event' : '');
-    html += '<div class="tl-item ' + cls + '">';
+    html += '<div class="tl-item ' + cls + '"' + (isRunning ? ' style="cursor:pointer;" onclick="showTimerActions()"' : '') + '>';
     html += '<div class="tl-time">' + formatTime12(item.time) + '</div>';
     html += '<div class="tl-title">';
     if (item.icon) html += '<i class="ph ' + item.icon + '" style="color:' + item.color + ';font-size:14px;"></i>';
     html += esc(item.label);
     if (item.done) html += '<span style="color:var(--green);font-size:11px;margin-left:4px;">&#10003;</span>';
+    if (isRunning) html += '<span style="font-size:10px;color:var(--blue);margin-left:auto;">tap to pause/stop</span>';
     html += '</div></div>';
   }
   return html;
