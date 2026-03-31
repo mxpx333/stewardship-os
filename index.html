@@ -976,6 +976,214 @@ body {
 .strat-task input { margin-bottom: 0; width: auto; flex: 1; font-size: 11px; padding: 4px 8px; }
 .strat-task .mins-input { width: 50px; text-align: center; }
 
+/* ── DEEP WORK TASK SYSTEM ── */
+.dw-block-container {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin-bottom: 6px;
+}
+.dw-block-container.active-block { border-color: var(--blue); }
+.dw-block-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.dw-block-hdr .block-label { font-size: 12px; font-weight: 700; color: var(--blue); }
+.dw-block-hdr .block-cap { font-size: 10px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.dw-task-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  margin-bottom: 3px;
+  font-size: 12px;
+}
+.dw-task-item .task-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dw-task-item .task-mins { font-size: 10px; color: var(--text-dim); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.dw-task-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  font-family: var(--font);
+}
+.dw-task-btn:hover { border-color: var(--text-dim); color: var(--text); }
+.dw-task-btn.check:hover { border-color: var(--green); color: var(--green); }
+.dw-task-btn.del:hover { border-color: var(--red); color: var(--red); }
+.dw-unassigned {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.dw-unassigned-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.capacity-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.capacity-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+/* ── END OF DAY SECTION ── */
+.eod-section { margin-top: 16px; }
+.eod-textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+}
+.eod-textarea:focus { border-color: var(--purple); }
+
+/* ── DARK THEME ── */
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --card: #161b22;
+  --card-hover: #1c2129;
+  --border: #30363d;
+  --border-subtle: #21262d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-faint: #484f58;
+  --blue: #58a6ff;
+  --blue-bg: rgba(88,166,255,0.10);
+  --green: #3fb950;
+  --green-bg: rgba(63,185,80,0.10);
+  --amber: #d29922;
+  --amber-bg: rgba(210,153,34,0.10);
+  --red: #f85149;
+  --red-bg: rgba(248,81,73,0.10);
+  --purple: #bc8cff;
+  --purple-bg: rgba(188,140,255,0.10);
+  --teal: #39d2c0;
+  --teal-bg: rgba(57,210,192,0.10);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.4);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #30363d; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #8b949e; }
+[data-theme="dark"] .btn-sm.purple, [data-theme="dark"] .btn-sm.blue,
+[data-theme="dark"] .btn-sm.green, [data-theme="dark"] .btn-sm.amber { color: #0d1117; }
+[data-theme="dark"] .modal-btn.primary { color: #0d1117; }
+
+/* ── BUFFER TIME INDICATORS ── */
+.tl-buffer {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 4px 16px 4px 32px;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── STREAKS SECTION ── */
+.streak-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.streak-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.streak-name { font-weight: 600; min-width: 80px; }
+.streak-fire { color: var(--amber); font-weight: 700; white-space: nowrap; }
+.streak-pct { font-size: 11px; color: var(--text-dim); font-weight: 600; width: 32px; text-align: right; }
+.streak-bar { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; min-width: 60px; }
+.streak-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+/* ── WEEKLY REVIEW MODAL ── */
+.weekly-review { max-width: 640px; max-height: 85vh; overflow-y: auto; }
+.weekly-review .wr-header { text-align: center; margin-bottom: 16px; }
+.weekly-review .wr-header h3 { font-size: 16px; margin-bottom: 2px; }
+.weekly-review .wr-header .wr-range { font-size: 12px; color: var(--text-dim); }
+.wr-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+.wr-stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.wr-stat-card .wr-val { font-size: 24px; font-weight: 800; color: var(--blue); }
+.wr-stat-card .wr-lbl { font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.wr-cat-chart { margin-bottom: 16px; }
+.wr-cat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.wr-cat-label { width: 70px; font-weight: 600; text-align: right; }
+.wr-cat-bar { flex: 1; height: 16px; background: var(--border); border-radius: 4px; overflow: hidden; position: relative; }
+.wr-cat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.wr-cat-mins { width: 50px; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.wr-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 12px; }
+.wr-table th { text-align: left; padding: 6px 8px; border-bottom: 2px solid var(--border); font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); }
+.wr-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-subtle); }
+
+/* ── COMMAND BAR ── */
+.cmd-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 200; justify-content: center; padding-top: 20vh; }
+.cmd-overlay.open { display: flex; }
+.cmd-bar { width: 100%; max-width: 560px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); overflow: hidden; }
+.cmd-bar input { width: 100%; padding: 16px 20px; border: none; background: transparent; color: var(--text); font-size: 16px; font-family: var(--font); outline: none; }
+.cmd-results { max-height: 300px; overflow-y: auto; }
+.cmd-result { padding: 10px 20px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; transition: background 0.1s; }
+.cmd-result:hover, .cmd-result.selected { background: var(--blue-bg); }
+.cmd-result .cmd-icon { color: var(--text-dim); font-size: 16px; }
+.cmd-result .cmd-label { flex: 1; }
+.cmd-result .cmd-hint { font-size: 11px; color: var(--text-faint); }
+
+/* ── CATEGORY DOT ── */
+.dw-cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
 /* ── RESPONSIVE (mobile stack) ── */
 @media (max-width: 1024px) {
   .main-grid {
@@ -1006,6 +1214,9 @@ body {
     <button class="date-arrow" id="date-prev" onclick="navDate(-1)">&#8249;</button>
     <div class="date-label" id="date-label"></div>
     <button class="date-arrow" id="date-next" onclick="navDate(1)">&#8250;</button>
+    <button class="date-arrow" onclick="toggleTheme()" id="theme-toggle" title="Toggle dark/light mode">
+      <i class="ph ph-moon" id="theme-icon"></i>
+    </button>
   </div>
 </div>
 
@@ -1018,6 +1229,13 @@ body {
   <div class="col" id="col-left">
     <div class="section-hdr">Daily Routine <span class="badge" id="flow-count"></span></div>
     <div id="flow-container"></div>
+
+    <div class="section-hdr collapse-hdr" style="border-left-color: var(--amber);" onclick="toggleCollapse('streaks')" id="streaks-hdr">
+      Streaks <span class="toggle-icon">&#9654;</span>
+    </div>
+    <div class="collapse-body" id="streaks-body">
+      <div id="streaks-container"></div>
+    </div>
 
     <div class="section-hdr" style="border-left-color: var(--blue);">Deep Work Tracker</div>
     <div id="dw-tracker"></div>
@@ -1078,6 +1296,12 @@ body {
     </div>
     <div class="collapse-body" id="backlog-body">
       <div id="backlog-container"></div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <button class="btn-sm purple" onclick="openWeeklyReview()" style="width:100%;padding:10px;font-size:13px;">
+        <i class="ph ph-chart-line-up" style="margin-right:6px;"></i>Weekly Review
+      </button>
     </div>
   </div>
 </div>
@@ -1146,8 +1370,52 @@ body {
   <div class="modal" id="confirm-content"></div>
 </div>
 
+<!-- Weekly Review Modal -->
+<div class="modal-overlay" id="weekly-review-modal">
+  <div class="modal weekly-review">
+    <div class="wr-header">
+      <h3>Weekly Review</h3>
+      <div class="wr-range" id="wr-date-range"></div>
+    </div>
+    <div class="wr-stats" id="wr-stats"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Time by Category</div>
+    <div class="wr-cat-chart" id="wr-cat-chart"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Daily Breakdown</div>
+    <table class="wr-table" id="wr-table"></table>
+    <div class="field-group" style="margin-top:12px;">
+      <label class="purple">What went well this week?</label>
+      <textarea id="wr-went-well" placeholder="Wins, highlights, progress..." style="min-height:60px;"></textarea>
+    </div>
+    <div class="field-group">
+      <label class="purple">What to improve?</label>
+      <textarea id="wr-improve" placeholder="Gaps, missed habits, adjustments..." style="min-height:60px;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeWeeklyReview()">Close</button>
+      <button class="modal-btn primary" onclick="saveWeeklyReview()">Save Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- Command Bar Overlay -->
+<div class="cmd-overlay" id="cmd-overlay">
+  <div class="cmd-bar">
+    <input type="text" id="cmd-input" placeholder="Type a command... (add task, start deep work, log clearing...)" autocomplete="off">
+    <div class="cmd-results" id="cmd-results"></div>
+  </div>
+</div>
 
 <script>
+// ── THEME INIT (must run before DOM renders) ──
+(function() {
+  const theme = localStorage.getItem('stewardship-theme') || 'light';
+  document.documentElement.dataset.theme = theme;
+  document.addEventListener('DOMContentLoaded', () => {
+    const icon = document.getElementById('theme-icon');
+    if (icon) icon.className = 'ph ' + (theme === 'dark' ? 'ph-sun' : 'ph-moon');
+  });
+})();
+
 // ══════════════════════════════════════════════════════════════
 // STEWARDSHIP OS v4 — Desktop-First Daily Operating Dashboard
 // ══════════════════════════════════════════════════════════════
@@ -1228,6 +1496,15 @@ const FLOW_STEPS = [
   { id: "family",     time: "6:00 PM",  label: "Family Time",           icon: "ph-heart",              color: "var(--green)",  colorBg: "var(--green-bg)" },
 ];
 
+// ── DEEP WORK CATEGORIES ──
+const DW_CATEGORIES = [
+  { id: 'pipeline', label: 'Pipeline', color: 'var(--blue)' },
+  { id: 'outreach', label: 'Outreach', color: 'var(--green)' },
+  { id: 'internal', label: 'Internal', color: 'var(--amber)' },
+  { id: 'strategy', label: 'Strategy', color: 'var(--purple)' },
+  { id: 'other', label: 'Other', color: 'var(--text-dim)' },
+];
+
 // ── GOALS ──
 const GOALS = {
   work: [
@@ -1259,7 +1536,8 @@ function loadData() {
       tomorrowPlan: {}, timerCompletions: {},
       deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {}, salesMetrics: {},
       silencedEvents: {}, goalProgress: {}, timerHistory: {},
-      customTasks: []
+      customTasks: [], deepWorkTasks: [], clearingItems: [],
+      weeklyReviews: {}
     };
     Object.keys(defaults).forEach(k => { if (d[k] === undefined) d[k] = defaults[k]; });
     if (!Array.isArray(d.customTasks)) d.customTasks = [];
@@ -1272,7 +1550,8 @@ function loadData() {
     timerCompletions: {},
     deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {},
     salesMetrics: {}, silencedEvents: {}, goalProgress: {}, timerHistory: {},
-    customTasks: []
+    customTasks: [], deepWorkTasks: [], clearingItems: [],
+    weeklyReviews: {}
   };
 }
 
@@ -1302,25 +1581,49 @@ function syncFullBackup() {
 
 function tryRestoreFromCloud() {
   if (!SHEET_URL) return;
-  const hasData = Object.keys(APP.flow || {}).length > 0;
-  if (hasData) { syncFullBackup(); return; }
+  // Always fetch from cloud and use whichever has more data
   fetch(SHEET_URL)
     .then(r => r.json())
     .then(data => {
-      if (data && data.flow && Object.keys(data.flow).length > 0) {
-        APP = data;
-        // Re-ensure keys
+      if (data && data.flow) {
+        const cloudFlowDays = Object.keys(data.flow || {}).length;
+        const localFlowDays = Object.keys(APP.flow || {}).length;
+        if (cloudFlowDays >= localFlowDays) {
+          // Cloud has same or more data — use it
+          APP = data;
+          console.log('Cloud sync: loaded from cloud (' + cloudFlowDays + ' days, local had ' + localFlowDays + ')');
+        } else {
+          // Local has more — push to cloud
+          console.log('Cloud sync: local is ahead (' + localFlowDays + ' days vs cloud ' + cloudFlowDays + '). Pushing backup.');
+          syncFullBackup();
+          return;
+        }
+        // Re-ensure all keys exist
         const defaults = {
+          flow: {}, soap: {}, meditation: {}, strategy: {}, ships: [], backlog: [],
+          weekHistory: [], fridayReviewed: {}, morningCommit: {}, shutdowns: {},
+          tomorrowPlan: {}, timerCompletions: {},
           deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {}, salesMetrics: {},
           silencedEvents: {}, goalProgress: {}, timerHistory: {},
-          customTasks: []
+          customTasks: [], deepWorkTasks: [], clearingItems: [],
+          weeklyReviews: {}
         };
-        Object.keys(defaults).forEach(k => { if (APP[k] === undefined) APP[k] = defaults[k]; });
+        Object.keys(defaults).forEach(k => {
+          if (APP[k] === undefined) APP[k] = defaults[k];
+        });
+        if (!Array.isArray(APP.customTasks)) APP.customTasks = [];
+        if (!Array.isArray(APP.deepWorkTasks)) APP.deepWorkTasks = [];
+        if (!Array.isArray(APP.clearingItems)) APP.clearingItems = [];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(APP));
         render();
+        lastSyncTime = Date.now();
+        updateSyncStatus();
+      } else {
+        // Cloud is empty — push local up
+        syncFullBackup();
       }
     })
-    .catch(() => {});
+    .catch(() => { console.log('Cloud sync: offline, using local cache'); });
 }
 
 function updateSyncStatus() {
@@ -2219,79 +2522,207 @@ function deleteCustomTask(customId) {
 // LEFT COLUMN: DEEP WORK TRACKER
 // ══════════════════════════════════════════════════════════════
 
+function ensureDeepWorkTasks() {
+  if (!APP.deepWorkTasks) APP.deepWorkTasks = [];
+}
+
+function ensureBlockAssignments(d) {
+  if (!APP.strategy[d]) APP.strategy[d] = { planned: [] };
+  if (!APP.strategy[d].blockAssignments) APP.strategy[d].blockAssignments = { 1: [], 2: [], 3: [] };
+  for (let b = 1; b <= 3; b++) {
+    APP.strategy[d].blockAssignments[b] = (APP.strategy[d].blockAssignments[b] || []).filter(tid => {
+      const t = (APP.deepWorkTasks || []).find(x => x.id === tid);
+      return t && t.status !== 'done';
+    });
+  }
+}
+
+function getActiveDeepWorkBlockNum() {
+  if (!activeTimer || activeTimer.type !== 'deep-work') return null;
+  const d = todayStr();
+  const blocks = APP.deepWorkBlocks[d] || [];
+  const runningIdx = blocks.findIndex(b => !b.endedAt);
+  return runningIdx >= 0 ? runningIdx + 1 : null;
+}
+
 function renderDeepWork() {
   const d = selectedDate;
   if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
+  ensureDeepWorkTasks();
+  ensureBlockAssignments(d);
+
   const blocks = APP.deepWorkBlocks[d];
-  const target = 270; // baseline target
+  const assignments = APP.strategy[d].blockAssignments;
+  const target = 270;
+  const activeBlockNum = getActiveDeepWorkBlockNum();
 
   let totalMins = 0;
-  let html = '<div class="card"><div class="card-body" style="max-height:220px;overflow-y:auto;">';
+  let html = '<div class="card"><div class="card-body">';
 
-  // Get strategy-planned tasks
-  const planned = (APP.strategy[d] && APP.strategy[d].planned) || [];
+  for (let bn = 1; bn <= 3; bn++) {
+    const taskIds = assignments[bn] || [];
+    const tasks = taskIds.map(tid => (APP.deepWorkTasks || []).find(t => t.id === tid)).filter(Boolean);
+    const usedMins = tasks.reduce((s, t) => s + (t.estimatedMins || 0), 0);
+    const pctUsed = Math.round((usedMins / 90) * 100);
+    const capColor = pctUsed > 90 ? 'var(--red)' : pctUsed > 70 ? 'var(--amber)' : 'var(--green)';
+    const isActive = activeBlockNum === bn;
 
-  // Show all completed/running blocks
-  blocks.forEach((block, i) => {
-    if (block.endedAt) {
-      totalMins += block.minutes || 0;
-      html += '<div class="dw-block-row" style="cursor:pointer;" onclick="editDeepWorkBlock(' + i + ')">' +
-        '<span class="dw-block-num">Block ' + (i+1) + '</span>' +
-        '<span class="dw-block-time">' + (block.minutes || 0) + ' min</span>' +
-        (block.label ? '<span style="font-size:11px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:6px;">' + esc(block.label) + '</span>' : '') +
-        '<span class="dw-block-check">&#10003;</span></div>';
+    const timerBlock = blocks[bn - 1];
+    const timerDone = timerBlock && timerBlock.endedAt;
+    const timerRunning = timerBlock && !timerBlock.endedAt;
+    let timerMins = 0;
+    if (timerDone) timerMins = timerBlock.minutes || 0;
+    else if (timerRunning) timerMins = activeTimer ? Math.round(getTimerElapsed() / 60000) : Math.round((Date.now() - timerBlock.startedAt) / 60000);
+    if (timerDone || timerRunning) totalMins += timerMins;
+
+    html += '<div class="dw-block-container' + (isActive ? ' active-block' : '') + '">';
+    html += '<div class="dw-block-hdr">';
+    const blockData = blocks[bn - 1];
+    const blockCat = blockData ? (blockData.category || 'other') : 'other';
+    const catInfo = DW_CATEGORIES.find(c => c.id === blockCat) || DW_CATEGORIES[4];
+    html += '<span class="block-label"><span class="dw-cat-dot" style="background:' + catInfo.color + ';margin-right:6px;"></span>Block ' + bn;
+    if (timerDone) html += ' <span style="color:var(--green);font-size:11px;">&#10003; ' + timerMins + ' min</span>';
+    else if (timerRunning) html += ' <span style="color:var(--blue);font-size:11px;">' + timerMins + ' min (running)</span>';
+    html += '</span>';
+    html += '<span class="block-cap">' + usedMins + ' / 90 min</span>';
+    html += '</div>';
+    html += '<div class="capacity-bar"><div class="capacity-bar-fill" style="width:' + Math.min(100, pctUsed) + '%;background:' + capColor + ';"></div></div>';
+
+    if (tasks.length > 0) {
+      tasks.forEach(t => {
+        html += '<div class="dw-task-item" style="margin-top:4px;">';
+        html += '<span class="task-name">' + esc(t.name) + '</span>';
+        html += '<span class="task-mins">' + (t.estimatedMins || 0) + 'm</span>';
+        if (bn > 1) html += '<button class="dw-task-btn" onclick="moveDwTask(\'' + t.id + '\',' + bn + ',' + (bn - 1) + ')" title="Move to Block ' + (bn - 1) + '">&larr;</button>';
+        if (bn < 3) html += '<button class="dw-task-btn" onclick="moveDwTask(\'' + t.id + '\',' + bn + ',' + (bn + 1) + ')" title="Move to Block ' + (bn + 1) + '">&rarr;</button>';
+        html += '<button class="dw-task-btn check" onclick="completeDwTask(\'' + t.id + '\')" title="Complete">&#10003;</button>';
+        html += '</div>';
+      });
     } else {
-      // Currently running
-      const elapsed = activeTimer ? Math.round(getTimerElapsed() / 60000) : Math.round((Date.now() - block.startedAt) / 60000);
-      totalMins += elapsed;
-      html += '<div class="dw-block-row" style="border-color:var(--blue);cursor:pointer;" onclick="showTimerActions()"><span class="dw-block-num">Block ' + (i+1) + '</span>' +
-        '<span class="dw-block-time" style="color:var(--blue);">' + elapsed + ' min ' + (activeTimer && activeTimer.paused ? '(paused)' : '(running)') + '</span>' +
-        '<span style="font-size:10px;color:var(--text-dim);margin-left:auto;">click to pause/stop</span></div>';
+      html += '<div style="font-size:10px;color:var(--text-faint);padding:4px 0;margin-top:4px;">No tasks assigned</div>';
     }
-    // Show planned tasks for this block number
-    const blockTasks = planned.filter(t => t.blockNum === (i + 1));
-    if (blockTasks.length > 0) {
-      blockTasks.forEach(t => {
-        html += '<div style="padding:2px 10px 2px 32px;font-size:11px;color:var(--text-dim);">• ' + esc(t.name) + ' <span style="color:var(--text-faint);">(' + (t.minutes || '?') + 'm)</span></div>';
-      });
-    }
-  });
 
-  // Show planned tasks for blocks not yet started
-  const nextBlockNum = blocks.length + 1;
-  for (let bn = nextBlockNum; bn <= 3; bn++) {
-    const blockTasks = planned.filter(t => t.blockNum === bn);
-    if (blockTasks.length > 0) {
-      html += '<div class="dw-block-row" style="opacity:0.5;"><span class="dw-block-num">Block ' + bn + '</span><span class="dw-block-time">planned</span></div>';
-      blockTasks.forEach(t => {
-        html += '<div style="padding:2px 10px 2px 32px;font-size:11px;color:var(--text-faint);">• ' + esc(t.name) + ' (' + (t.minutes || '?') + 'm)</div>';
-      });
+    if (timerDone) {
+      html += '<div style="text-align:right;margin-top:4px;"><button class="dw-task-btn" style="display:inline-flex;width:auto;padding:2px 6px;font-size:9px;" onclick="editDeepWorkBlock(' + (bn - 1) + ')">Edit block</button></div>';
     }
-  }
 
-  // Add block button
-  const hasRunning = blocks.some(b => !b.endedAt);
-  if (!hasRunning) {
-    html += '<div class="dw-block-row" style="cursor:pointer;border-style:dashed;justify-content:center;color:var(--text-dim);" onclick="addManualDeepWorkBlock()">' +
-      '+ Log Deep Work Block</div>';
+    html += '</div>';
   }
 
   const pct = Math.min(100, Math.round((totalMins / target) * 100));
   html += '<div class="dw-total"><span>Total deep work</span><span class="value">' + totalMins + ' / ' + target + ' min</span></div>';
   html += '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + pct + '%;background:var(--blue);"></div></div>';
-  html += '</div></div>';
 
+  const hasRunning = blocks.some(b => !b.endedAt);
+  if (!hasRunning) {
+    html += '<div class="dw-block-row" style="cursor:pointer;border-style:dashed;justify-content:center;color:var(--text-dim);margin-top:6px;" onclick="addManualDeepWorkBlock()">' +
+      '+ Log Deep Work Block</div>';
+  }
+
+  const allAssigned = new Set();
+  for (let b = 1; b <= 3; b++) (assignments[b] || []).forEach(tid => allAssigned.add(tid));
+  const unassigned = (APP.deepWorkTasks || []).filter(t => t.status !== 'done' && !allAssigned.has(t.id));
+
+  html += '<div class="dw-unassigned">';
+  html += '<div class="dw-unassigned-label">Unassigned Tasks (' + unassigned.length + ')</div>';
+  html += '<div class="quick-input" style="margin-bottom:6px;"><input type="text" id="dw-task-input" placeholder="New task name..." onkeydown="if(event.key===\'Enter\')addDwTaskQuick()">' +
+    '<input type="number" id="dw-task-mins-input" placeholder="Min" style="width:55px;text-align:center;" value="30" onkeydown="if(event.key===\'Enter\')addDwTaskQuick()">' +
+    '<button onclick="addDwTaskQuick()">+</button></div>';
+
+  unassigned.forEach(t => {
+    html += '<div class="dw-task-item">';
+    html += '<span class="task-name">' + esc(t.name) + '</span>';
+    html += '<span class="task-mins">' + (t.estimatedMins || 0) + 'm</span>';
+    html += '<button class="dw-task-btn" onclick="assignDwTask(\'' + t.id + '\',1)" title="Block 1" style="font-size:8px;width:auto;padding:1px 4px;">B1</button>';
+    html += '<button class="dw-task-btn" onclick="assignDwTask(\'' + t.id + '\',2)" title="Block 2" style="font-size:8px;width:auto;padding:1px 4px;">B2</button>';
+    html += '<button class="dw-task-btn" onclick="assignDwTask(\'' + t.id + '\',3)" title="Block 3" style="font-size:8px;width:auto;padding:1px 4px;">B3</button>';
+    html += '<button class="dw-task-btn check" onclick="completeDwTask(\'' + t.id + '\')" title="Complete">&#10003;</button>';
+    html += '<button class="dw-task-btn del" onclick="deleteDwTask(\'' + t.id + '\')" title="Delete">&#10005;</button>';
+    html += '</div>';
+  });
+
+  if (unassigned.length === 0) {
+    html += '<div style="font-size:10px;color:var(--text-faint);padding:4px 0;">All tasks assigned or none created.</div>';
+  }
+
+  html += '</div></div></div>';
   document.getElementById('dw-tracker').innerHTML = html;
+}
+
+function addDwTaskQuick() {
+  const inp = document.getElementById('dw-task-input');
+  const minsInp = document.getElementById('dw-task-mins-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  const mins = parseInt(minsInp.value) || 30;
+  ensureDeepWorkTasks();
+  APP.deepWorkTasks.push({ id: uid(), name: name, estimatedMins: mins, status: 'todo', completedAt: null, completedDate: null });
+  saveData(APP);
+  inp.value = '';
+  renderDeepWork();
+}
+
+function assignDwTask(taskId, blockNum) {
+  const d = selectedDate;
+  ensureBlockAssignments(d);
+  for (let b = 1; b <= 3; b++) {
+    APP.strategy[d].blockAssignments[b] = (APP.strategy[d].blockAssignments[b] || []).filter(tid => tid !== taskId);
+  }
+  APP.strategy[d].blockAssignments[blockNum].push(taskId);
+  saveData(APP);
+  renderDeepWork();
+}
+
+function moveDwTask(taskId, fromBlock, toBlock) {
+  const d = selectedDate;
+  ensureBlockAssignments(d);
+  APP.strategy[d].blockAssignments[fromBlock] = (APP.strategy[d].blockAssignments[fromBlock] || []).filter(tid => tid !== taskId);
+  if (!APP.strategy[d].blockAssignments[toBlock]) APP.strategy[d].blockAssignments[toBlock] = [];
+  APP.strategy[d].blockAssignments[toBlock].push(taskId);
+  saveData(APP);
+  renderDeepWork();
+}
+
+function completeDwTask(taskId) {
+  ensureDeepWorkTasks();
+  const task = APP.deepWorkTasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.status = 'done';
+  task.completedAt = Date.now();
+  task.completedDate = todayStr();
+  const d = selectedDate;
+  ensureBlockAssignments(d);
+  for (let b = 1; b <= 3; b++) {
+    APP.strategy[d].blockAssignments[b] = (APP.strategy[d].blockAssignments[b] || []).filter(tid => tid !== taskId);
+  }
+  saveData(APP);
+  renderDeepWork();
+}
+
+function deleteDwTask(taskId) {
+  ensureDeepWorkTasks();
+  APP.deepWorkTasks = APP.deepWorkTasks.filter(t => t.id !== taskId);
+  const d = selectedDate;
+  ensureBlockAssignments(d);
+  for (let b = 1; b <= 3; b++) {
+    APP.strategy[d].blockAssignments[b] = (APP.strategy[d].blockAssignments[b] || []).filter(tid => tid !== taskId);
+  }
+  saveData(APP);
+  renderDeepWork();
 }
 
 function editDeepWorkBlock(idx) {
   const d = selectedDate;
   const block = APP.deepWorkBlocks[d]?.[idx];
   if (!block) return;
+  const blockCat = block.category || 'other';
+  let catOpts = DW_CATEGORIES.map(c => '<option value="' + c.id + '"' + (c.id === blockCat ? ' selected' : '') + '>' + c.label + '</option>').join('');
   showConfirmDialog(
     'Edit Block ' + (idx + 1),
     '<div class="field-group"><label class="blue">Minutes</label>' +
     '<input type="number" id="edit-dw-mins" value="' + (block.minutes || 0) + '" style="font-size:18px;text-align:center;font-weight:700;"></div>' +
+    '<div class="field-group"><label class="blue">Category</label>' +
+    '<select id="edit-dw-cat">' + catOpts + '</select></div>' +
     '<div class="field-group"><label class="blue">What did you work on?</label>' +
     '<input type="text" id="edit-dw-label" value="' + esc(block.label || '') + '" placeholder="e.g., Pipeline deck, outreach calls..."></div>',
     [
@@ -2306,9 +2737,11 @@ function saveDeepWorkEdit(idx) {
   const d = selectedDate;
   const mins = parseInt(document.getElementById('edit-dw-mins')?.value) || 0;
   const label = document.getElementById('edit-dw-label')?.value || '';
+  const cat = document.getElementById('edit-dw-cat')?.value || 'other';
   if (APP.deepWorkBlocks[d]?.[idx]) {
     APP.deepWorkBlocks[d][idx].minutes = mins;
     APP.deepWorkBlocks[d][idx].label = label;
+    APP.deepWorkBlocks[d][idx].category = cat;
     saveData(APP);
   }
   closeConfirm();
@@ -2328,10 +2761,13 @@ function deleteDeepWorkBlock(idx) {
 }
 
 function addManualDeepWorkBlock() {
+  let catOpts = DW_CATEGORIES.map(c => '<option value="' + c.id + '">' + c.label + '</option>').join('');
   showConfirmDialog(
     'Log Deep Work Block',
     '<div class="field-group"><label class="blue">Minutes</label>' +
     '<input type="number" id="new-dw-mins" value="90" style="font-size:18px;text-align:center;font-weight:700;"></div>' +
+    '<div class="field-group"><label class="blue">Category</label>' +
+    '<select id="new-dw-cat">' + catOpts + '</select></div>' +
     '<div class="field-group"><label class="blue">What did you work on?</label>' +
     '<input type="text" id="new-dw-label" placeholder="e.g., Pipeline deck, outreach calls..."></div>',
     [
@@ -2345,12 +2781,14 @@ function saveManualDeepWorkBlock() {
   const d = selectedDate;
   const mins = parseInt(document.getElementById('new-dw-mins')?.value) || 0;
   const label = document.getElementById('new-dw-label')?.value || '';
+  const cat = document.getElementById('new-dw-cat')?.value || 'other';
   if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
   APP.deepWorkBlocks[d].push({
     startedAt: Date.now(),
     endedAt: Date.now(),
     minutes: mins,
     label: label,
+    category: cat,
   });
   saveData(APP);
   closeConfirm();
@@ -2384,7 +2822,8 @@ function startTimer(type, mins, label, linkedStepId) {
       startedAt: Date.now(),
       endedAt: null,
       minutes: 0,
-      tasks: []
+      tasks: [],
+      category: 'other'
     });
     saveData(APP);
   }
@@ -2625,56 +3064,120 @@ function renderTimer() {
 // LEFT COLUMN: CATCH-UP LIST
 // ══════════════════════════════════════════════════════════════
 
+function migrateCatchupToClearingItems() {
+  if (!APP.clearingItems) APP.clearingItems = [];
+  // Migrate any existing catchupTasks into clearingItems (one-time)
+  if (APP.catchupTasks && typeof APP.catchupTasks === 'object') {
+    const migrated = new Set(APP.clearingItems.map(i => i.id));
+    Object.keys(APP.catchupTasks).forEach(dateKey => {
+      const tasks = APP.catchupTasks[dateKey];
+      if (Array.isArray(tasks)) {
+        tasks.forEach(t => {
+          if (!migrated.has(t.id)) {
+            APP.clearingItems.push({
+              id: t.id,
+              name: t.name,
+              done: t.done || false,
+              createdAt: dateKey,
+              completedAt: t.done ? Date.now() : null,
+              completedDate: t.done ? dateKey : null
+            });
+            migrated.add(t.id);
+          }
+        });
+      }
+    });
+    // Mark migration done by clearing old data
+    APP.catchupTasks = {};
+    saveData(APP);
+  }
+}
+
 function renderCatchup() {
-  const d = selectedDate;
-  if (!APP.catchupTasks[d]) APP.catchupTasks[d] = [];
-  const tasks = APP.catchupTasks[d];
+  if (!APP.clearingItems) APP.clearingItems = [];
 
-  let html = '<div class="quick-input"><input type="text" id="catchup-input" placeholder="Add a task..." onkeydown="if(event.key===\'Enter\')addCatchupTask()"><button onclick="addCatchupTask()">+</button></div>';
+  const active = APP.clearingItems.filter(t => !t.done);
+  const completed = APP.clearingItems.filter(t => t.done).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
-  tasks.forEach((t, i) => {
-    html += '<div class="catchup-item ' + (t.done ? 'done' : '') + '">' +
-      '<div class="catchup-check" onclick="toggleCatchup(' + i + ')">' + (t.done ? '&#10003;' : '') + '</div>' +
+  let html = '<div class="quick-input"><input type="text" id="catchup-input" placeholder="Add a clearing task..." onkeydown="if(event.key===\'Enter\')addCatchupTask()"><button onclick="addCatchupTask()">+</button></div>';
+
+  // Active items
+  active.forEach(t => {
+    html += '<div class="catchup-item">' +
+      '<div class="catchup-check" onclick="toggleClearing(\'' + t.id + '\')">' + '</div>' +
       '<span class="catchup-name">' + esc(t.name) + '</span>' +
-      '<button class="catchup-del" onclick="deleteCatchup(' + i + ')">&times;</button>' +
+      '<button class="catchup-del" onclick="deleteClearing(\'' + t.id + '\')">&times;</button>' +
       '</div>';
   });
 
-  if (tasks.length === 0) {
-    html += '<div style="font-size:11px;color:var(--text-faint);padding:6px 10px;">No tasks yet. Add small items here.</div>';
+  if (active.length === 0) {
+    html += '<div style="font-size:11px;color:var(--text-faint);padding:6px 10px;">No active tasks. Add items to clear.</div>';
+  }
+
+  // Completed items (collapsible)
+  if (completed.length > 0) {
+    html += '<div class="completed-divider" onclick="toggleClearedHistory()" style="cursor:pointer;">' +
+      '<div class="completed-line"></div>' +
+      '<span class="completed-label"><i class="ph ph-check-circle" style="margin-right:4px;"></i>' + completed.length + ' item' + (completed.length !== 1 ? 's' : '') + ' cleared</span>' +
+      '<span class="completed-chevron" id="cleared-chevron">&#9654;</span></div>';
+    html += '<div id="cleared-history" style="display:none;">';
+    completed.forEach(t => {
+      html += '<div class="catchup-item done">' +
+        '<div class="catchup-check" onclick="toggleClearing(\'' + t.id + '\')">&#10003;</div>' +
+        '<span class="catchup-name">' + esc(t.name) + '</span>' +
+        '<span style="font-size:10px;color:var(--text-faint);flex-shrink:0;margin-left:4px;">' + (t.completedDate || '') + '</span>' +
+        '</div>';
+    });
+    html += '</div>';
   }
 
   document.getElementById('catchup-container').innerHTML = html;
+}
+
+function toggleClearedHistory() {
+  const el = document.getElementById('cleared-history');
+  const chev = document.getElementById('cleared-chevron');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    chev.innerHTML = '&#9660;';
+  } else {
+    el.style.display = 'none';
+    chev.innerHTML = '&#9654;';
+  }
 }
 
 function addCatchupTask() {
   const inp = document.getElementById('catchup-input');
   const name = inp.value.trim();
   if (!name) return;
-  const d = selectedDate;
-  if (!APP.catchupTasks[d]) APP.catchupTasks[d] = [];
-  APP.catchupTasks[d].push({ id: uid(), name: name, done: false });
+  if (!APP.clearingItems) APP.clearingItems = [];
+  APP.clearingItems.push({ id: uid(), name: name, done: false, createdAt: todayStr(), completedAt: null, completedDate: null });
   saveData(APP);
   inp.value = '';
   renderCatchup();
 }
 
-function toggleCatchup(idx) {
-  const d = selectedDate;
-  if (APP.catchupTasks[d] && APP.catchupTasks[d][idx]) {
-    APP.catchupTasks[d][idx].done = !APP.catchupTasks[d][idx].done;
-    saveData(APP);
-    renderCatchup();
+function toggleClearing(id) {
+  if (!APP.clearingItems) return;
+  const item = APP.clearingItems.find(t => t.id === id);
+  if (!item) return;
+  item.done = !item.done;
+  if (item.done) {
+    item.completedAt = Date.now();
+    item.completedDate = todayStr();
+  } else {
+    item.completedAt = null;
+    item.completedDate = null;
   }
+  saveData(APP);
+  renderCatchup();
 }
 
-function deleteCatchup(idx) {
-  const d = selectedDate;
-  if (APP.catchupTasks[d]) {
-    APP.catchupTasks[d].splice(idx, 1);
-    saveData(APP);
-    renderCatchup();
-  }
+function deleteClearing(id) {
+  if (!APP.clearingItems) return;
+  APP.clearingItems = APP.clearingItems.filter(t => t.id !== id);
+  saveData(APP);
+  renderCatchup();
 }
 
 
@@ -2684,76 +3187,31 @@ function deleteCatchup(idx) {
 
 function renderShutdown() {
   const c = document.getElementById('shutdown-container');
-  const h = new Date().getHours();
-  const d = todayStr();
-  const isToday = selectedDate === todayStr();
+  const d = selectedDate;
 
   if (!APP.shutdowns) APP.shutdowns = {};
-  if (!APP.tomorrowPlan) APP.tomorrowPlan = {};
+  if (!APP.shutdowns[d]) APP.shutdowns[d] = {};
+  const notes = APP.shutdowns[d].notes || '';
 
-  // Show after 5 PM on today, or show trigger button
-  if (isToday && !APP.shutdowns[d]) {
-    if (h >= 17) {
-      renderShutdownForm(c, d);
-    } else {
-      c.innerHTML = '<div style="margin-top:16px;"><div class="section-hdr" style="border-left-color:var(--purple);">Shutdown Ritual</div>' +
-        '<button class="btn-sm outline" onclick="forceShowShutdown()" style="width:100%;">Start Shutdown Ritual</button></div>';
-    }
-  } else if (isToday && APP.shutdowns[d]) {
-    c.innerHTML = '<div style="margin-top:16px;"><div class="section-hdr" style="border-left-color:var(--purple);">Shutdown Ritual</div>' +
-      '<div class="card"><div class="card-body" style="text-align:center;color:var(--green);font-size:12px;"><i class="ph ph-check-circle" style="font-size:18px;vertical-align:middle;"></i> Shutdown complete. Rest well.</div></div></div>';
-  } else {
-    // Past day: show if completed
-    if (APP.shutdowns[d]) {
-      c.innerHTML = '<div style="margin-top:16px;"><div class="section-hdr" style="border-left-color:var(--purple);">Shutdown Ritual</div>' +
-        '<div class="card"><div class="card-body" style="text-align:center;color:var(--green);font-size:12px;">Shutdown was completed.</div></div></div>';
-    } else {
-      c.innerHTML = '';
-    }
-  }
+  // Simple collapsible "End of Day" section
+  c.innerHTML = '<div class="eod-section">' +
+    '<div class="section-hdr collapse-hdr" style="border-left-color:var(--purple);" onclick="toggleCollapse(\'eod\')" id="eod-hdr">' +
+    'End of Day <span class="toggle-icon" id="eod-toggle-icon">&#9654;</span></div>' +
+    '<div class="collapse-body" id="eod-body">' +
+    '<div class="card"><div class="card-body">' +
+    '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Unfinished deep work tasks persist to tomorrow automatically. Use this space for any end-of-day notes.</div>' +
+    '<textarea class="eod-textarea" id="eod-notes" placeholder="End of day notes, reflections, open loops..." onchange="saveEodNotes()">' + esc(notes) + '</textarea>' +
+    '<div class="btn-row" style="margin-top:8px;"><button class="btn-sm purple" onclick="saveEodNotes()">Save Notes</button></div>' +
+    '</div></div></div></div>';
 }
 
-function forceShowShutdown() {
-  renderShutdownForm(document.getElementById('shutdown-container'), todayStr());
-}
-
-function renderShutdownForm(container, d) {
-  const tmrw = tomorrowDate();
-  const ep = APP.tomorrowPlan[tmrw] || {};
-  const flowData = APP.flow[d] || {};
-  const done = Object.values(flowData).filter(Boolean).length;
-
-  container.innerHTML = '<div style="margin-top:16px;"><div class="section-hdr" style="border-left-color:var(--purple);">Shutdown Ritual</div>' +
-    '<div class="shutdown-card">' +
-    '<div class="shutdown-title">Shutdown Ritual</div>' +
-    '<div class="shutdown-sub">Review today. Plan tomorrow. Then rest. (' + done + '/' + FLOW_STEPS.length + ' flow steps done)</div>' +
-    '<div class="sd-field"><label>What worked today?</label><textarea id="sd-worked" placeholder="One thing that went well...">' + esc(ep.worked || '') + '</textarea></div>' +
-    '<div class="sd-field"><label>Tomorrow\'s priorities</label>' +
-    '<input type="text" id="sd-dw1" placeholder="Deep Work 1..." value="' + esc(ep.dw1 || '') + '">' +
-    '<input type="text" id="sd-dw2" placeholder="Deep Work 2..." value="' + esc(ep.dw2 || '') + '">' +
-    '</div>' +
-    '<div class="sd-field"><label>Open loops (capture so you can let go)</label><textarea id="sd-openloops" placeholder="Worries, ideas, to-dos...">' + esc(ep.openLoops || '') + '</textarea></div>' +
-    '<div class="sd-field"><label>App feedback (what to improve)</label><textarea id="sd-feedback" placeholder="Anything about this tool...">' + esc(ep.feedback || '') + '</textarea></div>' +
-    '<div class="btn-row" style="margin-top:8px;"><button class="btn-sm purple" onclick="completeShutdown()">Shutdown Complete</button></div>' +
-    '</div></div>';
-}
-
-function completeShutdown() {
-  const d = todayStr();
-  const tmrw = tomorrowDate();
+function saveEodNotes() {
+  const d = selectedDate;
   if (!APP.shutdowns) APP.shutdowns = {};
-  if (!APP.tomorrowPlan) APP.tomorrowPlan = {};
-
-  APP.shutdowns[d] = { completedAt: Date.now() };
-  APP.tomorrowPlan[tmrw] = {
-    dw1: document.getElementById('sd-dw1')?.value || '',
-    dw2: document.getElementById('sd-dw2')?.value || '',
-    openLoops: document.getElementById('sd-openloops')?.value || '',
-    worked: document.getElementById('sd-worked')?.value || '',
-    feedback: document.getElementById('sd-feedback')?.value || ''
-  };
+  if (!APP.shutdowns[d]) APP.shutdowns[d] = {};
+  APP.shutdowns[d].notes = document.getElementById('eod-notes')?.value || '';
+  APP.shutdowns[d].savedAt = Date.now();
   saveData(APP);
-  renderShutdown();
 }
 
 
@@ -2926,6 +3384,10 @@ function renderTimelineItem(item, isToday, nowMin) {
     }
     html += '<button class="silence-btn" onclick="toggleSilence(\'' + esc(item.uid) + '\')" title="' + (item.silenced ? 'Unsilence' : 'Silence') + '"><i class="ph ' + (item.silenced ? 'ph-bell-slash' : 'ph-bell') + '"></i></button>';
     html += '</div></div>';
+    // Buffer time indicator (today only, non-all-day, non-silenced)
+    if (!item.allDay && !item.silenced && selectedDate === todayStr()) {
+      html += '<div class="tl-buffer"><i class="ph ph-clock"></i> 10 min buffer &mdash; follow-ups, notes</div>';
+    }
   } else if (item.type === 'flow' || item.type === 'deepwork') {
     const isRunning = item.type === 'deepwork' && !item.done && activeTimer && activeTimer.type === 'deep-work';
     const cls = 'flow-event' + (item.done ? ' done-event' : '') +
@@ -3471,6 +3933,291 @@ function checkFridayReview() {
 
 
 // ══════════════════════════════════════════════════════════════
+// THEME TOGGLE
+// ══════════════════════════════════════════════════════════════
+
+function toggleTheme() {
+  const current = document.documentElement.dataset.theme || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('stewardship-theme', next);
+  document.getElementById('theme-icon').className = 'ph ' + (next === 'dark' ? 'ph-sun' : 'ph-moon');
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// STREAKS
+// ══════════════════════════════════════════════════════════════
+
+function calcStreak(stepId) {
+  let streak = 0;
+  let d = todayStr();
+  while (true) {
+    if (APP.flow[d] && APP.flow[d][stepId]) { streak++; d = addDays(d, -1); }
+    else break;
+  }
+  return streak;
+}
+
+function calc30DayRate(stepId) {
+  let done = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = addDays(todayStr(), -i);
+    if (APP.flow[d] && APP.flow[d][stepId]) done++;
+  }
+  return Math.round(done / 30 * 100);
+}
+
+function renderStreaks() {
+  const container = document.getElementById('streaks-container');
+  if (!container) return;
+  let html = '';
+  FLOW_STEPS.forEach(step => {
+    const streak = calcStreak(step.id);
+    const rate = calc30DayRate(step.id);
+    const barBlocks = 10;
+    const filled = Math.round(rate / 10);
+    const barStr = '\u2593'.repeat(filled) + '\u2591'.repeat(barBlocks - filled);
+    html += '<div class="streak-row">';
+    html += '<div class="streak-icon" style="background:' + step.colorBg + ';color:' + step.color + ';"><i class="ph ' + step.icon + '"></i></div>';
+    html += '<span class="streak-name">' + esc(step.label.split(' ')[0]) + '</span>';
+    html += '<span class="streak-fire">\uD83D\uDD25 ' + streak + 'd</span>';
+    html += '<span class="streak-pct">' + rate + '%</span>';
+    html += '<div class="streak-bar"><div class="streak-bar-fill" style="width:' + rate + '%;background:' + step.color + ';"></div></div>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// WEEKLY REVIEW
+// ══════════════════════════════════════════════════════════════
+
+function getWeekDates() {
+  // Returns array of 7 date strings (Mon-Sun) for the current week
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(dateStr(d));
+  }
+  return dates;
+}
+
+function openWeeklyReview() {
+  const weekDates = getWeekDates();
+  const weekId = getWeekId();
+  if (!APP.weeklyReviews) APP.weeklyReviews = {};
+  const saved = APP.weeklyReviews[weekId] || {};
+
+  // Calculate stats
+  let totalDW = 0;
+  let totalFlowSteps = 0;
+  let completedFlowSteps = 0;
+  const catMins = {};
+  DW_CATEGORIES.forEach(c => { catMins[c.id] = 0; });
+
+  const dailyData = [];
+  weekDates.forEach(d => {
+    // Deep work
+    const blocks = APP.deepWorkBlocks[d] || [];
+    let dayDW = 0;
+    blocks.forEach(b => {
+      const mins = b.minutes || 0;
+      dayDW += mins;
+      const cat = b.category || 'other';
+      catMins[cat] = (catMins[cat] || 0) + mins;
+    });
+    totalDW += dayDW;
+
+    // Flow steps
+    const allSteps = FLOW_STEPS; // use built-in for consistency
+    let dayTotal = allSteps.length;
+    let dayDone = 0;
+    allSteps.forEach(s => {
+      if (APP.flow[d] && APP.flow[d][s.id]) dayDone++;
+    });
+    totalFlowSteps += dayTotal;
+    completedFlowSteps += dayDone;
+
+    // Ships for this day (count by week)
+    dailyData.push({ date: d, flowDone: dayDone, flowTotal: dayTotal, dwMins: dayDW });
+  });
+
+  const avgFlowPct = totalFlowSteps > 0 ? Math.round(completedFlowSteps / totalFlowSteps * 100) : 0;
+
+  // Ships
+  const weekOf = getWeekOf();
+  const weekShips = APP.ships.filter(s => s.weekOf === weekOf);
+  const shippedCount = weekShips.filter(s => s.status === 'shipped').length;
+
+  // Date range label
+  const startLabel = parseDate(weekDates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const endLabel = parseDate(weekDates[6]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('wr-date-range').textContent = startLabel + ' - ' + endLabel;
+
+  // Stats cards
+  document.getElementById('wr-stats').innerHTML =
+    '<div class="wr-stat-card"><div class="wr-val">' + totalDW + '</div><div class="wr-lbl">Deep Work (min)</div></div>' +
+    '<div class="wr-stat-card"><div class="wr-val">' + avgFlowPct + '%</div><div class="wr-lbl">Avg Flow Completion</div></div>' +
+    '<div class="wr-stat-card"><div class="wr-val">' + shippedCount + '/' + Math.max(weekShips.length, 3) + '</div><div class="wr-lbl">Ships</div></div>';
+
+  // Category chart
+  const maxCatMins = Math.max(...Object.values(catMins), 1);
+  let catHtml = '';
+  DW_CATEGORIES.forEach(c => {
+    const mins = catMins[c.id] || 0;
+    const pct = Math.round(mins / maxCatMins * 100);
+    catHtml += '<div class="wr-cat-row">';
+    catHtml += '<span class="wr-cat-label">' + c.label + '</span>';
+    catHtml += '<div class="wr-cat-bar"><div class="wr-cat-bar-fill" style="width:' + pct + '%;background:' + c.color + ';"></div></div>';
+    catHtml += '<span class="wr-cat-mins">' + mins + ' min</span>';
+    catHtml += '</div>';
+  });
+  document.getElementById('wr-cat-chart').innerHTML = catHtml;
+
+  // Daily table
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let tableHtml = '<thead><tr><th>Day</th><th>Flow Steps</th><th>Deep Work</th></tr></thead><tbody>';
+  dailyData.forEach((dd, i) => {
+    tableHtml += '<tr><td>' + dayNames[i] + ' ' + dd.date.slice(5) + '</td>';
+    tableHtml += '<td>' + dd.flowDone + '/' + dd.flowTotal + '</td>';
+    tableHtml += '<td>' + dd.dwMins + ' min</td></tr>';
+  });
+  tableHtml += '</tbody>';
+  document.getElementById('wr-table').innerHTML = tableHtml;
+
+  // Load saved text
+  document.getElementById('wr-went-well').value = saved.wentWell || '';
+  document.getElementById('wr-improve').value = saved.improve || '';
+
+  document.getElementById('weekly-review-modal').classList.add('open');
+}
+
+function closeWeeklyReview() {
+  document.getElementById('weekly-review-modal').classList.remove('open');
+}
+
+function saveWeeklyReview() {
+  const weekId = getWeekId();
+  if (!APP.weeklyReviews) APP.weeklyReviews = {};
+  APP.weeklyReviews[weekId] = {
+    wentWell: document.getElementById('wr-went-well')?.value || '',
+    improve: document.getElementById('wr-improve')?.value || '',
+    savedAt: Date.now()
+  };
+  saveData(APP);
+  closeWeeklyReview();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// COMMAND BAR
+// ══════════════════════════════════════════════════════════════
+
+let cmdSelectedIdx = 0;
+let cmdFilteredCommands = [];
+
+const COMMANDS = [
+  { match: /^(add )?task[: ](.+)/i, label: 'Add Task', icon: 'ph-plus-circle', action: (m) => { closeCmd(); openAddTaskModal(); } },
+  { match: /^(start )?(deep ?work|dw)/i, label: 'Start Deep Work (90m)', icon: 'ph-fire-simple', action: () => { closeCmd(); startTimer('deep-work', 90, 'Deep Work Block (90m)', null); } },
+  { match: /^(start )?treadmill/i, label: 'Start Treadmill (30m)', icon: 'ph-person-simple-run', action: () => { closeCmd(); startTimer('treadmill', 30, 'Treadmill Walk (30m)', 'walk'); } },
+  { match: /^(start )?meditat/i, label: 'Start Meditation (10m)', icon: 'ph-brain', action: () => { closeCmd(); startTimer('meditation', 10, 'Meditation (10m)', 'meditation'); } },
+  { match: /^(log )?(clear|clearing)[: ](.+)/i, label: 'Add to Clearing List', icon: 'ph-checks', action: (m) => { closeCmd(); addClearingItem(m[3] || m[2]); } },
+  { match: /^(add )?ship[: ](.+)/i, label: 'Add Ship', icon: 'ph-rocket', action: (m) => { closeCmd(); openShipModal(); } },
+  { match: /^(weekly )?review/i, label: 'Open Weekly Review', icon: 'ph-chart-line-up', action: () => { closeCmd(); openWeeklyReview(); } },
+  { match: /^(toggle )?theme|dark|light/i, label: 'Toggle Dark/Light Mode', icon: 'ph-moon', action: () => { closeCmd(); toggleTheme(); } },
+  { match: /^export/i, label: 'Export Data', icon: 'ph-download-simple', action: () => { closeCmd(); exportData(); } },
+];
+
+function addClearingItem(name) {
+  if (!name || !name.trim()) return;
+  if (!APP.clearingItems) APP.clearingItems = [];
+  APP.clearingItems.push({ id: uid(), name: name.trim(), done: false, createdAt: todayStr(), completedAt: null, completedDate: null });
+  saveData(APP);
+  renderCatchup();
+}
+
+function openCmd() {
+  const overlay = document.getElementById('cmd-overlay');
+  overlay.classList.add('open');
+  const input = document.getElementById('cmd-input');
+  input.value = '';
+  input.focus();
+  cmdSelectedIdx = 0;
+  cmdFilteredCommands = [...COMMANDS];
+  renderCmdResults();
+}
+
+function closeCmd() {
+  document.getElementById('cmd-overlay').classList.remove('open');
+  document.getElementById('cmd-input').value = '';
+  document.getElementById('cmd-results').innerHTML = '';
+}
+
+function renderCmdResults() {
+  const container = document.getElementById('cmd-results');
+  let html = '';
+  cmdFilteredCommands.forEach((cmd, i) => {
+    html += '<div class="cmd-result' + (i === cmdSelectedIdx ? ' selected' : '') + '" onclick="executeCmdAt(' + i + ')">';
+    html += '<i class="ph ' + cmd.icon + ' cmd-icon"></i>';
+    html += '<span class="cmd-label">' + cmd.label + '</span>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function filterCommands(query) {
+  if (!query.trim()) {
+    cmdFilteredCommands = [...COMMANDS];
+  } else {
+    cmdFilteredCommands = COMMANDS.filter(cmd => {
+      return cmd.match.test(query) || cmd.label.toLowerCase().includes(query.toLowerCase());
+    });
+  }
+  cmdSelectedIdx = 0;
+  renderCmdResults();
+}
+
+function executeCmdAt(idx) {
+  const cmd = cmdFilteredCommands[idx];
+  if (!cmd) return;
+  const input = document.getElementById('cmd-input').value;
+  const match = input.match(cmd.match);
+  cmd.action(match || []);
+}
+
+document.getElementById('cmd-input').addEventListener('input', (e) => {
+  filterCommands(e.target.value);
+});
+
+document.getElementById('cmd-input').addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    cmdSelectedIdx = Math.min(cmdSelectedIdx + 1, cmdFilteredCommands.length - 1);
+    renderCmdResults();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    cmdSelectedIdx = Math.max(cmdSelectedIdx - 1, 0);
+    renderCmdResults();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    executeCmdAt(cmdSelectedIdx);
+  }
+});
+
+document.getElementById('cmd-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('cmd-overlay')) closeCmd();
+});
+
+
+// ══════════════════════════════════════════════════════════════
 // DATA EXPORT / IMPORT
 // ══════════════════════════════════════════════════════════════
 
@@ -3511,7 +4258,14 @@ function importData() {
 // ══════════════════════════════════════════════════════════════
 
 document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    openCmd();
+    return;
+  }
   if (e.key === 'Escape') {
+    closeCmd();
+    closeWeeklyReview();
     closeShipModal();
     closeStrategyModal();
     closeConfirmDialog();
@@ -3532,6 +4286,7 @@ function render() {
   checkWeekRollover();
   renderTopBar();
   renderFlow();
+  renderStreaks();
   renderDeepWork();
   renderTimer();
   renderCatchup();
@@ -3543,6 +4298,9 @@ function render() {
   renderBacklog();
   updateSyncStatus();
 }
+
+// Migrate old catchupTasks to clearingItems
+migrateCatchupToClearingItems();
 
 // Initial render
 render();
