@@ -2879,7 +2879,8 @@ function showConfirmDialog(title, message, buttons) {
   buttons.forEach(b => {
     const label = b.label || b.text || 'OK';
     const style = b.style ? ' style="' + b.style + '"' : '';
-    btns += '<button class="' + (b.cls || 'modal-btn') + '"' + style + ' onclick="' + b.onclick + '">' + label + '</button>';
+    const cls = b.cls ? 'modal-btn ' + b.cls : 'modal-btn';
+    btns += '<button class="' + cls + '"' + style + ' onclick="' + b.onclick + '">' + label + '</button>';
   });
   btns += '</div>';
   // message can contain HTML (for form fields)
