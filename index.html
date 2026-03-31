@@ -2323,7 +2323,10 @@ function startTimer(type, mins, label, linkedStepId) {
     type: type,
     label: label || type,
     linkedStepId: linkedStepId || null,
-    notified15: false
+    notified15: false,
+    paused: false,
+    pausedAt: null,
+    totalPausedMs: 0
   };
 
   // Record deep work block start
@@ -2344,10 +2347,17 @@ function startTimer(type, mins, label, linkedStepId) {
   renderTimer();
 }
 
+function getTimerElapsed() {
+  if (!activeTimer) return 0;
+  const now = activeTimer.paused ? activeTimer.pausedAt : Date.now();
+  return (now - activeTimer.startedAt) - activeTimer.totalPausedMs;
+}
+
 function tickTimer() {
   if (!activeTimer) { clearInterval(timerInterval); timerInterval = null; return; }
+  if (activeTimer.paused) { renderTimer(); return; }
 
-  const elapsed = Date.now() - activeTimer.startedAt;
+  const elapsed = getTimerElapsed();
   const remaining = activeTimer.duration - elapsed;
 
   // 15-min warning for 90-min blocks
@@ -2413,9 +2423,77 @@ function timerComplete() {
   render();
 }
 
+function pauseTimer() {
+  if (!activeTimer || activeTimer.paused) return;
+  activeTimer.paused = true;
+  activeTimer.pausedAt = Date.now();
+  renderTimer();
+}
+
+function resumeTimer() {
+  if (!activeTimer || !activeTimer.paused) return;
+  activeTimer.totalPausedMs += Date.now() - activeTimer.pausedAt;
+  activeTimer.paused = false;
+  activeTimer.pausedAt = null;
+  renderTimer();
+}
+
+function showTimerActions() {
+  if (!activeTimer) return;
+  const elapsed = getTimerElapsed();
+  const elapsedMins = Math.round(elapsed / 60000);
+  const wasPaused = activeTimer.paused;
+
+  // Auto-pause while dialog is open
+  if (!wasPaused) pauseTimer();
+
+  showConfirmDialog(
+    activeTimer.label,
+    '<div style="text-align:center;margin-bottom:8px;"><span style="font-size:14px;font-weight:700;">' + elapsedMins + ' min elapsed</span></div>' +
+    '<div class="field-group"><label class="blue">Edit Time Remaining (minutes)</label>' +
+    '<input type="number" id="edit-timer-mins" value="' + Math.max(0, Math.round((activeTimer.duration - elapsed) / 60000)) + '" min="0" style="width:80px;text-align:center;font-size:16px;font-weight:700;"></div>',
+    [
+      { label: 'Cancel Timer', cls: '', style: 'color:var(--red);margin-right:auto;', onclick: 'closeConfirm();cancelTimer()' },
+      { label: wasPaused ? 'Resume' : 'Pause', cls: '', onclick: wasPaused ? 'closeConfirm();resumeTimer()' : 'closeConfirm();pauseTimer()' },
+      { label: 'Save & Resume', cls: 'primary', onclick: 'applyTimerEdit()' },
+    ]
+  );
+}
+
+function applyTimerEdit() {
+  if (!activeTimer) { closeConfirm(); return; }
+  const newRemaining = parseInt(document.getElementById('edit-timer-mins')?.value) || 0;
+  const elapsed = getTimerElapsed();
+  activeTimer.duration = elapsed + (newRemaining * 60000);
+  // Resume if paused
+  if (activeTimer.paused) {
+    activeTimer.totalPausedMs += Date.now() - activeTimer.pausedAt;
+    activeTimer.paused = false;
+    activeTimer.pausedAt = null;
+  }
+  closeConfirm();
+  renderTimer();
+}
+
+function cancelTimer() {
+  if (!activeTimer) return;
+  const type = activeTimer.type;
+  const d = todayStr();
+  // Remove unfinished deep work block
+  if (type === 'deep-work' && APP.deepWorkBlocks[d]) {
+    const idx = APP.deepWorkBlocks[d].findIndex(b => !b.endedAt);
+    if (idx !== -1) APP.deepWorkBlocks[d].splice(idx, 1);
+    saveData(APP);
+  }
+  activeTimer = null;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  render();
+}
+
 function stopTimer() {
   if (!activeTimer) return;
-  const elapsed = Date.now() - activeTimer.startedAt;
+  const elapsed = getTimerElapsed();
   const actualMins = Math.round(elapsed / 60000);
   const stepId = activeTimer.linkedStepId;
   const type = activeTimer.type;
@@ -2457,17 +2535,25 @@ function renderTimer() {
   const el = document.getElementById('timer-card');
 
   if (activeTimer) {
-    const elapsed = Date.now() - activeTimer.startedAt;
+    const elapsed = getTimerElapsed();
     const remaining = Math.max(0, activeTimer.duration - elapsed);
     const mins = Math.floor(remaining / 60000);
     const secs = Math.floor((remaining % 60000) / 1000);
+    const isPaused = activeTimer.paused;
 
-    el.innerHTML = '<div class="timer-card active">' +
-      '<div class="timer-type">' + esc(activeTimer.label) + '</div>' +
-      '<div class="timer-display">' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '</div>' +
-      '<div class="timer-sub">' + (remaining <= 0 ? 'Complete!' : 'Stay focused. Finish strong.') + '</div>' +
+    let sub = 'Stay focused. Finish strong.';
+    if (remaining <= 0) sub = 'Complete!';
+    else if (isPaused) sub = 'PAUSED — click to resume';
+
+    el.innerHTML = '<div class="timer-card active" style="cursor:pointer;' + (isPaused ? 'border-color:var(--amber);' : '') + '" onclick="showTimerActions()">' +
+      '<div class="timer-type">' + esc(activeTimer.label) + (isPaused ? ' <span style="color:var(--amber);">PAUSED</span>' : '') + '</div>' +
+      '<div class="timer-display" style="' + (isPaused ? 'color:var(--amber);' : '') + '">' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '</div>' +
+      '<div class="timer-sub">' + sub + '</div>' +
       (activeTimer.linkedStepId ? '<div class="timer-linked">Linked to flow step</div>' : '') +
-      '<div class="timer-buttons"><button class="timer-btn red" onclick="stopTimer()">Stop</button></div>' +
+      '<div class="timer-buttons">' +
+        (isPaused ? '<button class="timer-btn green" onclick="event.stopPropagation();resumeTimer()">Resume</button>' : '<button class="timer-btn amber" onclick="event.stopPropagation();pauseTimer()">Pause</button>') +
+        '<button class="timer-btn red" onclick="event.stopPropagation();stopTimer()">Stop</button>' +
+      '</div>' +
       '</div>';
   } else {
     const blockNum = getNextDeepWorkBlockNum();
