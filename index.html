@@ -130,7 +130,7 @@ body {
   min-height: calc(100vh - 50px - 36px);
 }
 .main-grid > .col {
-  padding: 16px;
+  padding: 20px;
   overflow-y: auto;
   max-height: calc(100vh - 50px - 36px);
   border-right: 1px solid var(--border);
@@ -189,20 +189,20 @@ body {
 .flow-main {
   display: flex;
   align-items: center;
-  padding: 12px 14px;
-  gap: 10px;
+  padding: 14px 16px;
+  gap: 12px;
   cursor: pointer;
   transition: opacity 0.2s;
 }
 .flow-icon {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 16px;
+  font-size: 18px;
 }
 .flow-check {
   width: 22px;
@@ -584,8 +584,8 @@ body {
 }
 .tl-item {
   position: relative;
-  margin-bottom: 6px;
-  padding: 10px 14px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -613,18 +613,18 @@ body {
 .tl-item.done-event::before { background: var(--green); }
 .tl-item.done-event { opacity: 0.5; }
 .tl-time {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
 .tl-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  margin-top: 1px;
+  margin-top: 2px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .tl-duration {
   font-size: 12px;
@@ -1012,16 +1012,13 @@ body {
 
   <!-- ======== LEFT COLUMN ======== -->
   <div class="col" id="col-left">
-    <div class="section-hdr">Morning Routine <span class="badge" id="flow-count"></span></div>
+    <div class="section-hdr">Daily Routine <span class="badge" id="flow-count"></span></div>
     <div id="flow-container"></div>
 
     <div class="section-hdr" style="border-left-color: var(--blue);">Deep Work Tracker</div>
     <div id="dw-tracker"></div>
 
-    <div class="section-hdr" style="border-left-color: var(--blue);">Active Timer</div>
-    <div id="timer-card"></div>
-
-    <div class="section-hdr" style="border-left-color: var(--amber);">Catch-Up List</div>
+    <div class="section-hdr" style="border-left-color: var(--amber);">Clearing List</div>
     <div id="catchup-container"></div>
 
     <div id="shutdown-container"></div>
@@ -1037,6 +1034,9 @@ body {
   <div class="col" id="col-right">
     <div class="section-hdr" style="border-left-color: var(--teal);">VP Sales Scorecard</div>
     <div id="scorecard-container"></div>
+
+    <div class="section-hdr" style="border-left-color: var(--blue);">Active Timer</div>
+    <div id="timer-card"></div>
 
     <div class="section-hdr" style="border-left-color: var(--green);">Weekly Ships <span class="badge" id="ships-count"></span></div>
     <div id="ships-batting"></div>
@@ -2204,6 +2204,9 @@ function renderDeepWork() {
   let totalMins = 0;
   let html = '<div class="card"><div class="card-body" style="max-height:220px;overflow-y:auto;">';
 
+  // Get strategy-planned tasks
+  const planned = (APP.strategy[d] && APP.strategy[d].planned) || [];
+
   // Show all completed/running blocks
   blocks.forEach((block, i) => {
     if (block.endedAt) {
@@ -2215,12 +2218,31 @@ function renderDeepWork() {
         '<span class="dw-block-check">&#10003;</span></div>';
     } else {
       // Currently running
-      const elapsed = Math.round((Date.now() - block.startedAt) / 60000);
+      const elapsed = activeTimer ? Math.round(getTimerElapsed() / 60000) : Math.round((Date.now() - block.startedAt) / 60000);
       totalMins += elapsed;
-      html += '<div class="dw-block-row"><span class="dw-block-num">Block ' + (i+1) + '</span>' +
+      html += '<div class="dw-block-row" style="border-color:var(--blue);"><span class="dw-block-num">Block ' + (i+1) + '</span>' +
         '<span class="dw-block-time" style="color:var(--blue);">' + elapsed + ' min (running)</span></div>';
     }
+    // Show planned tasks for this block number
+    const blockTasks = planned.filter(t => t.blockNum === (i + 1));
+    if (blockTasks.length > 0) {
+      blockTasks.forEach(t => {
+        html += '<div style="padding:2px 10px 2px 32px;font-size:11px;color:var(--text-dim);">• ' + esc(t.name) + ' <span style="color:var(--text-faint);">(' + (t.minutes || '?') + 'm)</span></div>';
+      });
+    }
   });
+
+  // Show planned tasks for blocks not yet started
+  const nextBlockNum = blocks.length + 1;
+  for (let bn = nextBlockNum; bn <= 3; bn++) {
+    const blockTasks = planned.filter(t => t.blockNum === bn);
+    if (blockTasks.length > 0) {
+      html += '<div class="dw-block-row" style="opacity:0.5;"><span class="dw-block-num">Block ' + bn + '</span><span class="dw-block-time">planned</span></div>';
+      blockTasks.forEach(t => {
+        html += '<div style="padding:2px 10px 2px 32px;font-size:11px;color:var(--text-faint);">• ' + esc(t.name) + ' (' + (t.minutes || '?') + 'm)</div>';
+      });
+    }
+  }
 
   // Add block button
   const hasRunning = blocks.some(b => !b.endedAt);
@@ -2758,7 +2780,7 @@ function renderTimeline() {
     type: 'flow',
     time: 14 * 60,
     endTime: 15 * 60,
-    label: 'Catch-Up Hour',
+    label: 'Clearing Hour',
     icon: 'ph-checks',
     color: 'var(--amber)',
     done: false,
