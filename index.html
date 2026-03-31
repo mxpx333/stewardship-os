@@ -1868,8 +1868,8 @@ function handleFlowTap(id) {
       'No timer was recorded for this step.',
       [
         { label: 'Cancel', cls: '', onclick: 'closeConfirmDialog()' },
-        { label: 'Already Done', cls: 'primary', onclick: 'closeConfirmDialog();completeFlowStep("'+id+'")' },
-        { label: 'Start ' + step.timerMins + 'm Timer', cls: 'primary', onclick: 'closeConfirmDialog();startTimer("'+step.timerType+'",'+step.timerMins+',"'+step.label+'","'+id+'")' },
+        { label: 'Already Done', cls: 'primary', onclick: "closeConfirmDialog();completeFlowStep('"+id+"')" },
+        { label: 'Start ' + step.timerMins + 'm Timer', cls: 'primary', onclick: "closeConfirmDialog();startTimer('"+step.timerType+"',"+step.timerMins+",'"+step.label.replace(/'/g,"\\'")+"','"+id+"')" },
       ]
     );
     return;
