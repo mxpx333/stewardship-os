@@ -255,6 +255,33 @@ body {
 .flow-badge.on-time { background: var(--green-bg); color: var(--green); }
 .flow-badge.late { background: var(--amber-bg); color: var(--amber); }
 
+/* ── COMPLETED DIVIDER ── */
+.completed-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 8px;
+  padding: 6px 0;
+}
+.completed-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.completed-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--green);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+.completed-chevron {
+  font-size: 10px;
+  color: var(--text-dim);
+  transition: transform 0.15s;
+}
+
 /* ── SOAP / STRATEGY PANEL ── */
 .expand-panel {
   padding: 0 12px 12px;
@@ -1207,9 +1234,11 @@ function loadData() {
       weekHistory: [], fridayReviewed: {}, morningCommit: {}, shutdowns: {},
       tomorrowPlan: {}, timerCompletions: {},
       deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {}, salesMetrics: {},
-      silencedEvents: {}, goalProgress: {}, timerHistory: {}
+      silencedEvents: {}, goalProgress: {}, timerHistory: {},
+      customTasks: []
     };
     Object.keys(defaults).forEach(k => { if (d[k] === undefined) d[k] = defaults[k]; });
+    if (!Array.isArray(d.customTasks)) d.customTasks = [];
     return d;
   }
   return {
@@ -1218,7 +1247,8 @@ function loadData() {
     fridayReviewed: {}, morningCommit: {}, shutdowns: {}, tomorrowPlan: {},
     timerCompletions: {},
     deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {},
-    salesMetrics: {}, silencedEvents: {}, goalProgress: {}, timerHistory: {}
+    salesMetrics: {}, silencedEvents: {}, goalProgress: {}, timerHistory: {},
+    customTasks: []
   };
 }
 
@@ -1258,7 +1288,8 @@ function tryRestoreFromCloud() {
         // Re-ensure keys
         const defaults = {
           deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {}, salesMetrics: {},
-          silencedEvents: {}, goalProgress: {}, timerHistory: {}
+          silencedEvents: {}, goalProgress: {}, timerHistory: {},
+          customTasks: []
         };
         Object.keys(defaults).forEach(k => { if (APP[k] === undefined) APP[k] = defaults[k]; });
         localStorage.setItem(STORAGE_KEY, JSON.stringify(APP));
@@ -1697,67 +1728,144 @@ function renderTopBar() {
 // LEFT COLUMN: MORNING ROUTINE
 // ══════════════════════════════════════════════════════════════
 
+function getAllFlowSteps() {
+  // Merge built-in FLOW_STEPS with user's custom tasks, sorted by time
+  const custom = (APP.customTasks || []).map(t => ({
+    id: 'custom_' + t.id,
+    time: t.time,
+    label: t.label,
+    icon: t.icon || 'ph-check-circle',
+    color: t.color || 'var(--blue)',
+    colorBg: t.colorBg || 'var(--blue-bg)',
+    timerMins: t.timerMins || 0,
+    timerType: t.timerMins ? 'custom' : null,
+    hint: t.hint || '',
+    isCustom: true,
+    customId: t.id,
+  }));
+  const all = [...FLOW_STEPS.map(s => ({...s, isCustom: false})), ...custom];
+  all.sort((a, b) => parseTime(a.time) - parseTime(b.time));
+  return all;
+}
+
 function renderFlow() {
   const d = selectedDate;
-  if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); }
-  const flowData = APP.flow[d];
-  const done = Object.values(flowData).filter(Boolean).length;
-  document.getElementById('flow-count').textContent = done + '/' + FLOW_STEPS.length;
+  const allSteps = getAllFlowSteps();
 
+  // Ensure flow data has entries for all steps
+  if (!APP.flow[d]) APP.flow[d] = {};
+  allSteps.forEach(s => { if (APP.flow[d][s.id] === undefined) APP.flow[d][s.id] = false; });
+
+  const flowData = APP.flow[d];
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const isToday = d === todayStr();
   const reading = getReadingForDate(d);
 
-  let html = '';
-  FLOW_STEPS.forEach((step, i) => {
+  // Split into incomplete and complete
+  const incomplete = [];
+  const complete = [];
+  allSteps.forEach((step, i) => {
     const isDone = flowData[step.id];
-    const stepMin = parseTime(step.time);
-    const nextMin = i < FLOW_STEPS.length - 1 ? parseTime(FLOW_STEPS[i+1].time) : 1440;
-    const isCurrent = isToday && !isDone && nowMin >= stepMin && nowMin < nextMin;
-
-    let hint = '';
-    if (step.id === 'bible') hint = 'Plan suggests: ' + reading.book + ' ' + reading.chapter;
-    else if (step.id === 'walk') hint = '30 min. Turn on treadmill.';
-    else if (step.id === 'meditation') hint = '10 min. Be present.';
-    else if (step.id === 'strategy') hint = 'Assign tasks to deep work blocks.';
-    else if (step.id === 'family') hint = 'Put phone down. Find the boys.';
-
-    // Timer completion info
-    let timerInfo = '';
-    if (isDone && APP.timerCompletions[d] && APP.timerCompletions[d][step.id]) {
-      const tc = APP.timerCompletions[d][step.id];
-      if (tc.mins !== undefined) timerInfo = '<span style="font-size:10px;color:var(--green);margin-left:4px;">' + tc.mins + ' min</span>';
-    }
-
-    // Meditation badge
-    let badge = '';
-    if (step.id === 'meditation' && isDone && APP.meditation[d]) {
-      badge = APP.meditation[d].onTime
-        ? '<span class="flow-badge on-time">ON TIME</span>'
-        : '<span class="flow-badge late">LATE</span>';
-    }
-
-    html += '<div class="flow-item ' + (isDone ? 'done' : '') + ' ' + (isCurrent ? 'current' : '') + '">';
-    html += '<div class="flow-main" onclick="handleFlowTap(\'' + step.id + '\')">';
-    html += '<div class="flow-icon" style="background:' + step.colorBg + ';color:' + step.color + '"><i class="ph ' + step.icon + '"></i></div>';
-    html += '<div class="flow-check">' + (isDone ? '&#10003;' : '') + '</div>';
-    html += '<div class="flow-time">' + step.time + '</div>';
-    html += '<div class="flow-text"><div class="flow-label">' + step.label + '</div>';
-    if (!isDone && isToday) html += '<div class="flow-hint">' + hint + '</div>';
-    html += '</div>';
-    html += badge + timerInfo;
-    html += '</div>';
-
-    // Expand panels
-    if (step.id === 'bible') html += renderBiblePanel(d, isDone);
-    if (step.id === 'walk') html += renderSOAPPanel(d, isDone);
-    if (step.id === 'strategy') html += renderStrategyTrigger(d, isDone);
-
-    html += '</div>';
+    if (isDone) complete.push(step);
+    else incomplete.push(step);
   });
 
+  const totalCount = allSteps.length;
+  const doneCount = complete.length;
+  document.getElementById('flow-count').textContent = doneCount + '/' + totalCount;
+
+  let html = '';
+
+  // Render incomplete items
+  incomplete.forEach(step => {
+    const stepMin = parseTime(step.time);
+    // Find next incomplete step for "current" highlight
+    const nextIncomplete = incomplete.find(s => parseTime(s.time) > stepMin);
+    const nextMin = nextIncomplete ? parseTime(nextIncomplete.time) : 1440;
+    const isCurrent = isToday && nowMin >= stepMin && nowMin < nextMin;
+
+    html += renderFlowItem(step, false, isCurrent, isToday, d, reading);
+  });
+
+  // Add task button
+  html += '<div class="flow-item" style="border-style:dashed;cursor:pointer;" onclick="openAddTaskModal()">' +
+    '<div class="flow-main" style="justify-content:center;color:var(--text-dim);">' +
+    '<i class="ph ph-plus-circle" style="font-size:16px;margin-right:6px;"></i> Add Daily Task</div></div>';
+
+  // Completed items (collapsed)
+  if (doneCount > 0) {
+    html += '<div class="completed-divider" onclick="toggleCompletedFlow()" id="completed-toggle" style="cursor:pointer;">' +
+      '<div class="completed-line"></div>' +
+      '<span class="completed-label"><i class="ph ph-check-circle" style="margin-right:4px;"></i>' + doneCount + ' item' + (doneCount !== 1 ? 's' : '') + ' complete</span>' +
+      '<span class="completed-chevron" id="completed-chevron">&#9654;</span>' +
+      '</div>';
+    html += '<div id="completed-flow" style="display:none;">';
+    complete.forEach(step => {
+      html += renderFlowItem(step, true, false, isToday, d, reading);
+    });
+    html += '</div>';
+  }
+
   document.getElementById('flow-container').innerHTML = html;
+}
+
+function renderFlowItem(step, isDone, isCurrent, isToday, d, reading) {
+  let hint = step.hint || '';
+  if (step.id === 'bible') hint = 'Plan suggests: ' + reading.book + ' ' + reading.chapter;
+  else if (step.id === 'walk') hint = '30 min. Turn on treadmill.';
+  else if (step.id === 'meditation') hint = '10 min. Be present.';
+  else if (step.id === 'strategy') hint = 'Assign tasks to deep work blocks.';
+  else if (step.id === 'family') hint = 'Put phone down. Find the boys.';
+
+  let timerInfo = '';
+  if (isDone && APP.timerCompletions[d] && APP.timerCompletions[d][step.id]) {
+    const tc = APP.timerCompletions[d][step.id];
+    if (tc.mins !== undefined) timerInfo = '<span style="font-size:11px;color:var(--green);margin-left:4px;">' + tc.mins + ' min</span>';
+  }
+
+  let badge = '';
+  if (step.id === 'meditation' && isDone && APP.meditation[d]) {
+    badge = APP.meditation[d].onTime
+      ? '<span class="flow-badge on-time">ON TIME</span>'
+      : '<span class="flow-badge late">LATE</span>';
+  }
+
+  let editBtn = '';
+  if (step.isCustom) {
+    editBtn = '<button class="ship-btn" onclick="event.stopPropagation();editCustomTask(\'' + step.customId + '\')" title="Edit" style="margin-left:4px;">&#9998;</button>';
+  }
+
+  let html = '<div class="flow-item ' + (isDone ? 'done' : '') + ' ' + (isCurrent ? 'current' : '') + '">';
+  html += '<div class="flow-main" onclick="handleFlowTap(\'' + step.id + '\')">';
+  html += '<div class="flow-icon" style="background:' + step.colorBg + ';color:' + step.color + '"><i class="ph ' + step.icon + '"></i></div>';
+  html += '<div class="flow-check">' + (isDone ? '&#10003;' : '') + '</div>';
+  html += '<div class="flow-time">' + step.time + '</div>';
+  html += '<div class="flow-text"><div class="flow-label">' + step.label + '</div>';
+  if (!isDone && isToday && hint) html += '<div class="flow-hint">' + hint + '</div>';
+  html += '</div>';
+  html += badge + timerInfo + editBtn;
+  html += '</div>';
+
+  // Expand panels for built-in steps
+  if (step.id === 'bible') html += renderBiblePanel(d, isDone);
+  if (step.id === 'walk') html += renderSOAPPanel(d, isDone);
+  if (step.id === 'strategy') html += renderStrategyTrigger(d, isDone);
+
+  html += '</div>';
+  return html;
+}
+
+function toggleCompletedFlow() {
+  const el = document.getElementById('completed-flow');
+  const chev = document.getElementById('completed-chevron');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    chev.innerHTML = '&#9660;';
+  } else {
+    el.style.display = 'none';
+    chev.innerHTML = '&#9654;';
+  }
 }
 
 function renderBiblePanel(d, isDone) {
@@ -1819,8 +1927,11 @@ function saveSOAP() {
 // ── Flow Tap Handler ──
 function handleFlowTap(id) {
   const d = selectedDate;
-  if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); }
-  const step = FLOW_STEPS.find(s => s.id === id);
+  const allSteps = getAllFlowSteps();
+  if (!APP.flow[d]) APP.flow[d] = {};
+  allSteps.forEach(s => { if (APP.flow[d][s.id] === undefined) APP.flow[d][s.id] = false; });
+  const step = allSteps.find(s => s.id === id);
+  if (!step) return;
   const isDone = APP.flow[d][id];
   const isToday = d === todayStr();
 
@@ -1880,10 +1991,154 @@ function handleFlowTap(id) {
 
 function completeFlowStep(id) {
   const d = selectedDate;
-  if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); }
+  if (!APP.flow[d]) APP.flow[d] = {};
   APP.flow[d][id] = true;
   saveData(APP);
   renderFlow();
+}
+
+// ── Custom Task Management ──
+const TASK_ICONS = [
+  'ph-check-circle','ph-star','ph-phone','ph-envelope','ph-chat-circle',
+  'ph-video-camera','ph-calendar','ph-clipboard-text','ph-note-pencil','ph-megaphone',
+  'ph-handshake','ph-presentation-chart','ph-currency-dollar','ph-chart-line-up','ph-target',
+  'ph-lightning','ph-rocket','ph-coffee','ph-house','ph-car',
+  'ph-dog','ph-heart','ph-sun','ph-moon','ph-person-simple-run',
+  'ph-barbell','ph-book-open','ph-brain','ph-first-aid','ph-broom',
+];
+
+const TASK_COLORS = [
+  { color: 'var(--blue)', bg: 'var(--blue-bg)', label: 'Blue' },
+  { color: 'var(--green)', bg: 'var(--green-bg)', label: 'Green' },
+  { color: 'var(--purple)', bg: 'var(--purple-bg)', label: 'Purple' },
+  { color: 'var(--amber)', bg: 'var(--amber-bg)', label: 'Amber' },
+  { color: 'var(--teal)', bg: 'var(--teal-bg)', label: 'Teal' },
+  { color: 'var(--red)', bg: 'var(--red-bg)', label: 'Red' },
+];
+
+let editingTaskId = null;
+
+function openAddTaskModal() {
+  editingTaskId = null;
+  const iconGrid = TASK_ICONS.map(ic =>
+    '<div class="icon-pick" data-icon="' + ic + '" onclick="pickTaskIcon(this,\'' + ic + '\')" style="cursor:pointer;padding:6px;border:2px solid var(--border);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;font-size:18px;"><i class="ph ' + ic + '"></i></div>'
+  ).join('');
+  const colorBtns = TASK_COLORS.map((c, i) =>
+    '<div class="color-pick" data-idx="' + i + '" onclick="pickTaskColor(this,' + i + ')" style="cursor:pointer;width:28px;height:28px;border-radius:50%;border:3px solid transparent;background:' + c.color + ';display:inline-block;"></div>'
+  ).join('');
+
+  showConfirmDialog('Add Daily Task',
+    '<div class="field-group"><label class="blue">Task Name</label><input type="text" id="task-name" placeholder="e.g., Check email, Call prospect..."></div>' +
+    '<div class="field-group"><label class="blue">Time</label><input type="text" id="task-time" placeholder="e.g., 10:30 AM" value="10:00 AM"></div>' +
+    '<div class="field-group"><label class="blue">Timer Minutes (0 = no timer)</label><input type="number" id="task-timer" value="0" min="0" style="width:80px;"></div>' +
+    '<div class="field-group"><label class="blue">Hint / Reminder</label><input type="text" id="task-hint" placeholder="Optional reminder text..."></div>' +
+    '<div class="field-group"><label class="blue">Icon</label><div id="task-icon-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:120px;overflow-y:auto;">' + iconGrid + '</div></div>' +
+    '<div class="field-group"><label class="blue">Color</label><div id="task-color-grid" style="display:flex;gap:6px;">' + colorBtns + '</div></div>' +
+    '<input type="hidden" id="task-icon-val" value="ph-check-circle"><input type="hidden" id="task-color-idx" value="0">',
+    [
+      { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
+      { label: 'Add Task', cls: 'primary', onclick: 'saveCustomTask()' },
+    ]
+  );
+  // Select defaults
+  setTimeout(() => {
+    const firstIcon = document.querySelector('.icon-pick');
+    if (firstIcon) firstIcon.style.borderColor = 'var(--blue)';
+    const firstColor = document.querySelector('.color-pick');
+    if (firstColor) firstColor.style.borderColor = 'var(--text)';
+  }, 50);
+}
+
+function editCustomTask(customId) {
+  editingTaskId = customId;
+  const task = APP.customTasks.find(t => t.id === customId);
+  if (!task) return;
+
+  const colorIdx = TASK_COLORS.findIndex(c => c.color === task.color) || 0;
+  const iconGrid = TASK_ICONS.map(ic =>
+    '<div class="icon-pick" data-icon="' + ic + '" onclick="pickTaskIcon(this,\'' + ic + '\')" style="cursor:pointer;padding:6px;border:2px solid ' + (ic === task.icon ? 'var(--blue)' : 'var(--border)') + ';border-radius:8px;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;font-size:18px;"><i class="ph ' + ic + '"></i></div>'
+  ).join('');
+  const colorBtns = TASK_COLORS.map((c, i) =>
+    '<div class="color-pick" data-idx="' + i + '" onclick="pickTaskColor(this,' + i + ')" style="cursor:pointer;width:28px;height:28px;border-radius:50%;border:3px solid ' + (i === colorIdx ? 'var(--text)' : 'transparent') + ';background:' + c.color + ';display:inline-block;"></div>'
+  ).join('');
+
+  showConfirmDialog('Edit Task',
+    '<div class="field-group"><label class="blue">Task Name</label><input type="text" id="task-name" value="' + esc(task.label) + '"></div>' +
+    '<div class="field-group"><label class="blue">Time</label><input type="text" id="task-time" value="' + esc(task.time) + '"></div>' +
+    '<div class="field-group"><label class="blue">Timer Minutes (0 = no timer)</label><input type="number" id="task-timer" value="' + (task.timerMins || 0) + '" min="0" style="width:80px;"></div>' +
+    '<div class="field-group"><label class="blue">Hint / Reminder</label><input type="text" id="task-hint" value="' + esc(task.hint || '') + '"></div>' +
+    '<div class="field-group"><label class="blue">Icon</label><div id="task-icon-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:120px;overflow-y:auto;">' + iconGrid + '</div></div>' +
+    '<div class="field-group"><label class="blue">Color</label><div id="task-color-grid" style="display:flex;gap:6px;">' + colorBtns + '</div></div>' +
+    '<input type="hidden" id="task-icon-val" value="' + (task.icon || 'ph-check-circle') + '"><input type="hidden" id="task-color-idx" value="' + colorIdx + '">',
+    [
+      { label: 'Delete', cls: '', style: 'color:var(--red);margin-right:auto;', onclick: "deleteCustomTask('" + customId + "')" },
+      { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
+      { label: 'Save', cls: 'primary', onclick: 'saveCustomTask()' },
+    ]
+  );
+}
+
+function pickTaskIcon(el, icon) {
+  document.querySelectorAll('.icon-pick').forEach(e => e.style.borderColor = 'var(--border)');
+  el.style.borderColor = 'var(--blue)';
+  document.getElementById('task-icon-val').value = icon;
+}
+
+function pickTaskColor(el, idx) {
+  document.querySelectorAll('.color-pick').forEach(e => e.style.borderColor = 'transparent');
+  el.style.borderColor = 'var(--text)';
+  document.getElementById('task-color-idx').value = idx;
+}
+
+function saveCustomTask() {
+  const name = document.getElementById('task-name')?.value?.trim();
+  const time = document.getElementById('task-time')?.value?.trim();
+  const timerMins = parseInt(document.getElementById('task-timer')?.value) || 0;
+  const hint = document.getElementById('task-hint')?.value?.trim() || '';
+  const icon = document.getElementById('task-icon-val')?.value || 'ph-check-circle';
+  const colorIdx = parseInt(document.getElementById('task-color-idx')?.value) || 0;
+  const col = TASK_COLORS[colorIdx] || TASK_COLORS[0];
+
+  if (!name || !time) return;
+
+  if (!APP.customTasks) APP.customTasks = [];
+
+  if (editingTaskId) {
+    const task = APP.customTasks.find(t => t.id === editingTaskId);
+    if (task) {
+      task.label = name;
+      task.time = time;
+      task.timerMins = timerMins;
+      task.hint = hint;
+      task.icon = icon;
+      task.color = col.color;
+      task.colorBg = col.bg;
+    }
+  } else {
+    APP.customTasks.push({
+      id: uid(),
+      label: name,
+      time: time,
+      timerMins: timerMins,
+      hint: hint,
+      icon: icon,
+      color: col.color,
+      colorBg: col.bg,
+    });
+  }
+
+  saveData(APP);
+  closeConfirm();
+  renderFlow();
+  renderTimeline();
+}
+
+function deleteCustomTask(customId) {
+  APP.customTasks = APP.customTasks.filter(t => t.id !== customId);
+  saveData(APP);
+  closeConfirm();
+  renderFlow();
+  renderTimeline();
 }
 
 
