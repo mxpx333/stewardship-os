@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Stewardship OS</title>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -11,14 +14,23 @@
   --blue: #58a6ff; --green: #3fb950; --green-bg: rgba(63,185,80,0.1);
   --amber: #d29922; --amber-bg: rgba(210,153,34,0.1);
   --red: #f85149; --red-bg: rgba(248,81,73,0.1);
-  --purple: #bc8cff; --blue-bg: rgba(88,166,255,0.1);
+  --purple: #bc8cff; --purple-bg: rgba(188,140,255,0.1);
+  --blue-bg: rgba(88,166,255,0.1);
   --radius: 8px; --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
-body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; padding: 16px; max-width: 640px; margin: 0 auto; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; padding: 16px; max-width: 640px; margin: 0 auto; -webkit-tap-highlight-color: transparent; }
 
 /* Verse Bar */
 .verse-bar { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 12px; text-align: center; font-style: italic; color: var(--text-dim); font-size: 13px; line-height: 1.6; }
 .verse-bar .verse-ref { display: block; margin-top: 6px; font-style: normal; font-weight: 600; color: var(--purple); font-size: 11px; }
+
+/* Date Carousel */
+.date-carousel { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 0; margin-bottom: 8px; }
+.date-arrow { background: none; border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.date-arrow:active { background: var(--border); }
+.date-arrow.disabled { opacity: 0.25; pointer-events: none; }
+.date-label { font-size: 16px; font-weight: 700; min-width: 200px; text-align: center; letter-spacing: -0.3px; }
+.date-back-btn { background: none; border: none; color: var(--blue); font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font); display: block; text-align: center; margin-bottom: 8px; }
 
 /* Reading Card */
 .reading-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
@@ -44,14 +56,15 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .section-header h2 { font-size: 14px; font-weight: 600; }
 .section-header .count { font-size: 11px; color: var(--text-dim); }
 
-/* ═══ FLOW CHECKLIST (the main thing) ═══ */
+/* Flow Checklist */
 .flow-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 6px; overflow: hidden; transition: border-color 0.15s; }
 .flow-item.done { border-color: var(--green); opacity: 0.7; }
 .flow-item.current { border-color: var(--blue); }
-.flow-row { display: flex; align-items: center; padding: 12px 14px; gap: 12px; cursor: pointer; }
+.flow-row { display: flex; align-items: center; padding: 14px 14px; gap: 10px; cursor: pointer; min-height: 52px; }
+.flow-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
 .flow-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; transition: all 0.15s; }
 .flow-item.done .flow-check { border-color: var(--green); background: var(--green-bg); color: var(--green); }
-.flow-time { font-size: 11px; color: var(--text-dim); width: 65px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.flow-time { font-size: 11px; color: var(--text-dim); width: 60px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .flow-label { flex: 1; font-size: 13px; font-weight: 500; }
 .flow-item.done .flow-label { text-decoration: line-through; color: var(--text-dim); }
 .flow-hint { font-size: 11px; color: var(--text-dim); font-style: italic; }
@@ -59,11 +72,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .flow-badge.on-time { background: var(--green-bg); color: var(--green); }
 .flow-badge.late { background: var(--amber-bg); color: var(--amber); }
 
-/* SOAP Journal (expands below Bible reading) */
+/* SOAP Journal */
 .soap-panel { padding: 0 14px 14px; display: none; }
 .soap-panel.open { display: block; }
 .soap-field { margin-bottom: 8px; }
 .soap-field label { display: block; font-size: 11px; color: var(--purple); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.soap-field input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; margin-bottom: 6px; }
+.soap-field input[type="text"]:focus { border-color: var(--purple); }
 .soap-field textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 13px; font-family: var(--font); resize: vertical; min-height: 50px; outline: none; }
 .soap-field textarea:focus { border-color: var(--purple); }
 .soap-save { display: flex; justify-content: flex-end; }
@@ -81,11 +96,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .focus-block .focus-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
 .focus-block .focus-timer { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 2px; }
 .focus-block .focus-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.focus-block .focus-linked { font-size: 10px; color: var(--amber); margin-top: 4px; }
 .focus-block.active { border-color: var(--blue); }
 .focus-block.active .focus-timer { color: var(--blue); }
-.focus-controls { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
-.focus-btn { background: var(--blue-bg); border: 1px solid var(--blue); color: var(--blue); border-radius: var(--radius); padding: 5px 14px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-.focus-btn:hover { background: var(--blue); color: var(--bg); }
+.focus-controls { display: flex; gap: 6px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+.focus-btn { border-radius: var(--radius); padding: 6px 14px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid; font-family: var(--font); }
+.focus-btn.blue { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+.focus-btn.blue:hover { background: var(--blue); color: var(--bg); }
+.focus-btn.amber { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+.focus-btn.amber:hover { background: var(--amber); color: var(--bg); }
+.focus-btn.green { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.focus-btn.green:hover { background: var(--green); color: var(--bg); }
+.focus-btn.purple { background: var(--purple-bg); border-color: var(--purple); color: var(--purple); }
+.focus-btn.purple:hover { background: var(--purple); color: var(--bg); }
 .focus-btn.stop { border-color: var(--red); color: var(--red); background: var(--red-bg); }
 .focus-btn.stop:hover { background: var(--red); color: var(--bg); }
 .focus-btn.secondary { border-color: var(--border); color: var(--text-dim); background: none; }
@@ -127,7 +150,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 /* Collapsible */
 .collapsible-header { cursor: pointer; user-select: none; }
 .collapsible-header::after { content: ' +'; color: var(--text-dim); font-weight: 400; }
-.collapsible-header.open::after { content: ' −'; }
+.collapsible-header.open::after { content: ' \2212'; }
 .collapsible-body { display: none; margin-top: 6px; }
 .collapsible-body.open { display: block; }
 
@@ -171,7 +194,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .footer { text-align: center; padding: 20px 0 10px; font-size: 10px; color: var(--text-dim); }
 .footer a { color: var(--text-dim); text-decoration: underline; cursor: pointer; }
 
-/* Modal */
+/* Modal overlay */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
 .modal-overlay.open { display: flex; }
 .modal { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 400px; }
@@ -179,8 +202,21 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .modal input, .modal select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 13px; font-family: var(--font); margin-bottom: 10px; outline: none; }
 .modal input:focus, .modal select:focus { border-color: var(--blue); }
 .modal-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
-.modal-btn { padding: 6px 14px; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text); }
+.modal-btn { padding: 6px 14px; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text); font-family: var(--font); }
 .modal-btn.primary { background: var(--blue); border-color: var(--blue); color: var(--bg); }
+
+/* Slide-up confirmation modal */
+.confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; }
+.confirm-overlay.open { display: block; }
+.confirm-panel { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; padding: 20px 16px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 210; transform: translateY(100%); transition: transform 0.25s ease-out; max-width: 640px; margin: 0 auto; }
+.confirm-panel.open { transform: translateY(0); }
+.confirm-panel .cp-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.confirm-panel .cp-message { font-size: 13px; color: var(--text-dim); margin-bottom: 14px; line-height: 1.5; }
+.confirm-panel .cp-actions { display: flex; gap: 8px; }
+.confirm-panel .cp-btn { flex: 1; padding: 12px; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font); text-align: center; }
+.confirm-panel .cp-btn.cancel { background: var(--border); color: var(--text-dim); }
+.confirm-panel .cp-btn.confirm { background: var(--green); color: var(--bg); }
+.confirm-panel .cp-btn.start { background: var(--blue); color: var(--bg); }
 
 @media (max-width: 480px) { body { padding: 10px; } .header h1 { font-size: 17px; } .score-card .value { font-size: 20px; } .focus-block .focus-timer { font-size: 26px; } }
 </style>
@@ -189,12 +225,21 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 
 <div id="morning-commit-container"></div>
 <div class="verse-bar" id="verse-bar"></div>
+
+<!-- Date Carousel -->
+<div class="date-carousel">
+  <button class="date-arrow" id="date-prev" onclick="navDate(-1)">&#8249;</button>
+  <div class="date-label" id="date-label"></div>
+  <button class="date-arrow" id="date-next" onclick="navDate(1)">&#8250;</button>
+</div>
+<div id="date-back-container"></div>
+
 <div id="todays-reading"></div>
 <div class="header"><h1>Stewardship OS</h1><div class="subtitle" id="header-date"></div></div>
 <div id="identity-msg"></div>
 <div class="scoreboard" id="scoreboard"></div>
 
-<!-- THE FLOW: Sequential checklist — the main thing -->
+<!-- THE FLOW -->
 <div class="section-header"><h2>Today's Flow</h2><span class="count" id="flow-count"></span></div>
 <div id="daily-flow"></div>
 
@@ -226,7 +271,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 <div id="friday-review-container"></div>
 
 <div class="footer">
-  Whatever you do, work heartily, as for the Lord. — Col 3:23<br>
+  Whatever you do, work heartily, as for the Lord. — Col 3:23 (ESV)<br>
   <a onclick="exportData()">Export Data</a> | <a onclick="importData()">Import Data</a>
 </div>
 
@@ -238,10 +283,56 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
   <div class="modal-actions"><button class="modal-btn" onclick="closeShipModal()">Cancel</button><button class="modal-btn primary" onclick="saveShip()">Save</button></div>
 </div></div>
 
+<!-- Slide-up Confirm Modal -->
+<div class="confirm-overlay" id="confirm-overlay" onclick="closeConfirm()"></div>
+<div class="confirm-panel" id="confirm-panel"></div>
+
 <script>
-// ══════════════════════════════════════════
-// STEWARDSHIP OS v2 — Sequential Flow
-// ══════════════════════════════════════════
+// ======================================================
+// STEWARDSHIP OS v3 — Sequential Flow + Timer Integration
+// ======================================================
+
+// ── Google Sheets Sync ──
+// Set this to your deployed Apps Script web app URL to enable cloud sync.
+// See: https://developers.google.com/apps-script/guides/web
+const SHEET_URL = 'YOUR_APPS_SCRIPT_URL';
+
+function sheetsSyncEnabled() { return SHEET_URL && SHEET_URL !== 'YOUR_APPS_SCRIPT_URL'; }
+
+function syncCompletion(date, stepId, stepLabel, done) {
+  if (!sheetsSyncEnabled()) return;
+  const payload = { type: 'completion', date, stepId, stepLabel, done, timestamp: new Date().toISOString() };
+  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(() => {});
+}
+
+function syncSOAP(date, soapData) {
+  if (!sheetsSyncEnabled()) return;
+  const payload = { type: 'soap', date, scripture: soapData.scripture || '', observation: soapData.observation || '', application: soapData.application || '', prayer: soapData.prayer || '', reading: soapData.reading || '' };
+  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(() => {});
+}
+
+function syncFullBackup() {
+  if (!sheetsSyncEnabled()) return;
+  const payload = { type: 'full-sync', payload: APP };
+  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(() => {});
+}
+
+function tryRestoreFromCloud() {
+  if (!sheetsSyncEnabled()) return;
+  const hasData = Object.keys(APP.flow || {}).length > 0;
+  if (hasData) { syncFullBackup(); return; }
+  fetch(SHEET_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.flow && Object.keys(data.flow).length > 0) {
+        APP = data;
+        saveData(APP);
+        render();
+        console.log('Restored from cloud backup');
+      }
+    })
+    .catch(() => {});
+}
 
 const VERSES = [
   { text: "The Lord is my shepherd; I shall not want. He makes me to lie down in green pastures; He leads me beside the still waters. He restores my soul.", ref: "Psalm 23:1-3" },
@@ -265,7 +356,7 @@ const VERSES = [
   { text: "Do all things without grumbling or disputing.", ref: "Philippians 2:14" },
 ];
 
-// Bible Reading Plan: James (5) → Proverbs (31) → John (21) → Ephesians (6) = 63 days
+// Bible Reading Plan: James (5) -> Proverbs (31) -> John (21) -> Ephesians (6) = 63 days
 const READING_PLAN = [
   ...[1,2,3,4,5].map(c => ({ book: "James", chapter: c })),
   ...Array.from({length: 31}, (_, i) => ({ book: "Proverbs", chapter: i+1 })),
@@ -273,29 +364,29 @@ const READING_PLAN = [
   ...[1,2,3,4,5,6].map(c => ({ book: "Ephesians", chapter: c })),
 ];
 
-function getTodaysReading() {
+function getReadingForDate(dateStr) {
   const start = new Date(2026, 2, 24);
-  const diff = Math.floor((new Date() - start) / 86400000);
+  const target = parseDate(dateStr);
+  const diff = Math.floor((target - start) / 86400000);
   const idx = ((diff % READING_PLAN.length) + READING_PLAN.length) % READING_PLAN.length;
   return { ...READING_PLAN[idx], planDay: idx + 1, totalDays: READING_PLAN.length };
 }
 
-// ── Daily Flow Definition ──
-// Each step in order. Types: bible, walk, family, meditation, strategy, deepwork
+// ── Flow Steps Definition ──
 const FLOW_STEPS = [
-  { id: "bible",      time: "6:00 AM",  label: "Bible Reading (SOAP)", type: "bible",      hint: "dynamic" },
-  { id: "walk",       time: "6:30 AM",  label: "Treadmill Walk (30 min)", type: "health",  hint: "Put on shoes. Turn on treadmill. Light on." },
-  { id: "breakfast",  time: "7:30 AM",  label: "Breakfast + Family", type: "family",        hint: "Be present." },
-  { id: "meditation", time: "10:00 AM", label: "Meditation (10 min)", type: "meditation",   hint: "Were you on time?" },
-  { id: "strategy",   time: "10:10 AM", label: "Strategy Planning (10 min)", type: "strategy", hint: "What are today's biggest priorities?" },
-  { id: "dw1",        time: "10:20 AM", label: "Deep Work Block 1 (90 min)", type: "deepwork", hint: "Close door. Open document." },
-  { id: "dw2",        time: "12:00 PM", label: "Deep Work Block 2 (90 min)", type: "deepwork", hint: "Same ritual. Next priority." },
-  { id: "family",     time: "6:00 PM",  label: "Family Time", type: "family",               hint: "Put phone down. Go find the boys." },
+  { id: "bible",      time: "6:00 AM",   label: "Bible Reading (SOAP)", icon: "ph-book-open",         color: "var(--purple)",  colorBg: "var(--purple-bg)" },
+  { id: "walk",       time: "6:30 AM",   label: "Treadmill Walk (30 min)", icon: "ph-person-simple-run", color: "var(--green)", colorBg: "var(--green-bg)", timerMins: 30, timerType: "treadmill" },
+  { id: "meditation", time: "10:00 AM",  label: "Meditation (10 min)", icon: "ph-brain",               color: "var(--purple)",  colorBg: "var(--purple-bg)", timerMins: 10, timerType: "meditation" },
+  { id: "strategy",   time: "10:10 AM",  label: "Strategy Planning (10 min)", icon: "ph-lightbulb",    color: "var(--blue)",    colorBg: "var(--blue-bg)" },
+  { id: "dw1",        time: "10:20 AM",  label: "Deep Work Block 1 (90 min)", icon: "ph-fire-simple",  color: "var(--blue)",    colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
+  { id: "clearing",   time: "11:50 AM",  label: "Task Clearing (10 min)", icon: "ph-checks",           color: "var(--amber)",   colorBg: "var(--amber-bg)", timerMins: 10, timerType: "clearing" },
+  { id: "dw2",        time: "12:00 PM",  label: "Deep Work Block 2 (90 min)", icon: "ph-fire-simple",  color: "var(--blue)",    colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
+  { id: "family",     time: "6:00 PM",   label: "Family Time", icon: "ph-heart",                       color: "var(--green)",   colorBg: "var(--green-bg)" },
 ];
 
 const GOALS = {
   work: [
-    "Crush VP of Sales role at Versa — learn everything, build network",
+    "Crush VP of Sales role at Versa \u2014 learn everything, build network",
     "Close/advance BPO deals (VXI, ROI Solutions)",
     "Expand revenue with existing clients",
     "Start direct enterprise pipeline (MVNOs/MNOs)",
@@ -312,49 +403,129 @@ const GOALS = {
 const STORAGE_KEY = 'stewardship-os';
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) return JSON.parse(raw);
+  if (raw) {
+    const d = JSON.parse(raw);
+    // Ensure new fields exist
+    if (!d.flow) d.flow = {};
+    if (!d.soap) d.soap = {};
+    if (!d.meditation) d.meditation = {};
+    if (!d.strategy) d.strategy = {};
+    if (!d.ships) d.ships = [];
+    if (!d.backlog) d.backlog = [];
+    if (!d.weekHistory) d.weekHistory = [];
+    if (!d.fridayReviewed) d.fridayReviewed = {};
+    if (!d.morningCommit) d.morningCommit = {};
+    if (!d.shutdowns) d.shutdowns = {};
+    if (!d.tomorrowPlan) d.tomorrowPlan = {};
+    if (!d.timerCompletions) d.timerCompletions = {};
+    return d;
+  }
   return {
-    ships: [], backlog: [], weekHistory: [], focusTimer: null,
+    ships: [], backlog: [], weekHistory: [],
     fridayReviewed: {}, morningCommit: {}, shutdowns: {}, tomorrowPlan: {},
-    flow: {},       // { "2026-03-27": { bible: true, walk: false, ... } }
-    soap: {},       // { "2026-03-27": { scripture: "", observation: "", application: "", prayer: "" } }
-    meditation: {}, // { "2026-03-27": { startedAt: ts, onTime: bool } }
-    strategy: {},   // { "2026-03-27": { priorities: "" } }
+    flow: {},
+    soap: {},
+    meditation: {},
+    strategy: {},
+    timerCompletions: {},  // { "2026-03-31": { walk: { mins: 30 }, dw1: { mins: 90 }, ... } }
   };
 }
-function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function saveData(d) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  syncFullBackup();
+}
 let APP = loadData();
 
+// ── View State (ephemeral) ──
+let selectedDate = todayStr();
+
+// Focus timer state (ephemeral, current session only)
+let focusTimer = null; // { startedAt, duration, type, linkedStepId }
+let focusTimerInterval = null;
+
 // ── Utilities ──
-function today() { return new Date().toISOString().slice(0, 10); }
-function getWeekOf(date = new Date()) { const d = new Date(date); d.setDate(d.getDate() - d.getDay() + 1); return d.toISOString().slice(0,10); }
-function getWeekId(date = new Date()) { const d = new Date(date); const j = new Date(d.getFullYear(),0,1); return `${d.getFullYear()}-W${String(Math.ceil(((d-j)/86400000+j.getDay()+1)/7)).padStart(2,'0')}`; }
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function parseDate(s) { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function dateStr(d) { return d.toISOString().slice(0, 10); }
+function addDays(s, n) { const d = parseDate(s); d.setDate(d.getDate() + n); return dateStr(d); }
+function getWeekOf(date) { const d = date ? new Date(date) : new Date(); d.setDate(d.getDate() - d.getDay() + 1); return d.toISOString().slice(0,10); }
+function getWeekId(date) { const d = date ? new Date(date) : new Date(); const j = new Date(d.getFullYear(),0,1); return d.getFullYear()+'-W'+String(Math.ceil(((d-j)/86400000+j.getDay()+1)/7)).padStart(2,'0'); }
 function isFriday() { return new Date().getDay() === 5; }
 function isMonday() { return new Date().getDay() === 1; }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function dayOfYear() { const n = new Date(); return Math.floor((n - new Date(n.getFullYear(),0,0)) / 86400000); }
-function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function tomorrowDate() { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
-
-// Parse "10:00 AM" → hours in 24h
 function parseTime(t) { const [time, ap] = t.split(' '); let [h,m] = time.split(':').map(Number); if (ap==='PM'&&h!==12) h+=12; if (ap==='AM'&&h===12) h=0; return h*60+m; }
 
-// ══════════════════════════════════════════
+function formatDateLabel(dateString) {
+  const d = parseDate(dateString);
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+// ══════════════════════════
+// DATE CAROUSEL
+// ══════════════════════════
+function navDate(delta) {
+  const d = parseDate(selectedDate);
+  d.setDate(d.getDate() + delta);
+  const t = new Date(); t.setHours(0,0,0,0);
+  if (d > t) return;
+  selectedDate = dateStr(d);
+  render();
+}
+function goToToday() { selectedDate = todayStr(); render(); }
+
+function renderDateCarousel() {
+  const isToday = selectedDate === todayStr();
+  document.getElementById('date-label').textContent = formatDateLabel(selectedDate);
+  document.getElementById('date-next').className = 'date-arrow' + (isToday ? ' disabled' : '');
+  const backContainer = document.getElementById('date-back-container');
+  if (!isToday) {
+    backContainer.innerHTML = '<button class="date-back-btn" onclick="goToToday()">Back to Today</button>';
+  } else {
+    backContainer.innerHTML = '';
+  }
+}
+
+// ══════════════════════════
+// CONFIRM MODAL (slide-up)
+// ══════════════════════════
+function showConfirm(title, message, buttons) {
+  // buttons: [{ label, class, onclick }]
+  const panel = document.getElementById('confirm-panel');
+  const overlay = document.getElementById('confirm-overlay');
+  let btnsHtml = '<div class="cp-actions">';
+  buttons.forEach(b => {
+    btnsHtml += '<button class="cp-btn ' + (b.cls || '') + '" onclick="' + b.onclick + '">' + b.label + '</button>';
+  });
+  btnsHtml += '</div>';
+  panel.innerHTML = '<div class="cp-title">' + esc(title) + '</div><div class="cp-message">' + esc(message) + '</div>' + btnsHtml;
+  panel.classList.add('open');
+  overlay.classList.add('open');
+}
+function closeConfirm() {
+  document.getElementById('confirm-panel').classList.remove('open');
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+
+// ══════════════════════════
 // RENDER
-// ══════════════════════════════════════════
+// ══════════════════════════
 
 function renderVerse() {
   const v = VERSES[dayOfYear() % VERSES.length];
-  document.getElementById('verse-bar').innerHTML = `"${v.text}"<span class="verse-ref">— ${v.ref}</span>`;
+  document.getElementById('verse-bar').innerHTML = '"' + v.text + '"<span class="verse-ref">\u2014 ' + v.ref + ' (ESV)</span>';
 }
 
 function renderReading() {
-  const r = getTodaysReading();
-  document.getElementById('todays-reading').innerHTML = `<div class="reading-card"><div><div class="reading-book">${r.book} ${r.chapter}</div><div class="reading-method">SOAP: Read. Observe. Apply. Pray.</div></div><div class="reading-progress"><div class="reading-pct">Day ${r.planDay}</div>${r.totalDays} day plan</div></div>`;
+  const r = getReadingForDate(selectedDate);
+  document.getElementById('todays-reading').innerHTML = '<div class="reading-card"><div><div class="reading-book">' + r.book + ' ' + r.chapter + '</div><div class="reading-method">SOAP: Read. Observe. Apply. Pray.</div></div><div class="reading-progress"><div class="reading-pct">Day ' + r.planDay + '</div>' + r.totalDays + ' day plan</div></div>';
 }
 
 function renderHeader() {
-  document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  // The date carousel now handles the date display, so just show a static label
+  document.getElementById('header-date').textContent = '';
 }
 
 function renderScoreboard() {
@@ -367,150 +538,331 @@ function renderScoreboard() {
   const rp = rt > 0 ? Math.round(rs/rt*100) : 0;
   const aw = [...APP.weekHistory, {shipped,total}]; let qs=0,qt=0; aw.forEach(w=>{qs+=w.shipped;qt+=w.total;});
   const qp = qt>0?Math.round(qs/qt*100):0;
-  document.getElementById('scoreboard').innerHTML = `
-    <div class="score-card"><div class="label">This Week</div><div class="value">${shipped}/${total}</div><div class="sub">ships</div></div>
-    <div class="score-card"><div class="label">4-Week</div><div class="value">${rp}%</div><div class="sub">${rs}/${rt}</div></div>
-    <div class="score-card"><div class="label">Quarter</div><div class="value">${qp}%</div><div class="sub">${qs}/${qt}</div></div>`;
+  document.getElementById('scoreboard').innerHTML =
+    '<div class="score-card"><div class="label">This Week</div><div class="value">'+shipped+'/'+total+'</div><div class="sub">ships</div></div>' +
+    '<div class="score-card"><div class="label">4-Week</div><div class="value">'+rp+'%</div><div class="sub">'+rs+'/'+rt+'</div></div>' +
+    '<div class="score-card"><div class="label">Quarter</div><div class="value">'+qp+'%</div><div class="sub">'+qs+'/'+qt+'</div></div>';
 }
 
-// ═══ THE FLOW ═══
+// ══════════════════════════
+// THE FLOW
+// ══════════════════════════
 function renderFlow() {
-  const d = today();
+  const d = selectedDate;
   if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); saveData(APP); }
   const flowData = APP.flow[d];
   const done = Object.values(flowData).filter(Boolean).length;
-  document.getElementById('flow-count').textContent = `${done}/${FLOW_STEPS.length}`;
+  document.getElementById('flow-count').textContent = done + '/' + FLOW_STEPS.length;
 
   const now = new Date(); const nowMin = now.getHours()*60+now.getMinutes();
-  const r = getTodaysReading();
+  const isToday = d === todayStr();
+  const r = getReadingForDate(d);
 
   let html = '';
   FLOW_STEPS.forEach((step, i) => {
     const isDone = flowData[step.id];
     const stepMin = parseTime(step.time);
     const nextMin = i < FLOW_STEPS.length-1 ? parseTime(FLOW_STEPS[i+1].time) : 1440;
-    const isCurrent = !isDone && nowMin >= stepMin && nowMin < nextMin;
+    const isCurrent = isToday && !isDone && nowMin >= stepMin && nowMin < nextMin;
 
-    let hint = step.hint;
-    if (hint === 'dynamic') hint = `Open to ${r.book} ${r.chapter}. Read. SOAP.`;
+    let hint = '';
+    if (step.id === 'bible') hint = 'Open to ' + r.book + ' ' + r.chapter + '. Read. SOAP.';
+    else if (step.id === 'walk') hint = 'Put on shoes. Turn on treadmill.';
+    else if (step.id === 'meditation') hint = 'Were you on time?';
+    else if (step.id === 'strategy') hint = 'What are today\'s biggest priorities?';
+    else if (step.id === 'dw1') hint = 'Close door. Open document.';
+    else if (step.id === 'clearing') hint = 'Clear emails, small tasks.';
+    else if (step.id === 'dw2') hint = 'Same ritual. Next priority.';
+    else if (step.id === 'family') hint = 'Put phone down. Go find the boys.';
 
     // Meditation on-time badge
     let badge = '';
-    if (step.type === 'meditation' && isDone && APP.meditation[d]) {
+    if (step.id === 'meditation' && isDone && APP.meditation[d]) {
       badge = APP.meditation[d].onTime
         ? '<span class="flow-badge on-time">ON TIME</span>'
         : '<span class="flow-badge late">LATE</span>';
     }
 
-    html += `<div class="flow-item ${isDone?'done':''} ${isCurrent?'current':''}" id="flow-${step.id}">
-      <div class="flow-row" onclick="toggleFlow('${step.id}')">
-        <div class="flow-check">${isDone?'&#10003;':''}</div>
-        <div class="flow-time">${step.time}</div>
-        <div class="flow-label">${step.label}</div>
-        ${badge}
-        ${!isDone?`<div class="flow-hint">${hint}</div>`:''}
-      </div>
-      ${step.type === 'bible' ? renderSOAPPanel(d) : ''}
-      ${step.type === 'strategy' ? renderStrategyPanel(d) : ''}
-    </div>`;
+    // Timer completion info
+    let timerInfo = '';
+    if (isDone && APP.timerCompletions[d] && APP.timerCompletions[d][step.id]) {
+      const tc = APP.timerCompletions[d][step.id];
+      if (tc.mins !== undefined) timerInfo = '<span style="font-size:10px;color:var(--green);margin-left:4px;">' + tc.mins + ' min</span>';
+    }
+
+    html += '<div class="flow-item ' + (isDone?'done':'') + ' ' + (isCurrent?'current':'') + '" id="flow-' + step.id + '">' +
+      '<div class="flow-row" onclick="handleFlowTap(\'' + step.id + '\')">' +
+        '<div class="flow-icon" style="background:' + step.colorBg + ';color:' + step.color + '"><i class="ph ' + step.icon + '"></i></div>' +
+        '<div class="flow-check">' + (isDone?'&#10003;':'') + '</div>' +
+        '<div class="flow-time">' + step.time + '</div>' +
+        '<div class="flow-label">' + step.label + '</div>' +
+        badge + timerInfo +
+        (!isDone && isToday ? '<div class="flow-hint">' + hint + '</div>' : '') +
+      '</div>' +
+      (step.id === 'bible' ? renderSOAPPanel(d) : '') +
+      (step.id === 'strategy' ? renderStrategyPanel(d) : '') +
+    '</div>';
   });
 
   document.getElementById('daily-flow').innerHTML = html;
 }
 
+// ── SOAP Panel ──
 function renderSOAPPanel(d) {
-  if (!APP.soap[d]) APP.soap[d] = { scripture:'', observation:'', application:'', prayer:'' };
+  if (!APP.soap[d]) APP.soap[d] = { scripture:'', observation:'', application:'', prayer:'', reading:'' };
   const s = APP.soap[d];
-  const r = getTodaysReading();
-  const isOpen = !APP.flow[d]?.bible; // show when not yet done
-  return `<div class="soap-panel ${isOpen?'open':''}" id="soap-panel">
-    <div class="soap-field"><label>S — Scripture (${r.book} ${r.chapter})</label><textarea id="soap-s" placeholder="Copy or summarize the verse that stands out...">${esc(s.scripture)}</textarea></div>
-    <div class="soap-field"><label>O — Observation</label><textarea id="soap-o" placeholder="What's happening? Who's talking? What's the context?">${esc(s.observation)}</textarea></div>
-    <div class="soap-field"><label>A — Application</label><textarea id="soap-a" placeholder="How does this apply to my life right now?">${esc(s.application)}</textarea></div>
-    <div class="soap-field"><label>P — Prayer</label><textarea id="soap-p" placeholder="Pray based on what you read...">${esc(s.prayer)}</textarea></div>
-    <div class="soap-save"><button onclick="saveSOAP()">Save SOAP</button></div>
-  </div>`;
+  const r = getReadingForDate(d);
+  const isOpen = !APP.flow[d]?.bible;
+  const readingOverride = s.reading || (r.book + ' ' + r.chapter);
+  return '<div class="soap-panel ' + (isOpen?'open':'') + '" id="soap-panel">' +
+    '<div class="soap-field"><label>Today\'s Reading</label><input type="text" id="soap-reading" value="' + esc(readingOverride) + '" placeholder="' + esc(r.book + ' ' + r.chapter) + '"></div>' +
+    '<div class="soap-field"><label>S \u2014 Scripture</label><textarea id="soap-s" placeholder="Copy or summarize the verse that stands out...">' + esc(s.scripture) + '</textarea></div>' +
+    '<div class="soap-field"><label>O \u2014 Observation</label><textarea id="soap-o" placeholder="What\'s happening? Who\'s talking? What\'s the context?">' + esc(s.observation) + '</textarea></div>' +
+    '<div class="soap-field"><label>A \u2014 Application</label><textarea id="soap-a" placeholder="How does this apply to my life right now?">' + esc(s.application) + '</textarea></div>' +
+    '<div class="soap-field"><label>P \u2014 Prayer</label><textarea id="soap-p" placeholder="Pray based on what you read...">' + esc(s.prayer) + '</textarea></div>' +
+    '<div class="soap-save"><button onclick="saveSOAP()">Save SOAP</button></div>' +
+  '</div>';
 }
 
 function saveSOAP() {
-  const d = today();
+  const d = selectedDate;
+  if (!APP.soap[d]) APP.soap[d] = {};
   APP.soap[d] = {
+    reading: document.getElementById('soap-reading')?.value || '',
     scripture: document.getElementById('soap-s')?.value || '',
     observation: document.getElementById('soap-o')?.value || '',
     application: document.getElementById('soap-a')?.value || '',
     prayer: document.getElementById('soap-p')?.value || '',
   };
   saveData(APP);
+  syncSOAP(d, APP.soap[d]);
 }
 
+// ── Strategy Panel ──
 function renderStrategyPanel(d) {
   if (!APP.strategy[d]) APP.strategy[d] = { priorities: '' };
   const isOpen = !APP.flow[d]?.strategy;
-  return `<div class="strategy-panel ${isOpen?'open':''}" id="strategy-panel">
-    <div class="strategy-field"><label>Today's Top Priorities</label><textarea id="strat-p" placeholder="What are the 1-3 most important things to accomplish today?">${esc(APP.strategy[d].priorities)}</textarea></div>
-    <div class="soap-save"><button onclick="saveStrategy()" style="background:var(--blue);">Save Priorities</button></div>
-  </div>`;
+  return '<div class="strategy-panel ' + (isOpen?'open':'') + '" id="strategy-panel">' +
+    '<div class="strategy-field"><label>Today\'s Top Priorities</label><textarea id="strat-p" placeholder="What are the 1-3 most important things to accomplish today?">' + esc(APP.strategy[d].priorities) + '</textarea></div>' +
+    '<div class="soap-save"><button onclick="saveStrategy()" style="background:var(--blue);">Save Priorities</button></div>' +
+  '</div>';
 }
 
 function saveStrategy() {
-  const d = today();
+  const d = selectedDate;
   APP.strategy[d] = { priorities: document.getElementById('strat-p')?.value || '' };
   saveData(APP);
 }
 
-function toggleFlow(id) {
-  const d = today();
+// ══════════════════════════
+// FLOW TAP HANDLER + TIMER INTEGRATION
+// ══════════════════════════
+function handleFlowTap(id) {
+  const d = selectedDate;
   if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); }
+  const step = FLOW_STEPS.find(s => s.id === id);
+  const isDone = APP.flow[d][id];
+  const isToday = d === todayStr();
 
-  // Special handling for bible — save SOAP first
+  // If unchecking (already done), just toggle off
+  if (isDone) {
+    if (id === 'bible') saveSOAP();
+    if (id === 'strategy') saveStrategy();
+    APP.flow[d][id] = false;
+    saveData(APP);
+    syncCompletion(d, id, step.label, false);
+    renderFlow();
+    return;
+  }
+
+  // Save associated panels
   if (id === 'bible') saveSOAP();
   if (id === 'strategy') saveStrategy();
 
-  // Special handling for meditation — record on-time
-  if (id === 'meditation' && !APP.flow[d][id]) {
+  // Meditation on-time tracking
+  if (id === 'meditation' && isToday) {
     const now = new Date();
     const targetMin = parseTime('10:00 AM');
     const nowMin = now.getHours()*60 + now.getMinutes();
-    APP.meditation[d] = { startedAt: Date.now(), onTime: nowMin <= targetMin + 2 }; // 2 min grace
+    APP.meditation[d] = { startedAt: Date.now(), onTime: nowMin <= targetMin + 2 };
   }
 
-  APP.flow[d][id] = !APP.flow[d][id];
+  // Timer-linked steps: walk, dw1, dw2, clearing, meditation
+  if (step.timerType && isToday) {
+    // Check if a matching timer is running or was completed today
+    const timerCompleted = APP.timerCompletions[d] && APP.timerCompletions[d][id];
+    const timerRunningForThis = focusTimer && focusTimer.linkedStepId === id;
+
+    if (timerCompleted || timerRunningForThis) {
+      // Timer ran or is running for this step -- auto-check
+      completeFlowStep(id);
+      return;
+    }
+
+    // Check if a timer of the same type completed for any step
+    if (focusTimer && focusTimer.type === step.timerType) {
+      completeFlowStep(id);
+      return;
+    }
+
+    // No timer ran -- show confirmation modal
+    const timerMins = step.timerMins || 30;
+    showConfirm(
+      step.label,
+      'No timer was recorded for this step. What would you like to do?',
+      [
+        { label: 'Cancel', cls: 'cancel', onclick: 'closeConfirm()' },
+        { label: 'Already Done', cls: 'confirm', onclick: 'closeConfirm();completeFlowStep("'+id+'")' },
+        { label: 'Start ' + timerMins + 'm Timer', cls: 'start', onclick: 'closeConfirm();startFocusTimer("'+step.timerType+'",'+timerMins+',"'+id+'")' },
+      ]
+    );
+    return;
+  }
+
+  // Non-timer steps: just toggle
+  completeFlowStep(id);
+}
+
+function completeFlowStep(id) {
+  const d = selectedDate;
+  if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); }
+  const step = FLOW_STEPS.find(s => s.id === id);
+  APP.flow[d][id] = true;
   saveData(APP);
+  syncCompletion(d, id, step ? step.label : id, true);
   renderFlow();
 }
 
-// ═══ FOCUS TIMER ═══
+// ══════════════════════════
+// FOCUS TIMER
+// ══════════════════════════
+function startFocusTimer(type, mins, linkedStepId) {
+  focusTimer = { startedAt: Date.now(), duration: mins * 60000, type: type, linkedStepId: linkedStepId || null };
+  if (focusTimerInterval) clearInterval(focusTimerInterval);
+  focusTimerInterval = setInterval(tickFocusTimer, 1000);
+  renderFocusBlock();
+}
+
+function tickFocusTimer() {
+  if (!focusTimer) { clearInterval(focusTimerInterval); focusTimerInterval = null; return; }
+  const elapsed = Date.now() - focusTimer.startedAt;
+  const remaining = focusTimer.duration - elapsed;
+  if (remaining <= 0) {
+    // Timer completed
+    const d = todayStr();
+    const stepId = focusTimer.linkedStepId;
+    const actualMins = Math.round(focusTimer.duration / 60000);
+
+    // Record timer completion
+    if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
+    if (stepId) {
+      APP.timerCompletions[d][stepId] = { mins: actualMins, completedAt: Date.now() };
+      // Auto-check the linked flow step
+      if (APP.flow[d] && !APP.flow[d][stepId]) {
+        APP.flow[d][stepId] = true;
+        const step = FLOW_STEPS.find(s => s.id === stepId);
+        syncCompletion(d, stepId, step ? step.label : stepId, true);
+      }
+    }
+
+    saveData(APP);
+    focusTimer = null;
+    clearInterval(focusTimerInterval);
+    focusTimerInterval = null;
+    renderFlow();
+  }
+  renderFocusBlock();
+}
+
+function stopFocusTimer() {
+  if (focusTimer) {
+    const elapsed = Date.now() - focusTimer.startedAt;
+    const actualMins = Math.round(elapsed / 60000);
+    const stepId = focusTimer.linkedStepId;
+    const d = todayStr();
+
+    if (actualMins > 0 && stepId) {
+      if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
+      APP.timerCompletions[d][stepId] = { mins: actualMins, completedAt: Date.now() };
+
+      const step = FLOW_STEPS.find(s => s.id === stepId);
+      const targetMins = step ? step.timerMins : 30;
+
+      if (actualMins < targetMins) {
+        // Partial completion
+        showConfirm(
+          'Timer Stopped Early',
+          'You did ' + actualMins + ' of ' + targetMins + ' minutes. Mark as complete?',
+          [
+            { label: 'No', cls: 'cancel', onclick: 'closeConfirm()' },
+            { label: 'Yes, Mark Complete', cls: 'confirm', onclick: 'closeConfirm();completeFlowStep("'+stepId+'")' },
+          ]
+        );
+      }
+      saveData(APP);
+    }
+  }
+  focusTimer = null;
+  if (focusTimerInterval) { clearInterval(focusTimerInterval); focusTimerInterval = null; }
+  renderFocusBlock();
+}
+
+function getNextDeepWorkStep() {
+  const d = todayStr();
+  if (!APP.flow[d]) return 'dw1';
+  if (!APP.flow[d].dw1) return 'dw1';
+  if (!APP.flow[d].dw2) return 'dw2';
+  return null;
+}
+
 function renderFocusBlock() {
   const el = document.getElementById('focus-block');
-  if (APP.focusTimer) {
-    const elapsed = Date.now() - APP.focusTimer.startedAt;
-    const remaining = Math.max(0, APP.focusTimer.duration - elapsed);
-    const mins = Math.floor(remaining/60000); const secs = Math.floor((remaining%60000)/1000);
-    const label = APP.focusTimer.type==='deep-work'?'Deep Work: As Unto the Lord':APP.focusTimer.type==='chores'?'Chore Block':'Focus Block';
+  if (focusTimer) {
+    const elapsed = Date.now() - focusTimer.startedAt;
+    const remaining = Math.max(0, focusTimer.duration - elapsed);
+    const mins = Math.floor(remaining/60000);
+    const secs = Math.floor((remaining%60000)/1000);
+    const typeLabels = { 'deep-work': 'Deep Work', 'clearing': 'Task Clearing', 'treadmill': 'Treadmill Walk', 'meditation': 'Meditation' };
+    const label = typeLabels[focusTimer.type] || 'Focus';
+    const linkedStep = focusTimer.linkedStepId ? FLOW_STEPS.find(s => s.id === focusTimer.linkedStepId) : null;
+    const linkedLabel = linkedStep ? '<div class="focus-linked">Linked to: ' + linkedStep.label + '</div>' : '';
     el.className = 'focus-block active';
-    el.innerHTML = `<div class="focus-label">${label}</div><div class="focus-timer">${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</div><div class="focus-sub">${remaining<=0?'Complete!':'Stay focused. Finish strong.'}</div><div class="focus-controls"><button class="focus-btn stop" onclick="stopFocus()">Stop</button></div>`;
-    if (remaining > 0) setTimeout(renderFocusBlock, 1000);
-    else { APP.focusTimer = null; saveData(APP); }
+    el.innerHTML =
+      '<div class="focus-label">' + label + ': As Unto the Lord</div>' +
+      '<div class="focus-timer">' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0') + '</div>' +
+      '<div class="focus-sub">' + (remaining<=0?'Complete!':'Stay focused. Finish strong.') + '</div>' +
+      linkedLabel +
+      '<div class="focus-controls"><button class="focus-btn stop" onclick="stopFocusTimer()">Stop</button></div>';
   } else {
-    const plan = APP.tomorrowPlan?.[today()] || {};
-    const hint = plan.dw1 ? `<div class="focus-sub" style="margin-bottom:4px;">Planned: ${esc(plan.dw1)}</div>` : '';
+    const plan = APP.tomorrowPlan?.[todayStr()] || {};
+    const hint = plan.dw1 ? '<div class="focus-sub" style="margin-bottom:6px;">Planned: ' + esc(plan.dw1) + '</div>' : '';
+    const nextDW = getNextDeepWorkStep();
+
     el.className = 'focus-block';
-    el.innerHTML = `<div class="focus-label">Start a Focus Block</div><div class="focus-timer">--:--</div>${hint}<div class="focus-controls"><button class="focus-btn" onclick="startFocus('deep-work',90)">Deep Work (90m)</button><button class="focus-btn secondary" onclick="startFocus('chores',30)">Chores (30m)</button><button class="focus-btn secondary" onclick="startFocus('meditation',10)">Meditate (10m)</button></div>`;
+    el.innerHTML =
+      '<div class="focus-label">Start a Focus Block</div>' +
+      '<div class="focus-timer">--:--</div>' + hint +
+      '<div class="focus-controls">' +
+        '<button class="focus-btn blue" onclick="startFocusTimer(\'deep-work\',90,\'' + (nextDW || '') + '\')">Deep Work (90m)</button>' +
+        '<button class="focus-btn amber" onclick="startFocusTimer(\'clearing\',10,\'clearing\')">Clearing (10m)</button>' +
+        '<button class="focus-btn green" onclick="startFocusTimer(\'treadmill\',30,\'walk\')">Treadmill (30m)</button>' +
+        '<button class="focus-btn purple" onclick="startFocusTimer(\'meditation\',10,\'meditation\')">Meditate (10m)</button>' +
+      '</div>';
   }
 }
-function startFocus(type, mins) { APP.focusTimer = { startedAt: Date.now(), duration: mins*60000, type }; saveData(APP); renderFocusBlock(); }
-function stopFocus() { APP.focusTimer = null; saveData(APP); renderFocusBlock(); }
 
-// ═══ SHIPS ═══
+// ══════════════════════════
+// SHIPS
+// ══════════════════════════
 function renderShips() {
   const weekOf = getWeekOf(); const cs = APP.ships.filter(s=>s.weekOf===weekOf);
-  document.getElementById('ships-count').textContent = `${cs.length}/3`;
+  document.getElementById('ships-count').textContent = cs.length + '/3';
   let html = '';
   cs.forEach(s => {
     const icon = s.status==='shipped'?'&#10003;':s.status==='in-progress'?'&#9679;':'';
-    html += `<div class="ship-card ${s.status==='shipped'?'shipped':''}" onclick="cycleShip('${s.id}')"><div class="ship-status ${s.status}">${icon}</div><div class="ship-info"><div class="ship-name">${esc(s.name)}</div><div class="ship-meta"><span class="ship-category ${s.category}">${s.category}</span></div></div><div style="display:flex;gap:4px"><button class="ship-btn" onclick="event.stopPropagation();editShip('${s.id}')">&#9998;</button><button class="ship-btn delete" onclick="event.stopPropagation();deleteShip('${s.id}')">&#10005;</button></div></div>`;
+    html += '<div class="ship-card '+(s.status==='shipped'?'shipped':'')+'" onclick="cycleShip(\''+s.id+'\')"><div class="ship-status '+s.status+'">'+icon+'</div><div class="ship-info"><div class="ship-name">'+esc(s.name)+'</div><div class="ship-meta"><span class="ship-category '+s.category+'">'+s.category+'</span></div></div><div style="display:flex;gap:4px"><button class="ship-btn" onclick="event.stopPropagation();editShip(\''+s.id+'\')" title="Edit">&#9998;</button><button class="ship-btn delete" onclick="event.stopPropagation();deleteShip(\''+s.id+'\')">&#10005;</button></div></div>';
   });
-  if (cs.length < 3) html += `<div class="ship-card" onclick="openShipModal()" style="justify-content:center;color:var(--text-dim);border-style:dashed;">+ Add Ship (${3-cs.length} remaining)</div>`;
+  if (cs.length < 3) html += '<div class="ship-card" onclick="openShipModal()" style="justify-content:center;color:var(--text-dim);border-style:dashed;">+ Add Ship ('+(3-cs.length)+' remaining)</div>';
   document.getElementById('ships').innerHTML = html;
 }
 function cycleShip(id) { const s=APP.ships.find(x=>x.id===id); if(!s)return; const c=['not-started','in-progress','shipped']; s.status=c[(c.indexOf(s.status)+1)%3]; saveData(APP); renderShips(); renderScoreboard(); }
@@ -525,97 +877,138 @@ function saveShip(){const n=document.getElementById('ship-name-input'),c=documen
 function editShip(id){openShipModal(id);}
 function deleteShip(id){APP.ships=APP.ships.filter(s=>s.id!==id);saveData(APP);renderShips();renderScoreboard();}
 
-// ═══ BACKLOG ═══
-function renderBacklog(){document.getElementById('backlog-count').textContent=`${APP.backlog.length} items`;let h='';APP.backlog.forEach(i=>{h+=`<div class="backlog-item"><span class="ship-category ${i.category}">${i.category}</span><span class="backlog-name">${esc(i.name)}</span><div style="display:flex;gap:4px"><button class="ship-btn" onclick="promoteToShip('${i.id}')" title="Promote">&#8593;</button><button class="ship-btn delete" onclick="deleteBacklog('${i.id}')">&#10005;</button></div></div>`;});if(!APP.backlog.length)h='<div class="backlog-item" style="color:var(--text-dim);justify-content:center;">No items yet</div>';document.getElementById('backlog').innerHTML=h;}
-function addBacklogItem(cat){const inp=document.getElementById('backlog-input'),name=inp.value.trim();if(!name)return;APP.backlog.push({id:uid(),name,category:cat,createdAt:today()});saveData(APP);inp.value='';renderBacklog();}
+// ══════════════════════════
+// BACKLOG
+// ══════════════════════════
+function renderBacklog(){document.getElementById('backlog-count').textContent=APP.backlog.length+' items';let h='';APP.backlog.forEach(i=>{h+='<div class="backlog-item"><span class="ship-category '+i.category+'">'+i.category+'</span><span class="backlog-name">'+esc(i.name)+'</span><div style="display:flex;gap:4px"><button class="ship-btn" onclick="promoteToShip(\''+i.id+'\')" title="Promote">&#8593;</button><button class="ship-btn delete" onclick="deleteBacklog(\''+i.id+'\')">&#10005;</button></div></div>';});if(!APP.backlog.length)h='<div class="backlog-item" style="color:var(--text-dim);justify-content:center;">No items yet</div>';document.getElementById('backlog').innerHTML=h;}
+function addBacklogItem(cat){const inp=document.getElementById('backlog-input'),name=inp.value.trim();if(!name)return;APP.backlog.push({id:uid(),name,category:cat,createdAt:todayStr()});saveData(APP);inp.value='';renderBacklog();}
 function deleteBacklog(id){APP.backlog=APP.backlog.filter(b=>b.id!==id);saveData(APP);renderBacklog();}
-function promoteToShip(id){const item=APP.backlog.find(b=>b.id===id);if(!item)return;const cs=APP.ships.filter(s=>s.weekOf===getWeekOf());if(cs.length>=3){alert('3 ships max. Finish or remove one.');return;}APP.ships.push({id:uid(),name:item.name,category:item.category,status:'not-started',weekOf:getWeekOf()});APP.backlog=APP.backlog.filter(b=>b.id!==id);saveData(APP);renderShips();renderBacklog();renderScoreboard();}
+function promoteToShip(id){const item=APP.backlog.find(b=>b.id===id);if(!item)return;const cs=APP.ships.filter(s=>s.weekOf===getWeekOf());if(cs.length>=3){showConfirm('Ships Full','3 ships max. Finish or remove one first.',[{label:'OK',cls:'confirm',onclick:'closeConfirm()'}]);return;}APP.ships.push({id:uid(),name:item.name,category:item.category,status:'not-started',weekOf:getWeekOf()});APP.backlog=APP.backlog.filter(b=>b.id!==id);saveData(APP);renderShips();renderBacklog();renderScoreboard();}
 
-// ═══ GOALS ═══
-function renderGoals(){let h='<div style="margin-bottom:6px;font-size:11px;color:var(--blue);font-weight:600;">WORK</div>';GOALS.work.forEach(g=>{h+=`<div class="goal-item">${esc(g)}</div>`;});h+='<div style="margin:10px 0 6px;font-size:11px;color:var(--green);font-weight:600;">PERSONAL</div>';GOALS.personal.forEach(g=>{h+=`<div class="goal-item">${esc(g)}</div>`;});document.getElementById('goals').innerHTML=h;}
+// ══════════════════════════
+// GOALS
+// ══════════════════════════
+function renderGoals(){let h='<div style="margin-bottom:6px;font-size:11px;color:var(--blue);font-weight:600;">WORK</div>';GOALS.work.forEach(g=>{h+='<div class="goal-item">'+esc(g)+'</div>';});h+='<div style="margin:10px 0 6px;font-size:11px;color:var(--green);font-weight:600;">PERSONAL</div>';GOALS.personal.forEach(g=>{h+='<div class="goal-item">'+esc(g)+'</div>';});document.getElementById('goals').innerHTML=h;}
 
-// ═══ MORNING COMMIT ═══
+// ══════════════════════════
+// MORNING COMMIT
+// ══════════════════════════
 const ANCHOR_BLOCKS = [
   { time:"6:00 AM", label:"Quiet Time", type:"faith" },
   { time:"6:30 AM", label:"Treadmill Walk + Light", type:"health" },
   { time:"10:00 AM", label:"Meditation (10 min)", type:"faith" },
   { time:"10:10 AM", label:"Strategy Planning", type:"deepwork" },
   { time:"10:20 AM", label:"Deep Work Block 1", type:"deepwork" },
+  { time:"11:50 AM", label:"Task Clearing (10 min)", type:"chore" },
   { time:"12:00 PM", label:"Deep Work Block 2", type:"deepwork" },
   { time:"6:00 PM", label:"Family Time", type:"family" },
 ];
 
 function renderMorningCommit(){
-  const c=document.getElementById('morning-commit-container'),h=new Date().getHours(),d=today();
+  const c=document.getElementById('morning-commit-container'),h=new Date().getHours(),d=todayStr();
   if(!APP.morningCommit)APP.morningCommit={};if(!APP.tomorrowPlan)APP.tomorrowPlan={};
-  if(h<10&&!APP.morningCommit[d]){
-    const plan=APP.tomorrowPlan[d]||{},r=getTodaysReading();
-    const colors={faith:'rgba(188,140,255,0.1)',health:'var(--green-bg)',deepwork:'var(--blue-bg)',family:'rgba(248,81,73,0.1)'};
+  if(h<10&&!APP.morningCommit[d]&&selectedDate===todayStr()){
+    const plan=APP.tomorrowPlan[d]||{},r=getReadingForDate(d);
+    const colors={faith:'rgba(188,140,255,0.1)',health:'var(--green-bg)',deepwork:'var(--blue-bg)',family:'rgba(248,81,73,0.1)',chore:'var(--amber-bg)'};
     let blocks='';ANCHOR_BLOCKS.forEach(b=>{
       let hint='';
-      if(b.label==='Quiet Time')hint=`${r.book} ${r.chapter} (SOAP)`;
+      if(b.label==='Quiet Time')hint=r.book+' '+r.chapter+' (SOAP)';
       else if(b.label.includes('Deep Work 1')&&plan.dw1)hint=plan.dw1;
       else if(b.label.includes('Deep Work 2')&&plan.dw2)hint=plan.dw2;
       else if(b.label==='Family Time'&&plan.family)hint=plan.family;
-      blocks+=`<div class="mc-block" style="background:${colors[b.type]||'transparent'}"><span class="mc-time">${b.time}</span><span>${b.label}</span>${hint?`<span class="mc-start">${esc(hint)}</span>`:''}</div>`;
+      blocks+='<div class="mc-block" style="background:'+colors[b.type]+'"><span class="mc-time">'+b.time+'</span><span>'+b.label+'</span>'+(hint?'<span class="mc-start">'+esc(hint)+'</span>':'')+'</div>';
     });
-    let loops='';if(plan.openLoops)loops=`<div style="font-size:11px;color:var(--text-dim);margin-top:8px;padding:6px 10px;background:var(--bg);border-radius:var(--radius);text-align:left;"><span style="color:var(--amber);font-weight:600;">Open loops:</span> ${esc(plan.openLoops)}</div>`;
+    let loops='';if(plan.openLoops)loops='<div style="font-size:11px;color:var(--text-dim);margin-top:8px;padding:6px 10px;background:var(--bg);border-radius:var(--radius);text-align:left;"><span style="color:var(--amber);font-weight:600;">Open loops:</span> '+esc(plan.openLoops)+'</div>';
     const src=plan.dw1?'Planned last night. No decisions needed.':'Commit to these. Everything else flexes.';
-    c.innerHTML=`<div class="morning-commit"><div class="mc-title">Today's Anchor Blocks</div><div class="mc-sub">${src}</div><div class="mc-blocks">${blocks}</div>${loops}<button class="focus-btn" onclick="commitMorning()" style="margin-top:10px">I commit to today</button></div>`;
+    c.innerHTML='<div class="morning-commit"><div class="mc-title">Today\'s Anchor Blocks</div><div class="mc-sub">'+src+'</div><div class="mc-blocks">'+blocks+'</div>'+loops+'<button class="focus-btn blue" onclick="commitMorning()" style="margin-top:10px">I commit to today</button></div>';
   } else c.innerHTML='';
 }
-function commitMorning(){if(!APP.morningCommit)APP.morningCommit={};APP.morningCommit[today()]=true;saveData(APP);renderMorningCommit();}
+function commitMorning(){if(!APP.morningCommit)APP.morningCommit={};APP.morningCommit[todayStr()]=true;saveData(APP);renderMorningCommit();}
 
-// ═══ SHUTDOWN RITUAL ═══
+// ══════════════════════════
+// SHUTDOWN RITUAL
+// ══════════════════════════
 function renderShutdownRitual(){
-  const c=document.getElementById('evening-review-container'),h=new Date().getHours(),d=today();
+  const c=document.getElementById('evening-review-container'),h=new Date().getHours(),d=todayStr();
   if(!APP.shutdowns)APP.shutdowns={};if(!APP.tomorrowPlan)APP.tomorrowPlan={};
-  if(h>=17&&!APP.shutdowns[d]){
+  if(h>=17&&!APP.shutdowns[d]&&selectedDate===todayStr()){
     const fd=APP.flow[d]||{};const done=Object.values(fd).filter(Boolean).length;
     const weekOf=getWeekOf(),cs=APP.ships.filter(s=>s.weekOf===weekOf);
     const shipped=cs.filter(s=>s.status==='shipped').length,ip=cs.filter(s=>s.status==='in-progress').length;
     const tmrw=tomorrowDate(),ep=APP.tomorrowPlan[tmrw]||{};
-    c.innerHTML=`<div class="shutdown"><div class="sd-title">Shutdown Ritual</div><div class="sd-sub">Review today. Plan tomorrow. Then rest.</div>
-      <div class="sd-summary">Today: ${done}/${FLOW_STEPS.length} flow steps | Ships: ${shipped} shipped, ${ip} in progress</div>
-      <div class="sd-section"><div class="sd-label">What worked today?</div><textarea id="sd-worked" placeholder="One thing that went well...">${ep.worked||''}</textarea></div>
-      <div class="sd-section"><div class="sd-label">Tomorrow's Priorities</div>
-        <div class="sd-plan-row"><span class="sd-block-label">Deep Work 1:</span><input type="text" id="sd-dw1" placeholder="What will you work on?" value="${esc(ep.dw1||'')}"></div>
-        <div class="sd-plan-row"><span class="sd-block-label">Deep Work 2:</span><input type="text" id="sd-dw2" placeholder="Next priority..." value="${esc(ep.dw2||'')}"></div>
-        <div class="sd-plan-row"><span class="sd-block-label">Top Chore:</span><input type="text" id="sd-chore" placeholder="One chore..." value="${esc(ep.chore||'')}"></div>
-        <div class="sd-plan-row"><span class="sd-block-label">Family Focus:</span><input type="text" id="sd-family" placeholder="Something intentional..." value="${esc(ep.family||'')}"></div>
-      </div>
-      <div class="sd-section"><div class="sd-label">Open loops (capture so you can let go)</div><textarea id="sd-openloops" placeholder="Worries, ideas, to-dos...">${ep.openLoops||''}</textarea></div>
-      <div class="sd-actions"><button class="focus-btn" onclick="completeShutdown()">Shutdown Complete</button></div></div>`;
+    c.innerHTML='<div class="shutdown"><div class="sd-title">Shutdown Ritual</div><div class="sd-sub">Review today. Plan tomorrow. Then rest.</div>'+
+      '<div class="sd-summary">Today: '+done+'/'+FLOW_STEPS.length+' flow steps | Ships: '+shipped+' shipped, '+ip+' in progress</div>'+
+      '<div class="sd-section"><div class="sd-label">What worked today?</div><textarea id="sd-worked" placeholder="One thing that went well...">'+(ep.worked||'')+'</textarea></div>'+
+      '<div class="sd-section"><div class="sd-label">Tomorrow\'s Priorities</div>'+
+        '<div class="sd-plan-row"><span class="sd-block-label">Deep Work 1:</span><input type="text" id="sd-dw1" placeholder="What will you work on?" value="'+esc(ep.dw1||'')+'"></div>'+
+        '<div class="sd-plan-row"><span class="sd-block-label">Deep Work 2:</span><input type="text" id="sd-dw2" placeholder="Next priority..." value="'+esc(ep.dw2||'')+'"></div>'+
+        '<div class="sd-plan-row"><span class="sd-block-label">Top Chore:</span><input type="text" id="sd-chore" placeholder="One chore..." value="'+esc(ep.chore||'')+'"></div>'+
+        '<div class="sd-plan-row"><span class="sd-block-label">Family Focus:</span><input type="text" id="sd-family" placeholder="Something intentional..." value="'+esc(ep.family||'')+'"></div>'+
+      '</div>'+
+      '<div class="sd-section"><div class="sd-label">Open loops (capture so you can let go)</div><textarea id="sd-openloops" placeholder="Worries, ideas, to-dos...">'+(ep.openLoops||'')+'</textarea></div>'+
+      '<div class="sd-actions"><button class="focus-btn purple" onclick="completeShutdown()">Shutdown Complete</button></div></div>';
   } else c.innerHTML='';
 }
-function completeShutdown(){if(!APP.shutdowns)APP.shutdowns={};if(!APP.tomorrowPlan)APP.tomorrowPlan={};const t=tomorrowDate();APP.shutdowns[today()]={completedAt:Date.now()};APP.tomorrowPlan[t]={dw1:document.getElementById('sd-dw1')?.value||'',dw2:document.getElementById('sd-dw2')?.value||'',chore:document.getElementById('sd-chore')?.value||'',family:document.getElementById('sd-family')?.value||'',openLoops:document.getElementById('sd-openloops')?.value||'',worked:document.getElementById('sd-worked')?.value||''};saveData(APP);renderShutdownRitual();}
+function completeShutdown(){if(!APP.shutdowns)APP.shutdowns={};if(!APP.tomorrowPlan)APP.tomorrowPlan={};const t=tomorrowDate();APP.shutdowns[todayStr()]={completedAt:Date.now()};APP.tomorrowPlan[t]={dw1:document.getElementById('sd-dw1')?.value||'',dw2:document.getElementById('sd-dw2')?.value||'',chore:document.getElementById('sd-chore')?.value||'',family:document.getElementById('sd-family')?.value||'',openLoops:document.getElementById('sd-openloops')?.value||'',worked:document.getElementById('sd-worked')?.value||''};saveData(APP);renderShutdownRitual();}
 
-// ═══ FRIDAY REVIEW ═══
-function renderFridayReview(){const c=document.getElementById('friday-review-container'),wk=getWeekId();if(isFriday()&&!APP.fridayReviewed?.[wk]){c.innerHTML=`<div class="friday-review"><div class="fr-question">Did I steward my time faithfully this week?</div><div style="display:flex;gap:6px;justify-content:center;"><button class="focus-btn" onclick="completeFridayReview()">Score This Week</button></div></div>`;}else c.innerHTML='';}
+// ══════════════════════════
+// FRIDAY REVIEW
+// ══════════════════════════
+function renderFridayReview(){const c=document.getElementById('friday-review-container'),wk=getWeekId();if(isFriday()&&!APP.fridayReviewed?.[wk]&&selectedDate===todayStr()){c.innerHTML='<div class="friday-review"><div class="fr-question">Did I steward my time faithfully this week?</div><div style="display:flex;gap:6px;justify-content:center;"><button class="focus-btn purple" onclick="completeFridayReview()">Score This Week</button></div></div>';}else c.innerHTML='';}
 function completeFridayReview(){const wo=getWeekOf(),wk=getWeekId(),cs=APP.ships.filter(s=>s.weekOf===wo),sh=cs.filter(s=>s.status==='shipped').length;APP.weekHistory.push({weekOf:wo,shipped:sh,total:cs.length||3});if(!APP.fridayReviewed)APP.fridayReviewed={};APP.fridayReviewed[wk]=true;saveData(APP);renderScoreboard();renderFridayReview();}
 
-// ═══ IDENTITY ═══
-function renderIdentityMessage(){const el=document.getElementById('identity-msg');const dates=Object.keys(APP.flow||{}).sort();if(dates.length<7){el.innerHTML='';return;}let good=0;dates.slice(-28).forEach(d=>{const f=APP.flow[d];if(!f)return;const done=Object.values(f).filter(Boolean).length;if(done>=Math.ceil(FLOW_STEPS.length/2))good++;});const wks=Math.floor(good/5);if(wks>=4)el.innerHTML=`<div class="identity-msg">${wks} weeks of faithful stewardship. This is who you are now.</div>`;else if(wks>=2)el.innerHTML=`<div class="identity-msg">${wks} weeks of showing up. Building the pattern.</div>`;else el.innerHTML='';}
+// ══════════════════════════
+// IDENTITY
+// ══════════════════════════
+function renderIdentityMessage(){const el=document.getElementById('identity-msg');const dates=Object.keys(APP.flow||{}).sort();if(dates.length<7){el.innerHTML='';return;}let good=0;dates.slice(-28).forEach(d=>{const f=APP.flow[d];if(!f)return;const done=Object.values(f).filter(Boolean).length;if(done>=Math.ceil(FLOW_STEPS.length/2))good++;});const wks=Math.floor(good/5);if(wks>=4)el.innerHTML='<div class="identity-msg">'+wks+' weeks of faithful stewardship. This is who you are now.</div>';else if(wks>=2)el.innerHTML='<div class="identity-msg">'+wks+' weeks of showing up. Building the pattern.</div>';else el.innerHTML='';}
 
-// ═══ WEEK ROLLOVER ═══
+// ══════════════════════════
+// WEEK ROLLOVER
+// ══════════════════════════
 function checkWeekRollover(){if(!isMonday())return;const wo=getWeekOf();if(!APP.ships.some(s=>s.weekOf===wo)){const lw=new Date();lw.setDate(lw.getDate()-7);const lwo=getWeekOf(lw),ls=APP.ships.filter(s=>s.weekOf===lwo);if(ls.length>0&&!APP.weekHistory.some(w=>w.weekOf===lwo)){APP.weekHistory.push({weekOf:lwo,shipped:ls.filter(s=>s.status==='shipped').length,total:ls.length});saveData(APP);}}}
 
-// ═══ DATA EXPORT/IMPORT ═══
-function exportData(){const blob=new Blob([JSON.stringify(APP,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`stewardship-os-backup-${today()}.json`;a.click();}
-function importData(){const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{APP=JSON.parse(ev.target.result);saveData(APP);render();alert('Data imported successfully.');}catch(err){alert('Invalid file.');}};r.readAsText(f);};inp.click();}
+// ══════════════════════════
+// DATA EXPORT/IMPORT
+// ══════════════════════════
+function exportData(){const blob=new Blob([JSON.stringify(APP,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='stewardship-os-backup-'+todayStr()+'.json';a.click();}
+function importData(){const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{APP=JSON.parse(ev.target.result);saveData(APP);render();}catch(err){showConfirm('Import Error','Invalid file format.',[{label:'OK',cls:'confirm',onclick:'closeConfirm()'}]);}};r.readAsText(f);};inp.click();}
 
-// ═══ COLLAPSIBLES ═══
+// ══════════════════════════
+// COLLAPSIBLES
+// ══════════════════════════
 document.querySelectorAll('.collapsible-header').forEach(h=>{h.addEventListener('click',()=>{const b=document.getElementById(h.dataset.target);h.classList.toggle('open');b.classList.toggle('open');});});
 
-// ═══ KEYBOARD ═══
+// ══════════════════════════
+// KEYBOARD
+// ══════════════════════════
 document.getElementById('backlog-input').addEventListener('keydown',e=>{if(e.key==='Enter')addBacklogItem('work');});
 document.getElementById('ship-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveShip();if(e.key==='Escape')closeShipModal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeShipModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeShipModal();closeConfirm();}});
 
-// ═══ INIT ═══
-function render(){checkWeekRollover();renderMorningCommit();renderVerse();renderReading();renderHeader();renderIdentityMessage();renderScoreboard();renderFlow();renderFocusBlock();renderShips();renderBacklog();renderGoals();renderShutdownRitual();renderFridayReview();}
+// ══════════════════════════
+// INIT
+// ══════════════════════════
+function render(){
+  checkWeekRollover();
+  renderMorningCommit();
+  renderVerse();
+  renderDateCarousel();
+  renderReading();
+  renderHeader();
+  renderIdentityMessage();
+  renderScoreboard();
+  renderFlow();
+  renderFocusBlock();
+  renderShips();
+  renderBacklog();
+  renderGoals();
+  renderShutdownRitual();
+  renderFridayReview();
+}
+
 render();
-setInterval(()=>{renderFlow();},60000); // refresh flow highlighting every minute
+tryRestoreFromCloud();
+setInterval(()=>{ renderFlow(); }, 60000);
 </script>
 </body>
 </html>
