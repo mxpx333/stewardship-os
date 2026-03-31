@@ -1895,24 +1895,34 @@ function renderDeepWork() {
   const d = selectedDate;
   if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
   const blocks = APP.deepWorkBlocks[d];
-  const target = 270; // 3 x 90 min
+  const target = 270; // baseline target
 
   let totalMins = 0;
-  let html = '<div class="card"><div class="card-body">';
+  let html = '<div class="card"><div class="card-body" style="max-height:220px;overflow-y:auto;">';
 
-  for (let i = 0; i < 3; i++) {
-    const block = blocks[i];
-    if (block && block.endedAt) {
+  // Show all completed/running blocks
+  blocks.forEach((block, i) => {
+    if (block.endedAt) {
       totalMins += block.minutes || 0;
-      html += '<div class="dw-block-row"><span class="dw-block-num">Block ' + (i+1) + '</span><span class="dw-block-time">' + (block.minutes || 0) + ' min</span><span class="dw-block-check">&#10003;</span></div>';
-    } else if (block && !block.endedAt) {
+      html += '<div class="dw-block-row" style="cursor:pointer;" onclick="editDeepWorkBlock(' + i + ')">' +
+        '<span class="dw-block-num">Block ' + (i+1) + '</span>' +
+        '<span class="dw-block-time">' + (block.minutes || 0) + ' min</span>' +
+        (block.label ? '<span style="font-size:11px;color:var(--text-dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:6px;">' + esc(block.label) + '</span>' : '') +
+        '<span class="dw-block-check">&#10003;</span></div>';
+    } else {
       // Currently running
       const elapsed = Math.round((Date.now() - block.startedAt) / 60000);
       totalMins += elapsed;
-      html += '<div class="dw-block-row"><span class="dw-block-num">Block ' + (i+1) + '</span><span class="dw-block-time" style="color:var(--blue);">' + elapsed + ' min (running)</span></div>';
-    } else {
-      html += '<div class="dw-block-row"><span class="dw-block-num">Block ' + (i+1) + '</span><span class="dw-block-time">--</span></div>';
+      html += '<div class="dw-block-row"><span class="dw-block-num">Block ' + (i+1) + '</span>' +
+        '<span class="dw-block-time" style="color:var(--blue);">' + elapsed + ' min (running)</span></div>';
     }
+  });
+
+  // Add block button
+  const hasRunning = blocks.some(b => !b.endedAt);
+  if (!hasRunning) {
+    html += '<div class="dw-block-row" style="cursor:pointer;border-style:dashed;justify-content:center;color:var(--text-dim);" onclick="addManualDeepWorkBlock()">' +
+      '+ Log Deep Work Block</div>';
   }
 
   const pct = Math.min(100, Math.round((totalMins / target) * 100));
@@ -1921,6 +1931,80 @@ function renderDeepWork() {
   html += '</div></div>';
 
   document.getElementById('dw-tracker').innerHTML = html;
+}
+
+function editDeepWorkBlock(idx) {
+  const d = selectedDate;
+  const block = APP.deepWorkBlocks[d]?.[idx];
+  if (!block) return;
+  showConfirmDialog(
+    'Edit Block ' + (idx + 1),
+    '<div class="field-group"><label class="blue">Minutes</label>' +
+    '<input type="number" id="edit-dw-mins" value="' + (block.minutes || 0) + '" style="font-size:18px;text-align:center;font-weight:700;"></div>' +
+    '<div class="field-group"><label class="blue">What did you work on?</label>' +
+    '<input type="text" id="edit-dw-label" value="' + esc(block.label || '') + '" placeholder="e.g., Pipeline deck, outreach calls..."></div>',
+    [
+      { text: 'Delete', cls: 'modal-btn', style: 'color:var(--red);margin-right:auto;', onclick: 'deleteDeepWorkBlock(' + idx + ')' },
+      { text: 'Cancel', cls: 'modal-btn', onclick: 'closeConfirm()' },
+      { text: 'Save', cls: 'modal-btn primary', onclick: 'saveDeepWorkEdit(' + idx + ')' },
+    ]
+  );
+}
+
+function saveDeepWorkEdit(idx) {
+  const d = selectedDate;
+  const mins = parseInt(document.getElementById('edit-dw-mins')?.value) || 0;
+  const label = document.getElementById('edit-dw-label')?.value || '';
+  if (APP.deepWorkBlocks[d]?.[idx]) {
+    APP.deepWorkBlocks[d][idx].minutes = mins;
+    APP.deepWorkBlocks[d][idx].label = label;
+    saveData(APP);
+  }
+  closeConfirm();
+  renderDeepWork();
+  renderTimeline();
+}
+
+function deleteDeepWorkBlock(idx) {
+  const d = selectedDate;
+  if (APP.deepWorkBlocks[d]) {
+    APP.deepWorkBlocks[d].splice(idx, 1);
+    saveData(APP);
+  }
+  closeConfirm();
+  renderDeepWork();
+  renderTimeline();
+}
+
+function addManualDeepWorkBlock() {
+  showConfirmDialog(
+    'Log Deep Work Block',
+    '<div class="field-group"><label class="blue">Minutes</label>' +
+    '<input type="number" id="new-dw-mins" value="90" style="font-size:18px;text-align:center;font-weight:700;"></div>' +
+    '<div class="field-group"><label class="blue">What did you work on?</label>' +
+    '<input type="text" id="new-dw-label" placeholder="e.g., Pipeline deck, outreach calls..."></div>',
+    [
+      { text: 'Cancel', cls: 'modal-btn', onclick: 'closeConfirm()' },
+      { text: 'Log Block', cls: 'modal-btn primary', onclick: 'saveManualDeepWorkBlock()' },
+    ]
+  );
+}
+
+function saveManualDeepWorkBlock() {
+  const d = selectedDate;
+  const mins = parseInt(document.getElementById('new-dw-mins')?.value) || 0;
+  const label = document.getElementById('new-dw-label')?.value || '';
+  if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
+  APP.deepWorkBlocks[d].push({
+    startedAt: Date.now(),
+    endedAt: Date.now(),
+    minutes: mins,
+    label: label,
+  });
+  saveData(APP);
+  closeConfirm();
+  renderDeepWork();
+  renderTimeline();
 }
 
 
@@ -2793,16 +2877,22 @@ function showConfirmDialog(title, message, buttons) {
   const c = document.getElementById('confirm-content');
   let btns = '<div class="modal-actions">';
   buttons.forEach(b => {
-    btns += '<button class="modal-btn ' + (b.cls || '') + '" onclick="' + b.onclick + '">' + b.label + '</button>';
+    const label = b.label || b.text || 'OK';
+    const style = b.style ? ' style="' + b.style + '"' : '';
+    btns += '<button class="' + (b.cls || 'modal-btn') + '"' + style + ' onclick="' + b.onclick + '">' + label + '</button>';
   });
   btns += '</div>';
-  c.innerHTML = '<h3>' + esc(title) + '</h3><p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">' + esc(message) + '</p>' + btns;
+  // message can contain HTML (for form fields)
+  c.innerHTML = '<h3>' + esc(title) + '</h3><div style="margin-bottom:12px;">' + message + '</div>' + btns;
   document.getElementById('confirm-modal').classList.add('open');
 }
 
 function closeConfirmDialog() {
   document.getElementById('confirm-modal').classList.remove('open');
 }
+
+// Alias for convenience
+function closeConfirm() { closeConfirmDialog(); }
 
 
 // ══════════════════════════════════════════════════════════════
