@@ -2,144 +2,825 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Stewardship OS</title>
+<title>Stewardship OS v4</title>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
+/* ============================================================
+   STEWARDSHIP OS v4 — Desktop-First Daily Operating Dashboard
+   ============================================================ */
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
 :root {
-  --bg: #0d1117; --card: #161b22; --border: #30363d; --text: #e6edf3; --text-dim: #8b949e;
-  --blue: #58a6ff; --green: #3fb950; --green-bg: rgba(63,185,80,0.1);
-  --amber: #d29922; --amber-bg: rgba(210,153,34,0.1);
-  --red: #f85149; --red-bg: rgba(248,81,73,0.1);
-  --purple: #bc8cff; --purple-bg: rgba(188,140,255,0.1);
-  --blue-bg: rgba(88,166,255,0.1);
-  --radius: 8px; --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --bg: #0d1117;
+  --card: #161b22;
+  --card-hover: #1c2129;
+  --border: #30363d;
+  --border-subtle: #21262d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-faint: #484f58;
+  --blue: #58a6ff;
+  --blue-bg: rgba(88,166,255,0.10);
+  --green: #3fb950;
+  --green-bg: rgba(63,185,80,0.10);
+  --amber: #d29922;
+  --amber-bg: rgba(210,153,34,0.10);
+  --red: #f85149;
+  --red-bg: rgba(248,81,73,0.10);
+  --purple: #bc8cff;
+  --purple-bg: rgba(188,140,255,0.10);
+  --teal: #39d2c0;
+  --teal-bg: rgba(57,210,192,0.10);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono: 'SF Mono', SFMono-Regular, ui-monospace, Menlo, monospace;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.4);
 }
-body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; padding: 16px; max-width: 640px; margin: 0 auto; -webkit-tap-highlight-color: transparent; }
 
-/* Verse Bar */
-.verse-bar { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 12px; text-align: center; font-style: italic; color: var(--text-dim); font-size: 13px; line-height: 1.6; }
-.verse-bar .verse-ref { display: block; margin-top: 6px; font-style: normal; font-weight: 600; color: var(--purple); font-size: 11px; }
+html { height: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-/* Date Carousel */
-.date-carousel { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px 0; margin-bottom: 8px; }
-.date-arrow { background: none; border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-.date-arrow:active { background: var(--border); }
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+/* ── TOP BAR ── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.verse-area {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 20px;
+}
+.verse-ref {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--purple);
+  margin-left: 6px;
+  font-size: 11px;
+}
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.date-nav .date-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  min-width: 200px;
+  text-align: center;
+}
+.date-arrow {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.date-arrow:hover { background: var(--border); }
 .date-arrow.disabled { opacity: 0.25; pointer-events: none; }
-.date-label { font-size: 16px; font-weight: 700; min-width: 200px; text-align: center; letter-spacing: -0.3px; }
-.date-back-btn { background: none; border: none; color: var(--blue); font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font); display: block; text-align: center; margin-bottom: 8px; }
 
-/* Reading Card */
-.reading-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
-.reading-book { font-size: 15px; font-weight: 700; color: var(--purple); }
-.reading-method { font-size: 11px; color: var(--text-dim); }
-.reading-progress { font-size: 11px; color: var(--text-dim); text-align: right; }
-.reading-pct { font-size: 13px; font-weight: 600; color: var(--text); }
+/* ── MAIN GRID ── */
+.main-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 0;
+  min-height: calc(100vh - 50px - 36px);
+}
+.main-grid > .col {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 50px - 36px);
+  border-right: 1px solid var(--border-subtle);
+}
+.main-grid > .col:last-child { border-right: none; }
 
-/* Header */
-.header { text-align: center; margin-bottom: 16px; }
-.header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
-.header .subtitle { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+/* ── SECTION HEADERS ── */
+.section-hdr {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  margin-top: 20px;
+  padding-left: 8px;
+  border-left: 3px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-hdr:first-child { margin-top: 0; }
+.section-hdr .badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0;
+  text-transform: none;
+}
 
-/* Scoreboard */
-.scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-.score-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 8px; text-align: center; }
-.score-card .label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-.score-card .value { font-size: 24px; font-weight: 700; }
-.score-card .sub { font-size: 10px; color: var(--text-dim); }
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.card:hover { box-shadow: var(--shadow); }
+.card-body { padding: 12px 14px; }
 
-/* Section Headers */
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; margin-top: 20px; }
-.section-header h2 { font-size: 14px; font-weight: 600; }
-.section-header .count { font-size: 11px; color: var(--text-dim); }
-
-/* Flow Checklist */
-.flow-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 6px; overflow: hidden; transition: border-color 0.15s; }
-.flow-item.done { border-color: var(--green); opacity: 0.7; }
+/* ── FLOW CHECKLIST (Left Col) ── */
+.flow-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.flow-item.done { border-color: rgba(63,185,80,0.4); }
+.flow-item.done .flow-main { opacity: 0.55; }
 .flow-item.current { border-color: var(--blue); }
-.flow-row { display: flex; align-items: center; padding: 14px 14px; gap: 10px; cursor: pointer; min-height: 52px; }
-.flow-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
-.flow-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; transition: all 0.15s; }
-.flow-item.done .flow-check { border-color: var(--green); background: var(--green-bg); color: var(--green); }
-.flow-time { font-size: 11px; color: var(--text-dim); width: 60px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-.flow-label { flex: 1; font-size: 13px; font-weight: 500; }
+.flow-main {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.flow-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+.flow-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+  transition: all 0.15s;
+  color: transparent;
+}
+.flow-item.done .flow-check {
+  border-color: var(--green);
+  background: var(--green-bg);
+  color: var(--green);
+}
+.flow-time {
+  font-size: 10px;
+  color: var(--text-dim);
+  width: 52px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.flow-label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  min-width: 0;
+}
 .flow-item.done .flow-label { text-decoration: line-through; color: var(--text-dim); }
-.flow-hint { font-size: 11px; color: var(--text-dim); font-style: italic; }
-.flow-badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+.flow-hint {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+.flow-badge {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
 .flow-badge.on-time { background: var(--green-bg); color: var(--green); }
 .flow-badge.late { background: var(--amber-bg); color: var(--amber); }
 
-/* SOAP Journal */
-.soap-panel { padding: 0 14px 14px; display: none; }
-.soap-panel.open { display: block; }
-.soap-field { margin-bottom: 8px; }
-.soap-field label { display: block; font-size: 11px; color: var(--purple); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
-.soap-field input[type="text"] { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; margin-bottom: 6px; }
-.soap-field input[type="text"]:focus { border-color: var(--purple); }
-.soap-field textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 13px; font-family: var(--font); resize: vertical; min-height: 50px; outline: none; }
-.soap-field textarea:focus { border-color: var(--purple); }
-.soap-save { display: flex; justify-content: flex-end; }
-.soap-save button { background: var(--purple); border: none; color: var(--bg); padding: 6px 14px; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; }
+/* ── SOAP / STRATEGY PANEL ── */
+.expand-panel {
+  padding: 0 12px 12px;
+  display: none;
+  border-top: 1px solid var(--border-subtle);
+}
+.expand-panel.open { display: block; padding-top: 10px; }
+.field-group { margin-bottom: 8px; }
+.field-group label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+.field-group label.purple { color: var(--purple); }
+.field-group label.blue { color: var(--blue); }
+.field-group input[type="text"],
+.field-group textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field-group input[type="text"]:focus { border-color: var(--purple); }
+.field-group textarea { resize: vertical; min-height: 42px; }
+.field-group textarea:focus { border-color: var(--purple); }
+.btn-row { display: flex; justify-content: flex-end; gap: 6px; }
+.btn-sm {
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: opacity 0.15s;
+}
+.btn-sm:hover { opacity: 0.85; }
+.btn-sm.purple { background: var(--purple); color: var(--bg); }
+.btn-sm.blue { background: var(--blue); color: var(--bg); }
+.btn-sm.green { background: var(--green); color: var(--bg); }
+.btn-sm.amber { background: var(--amber); color: var(--bg); }
+.btn-sm.outline {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
 
-/* Strategy Planning */
-.strategy-panel { padding: 0 14px 14px; display: none; }
-.strategy-panel.open { display: block; }
-.strategy-field textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 13px; font-family: var(--font); resize: vertical; min-height: 60px; outline: none; margin-bottom: 6px; }
-.strategy-field textarea:focus { border-color: var(--blue); }
-.strategy-field label { display: block; font-size: 11px; color: var(--blue); font-weight: 600; margin-bottom: 3px; }
+/* ── DEEP WORK TRACKER ── */
+.dw-tracker { margin-bottom: 8px; }
+.dw-block-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+}
+.dw-block-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  width: 52px;
+  flex-shrink: 0;
+}
+.dw-block-time {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.dw-block-check {
+  color: var(--green);
+  font-size: 12px;
+}
+.dw-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+}
+.dw-total .value { font-weight: 700; color: var(--blue); font-size: 13px; }
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
 
-/* Focus Timer */
-.focus-block { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; text-align: center; }
-.focus-block .focus-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.focus-block .focus-timer { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 2px; }
-.focus-block .focus-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
-.focus-block .focus-linked { font-size: 10px; color: var(--amber); margin-top: 4px; }
-.focus-block.active { border-color: var(--blue); }
-.focus-block.active .focus-timer { color: var(--blue); }
-.focus-controls { display: flex; gap: 6px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
-.focus-btn { border-radius: var(--radius); padding: 6px 14px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: 1px solid; font-family: var(--font); }
-.focus-btn.blue { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
-.focus-btn.blue:hover { background: var(--blue); color: var(--bg); }
-.focus-btn.amber { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
-.focus-btn.amber:hover { background: var(--amber); color: var(--bg); }
-.focus-btn.green { background: var(--green-bg); border-color: var(--green); color: var(--green); }
-.focus-btn.green:hover { background: var(--green); color: var(--bg); }
-.focus-btn.purple { background: var(--purple-bg); border-color: var(--purple); color: var(--purple); }
-.focus-btn.purple:hover { background: var(--purple); color: var(--bg); }
-.focus-btn.stop { border-color: var(--red); color: var(--red); background: var(--red-bg); }
-.focus-btn.stop:hover { background: var(--red); color: var(--bg); }
-.focus-btn.secondary { border-color: var(--border); color: var(--text-dim); background: none; }
+/* ── ACTIVE TIMER ── */
+.timer-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+.timer-card.active { border-color: var(--blue); }
+.timer-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.timer-display {
+  font-size: 42px;
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: 2px;
+  line-height: 1;
+  margin: 4px 0;
+}
+.timer-card.active .timer-display { color: var(--blue); }
+.timer-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+.timer-linked {
+  font-size: 10px;
+  color: var(--amber);
+  margin-top: 4px;
+}
+.timer-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.timer-btn {
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid;
+  font-family: var(--font);
+}
+.timer-btn.blue { background: var(--blue-bg); border-color: var(--blue); color: var(--blue); }
+.timer-btn.blue:hover { background: var(--blue); color: var(--bg); }
+.timer-btn.amber { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+.timer-btn.amber:hover { background: var(--amber); color: var(--bg); }
+.timer-btn.green { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.timer-btn.green:hover { background: var(--green); color: var(--bg); }
+.timer-btn.purple { background: var(--purple-bg); border-color: var(--purple); color: var(--purple); }
+.timer-btn.purple:hover { background: var(--purple); color: var(--bg); }
+.timer-btn.red { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+.timer-btn.red:hover { background: var(--red); color: var(--bg); }
 
-/* Ship Cards */
-.ship-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: border-color 0.15s; }
+/* ── CATCH-UP LIST ── */
+.catchup-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.catchup-item.done .catchup-name { text-decoration: line-through; color: var(--text-dim); }
+.catchup-check {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 10px;
+  color: transparent;
+  transition: all 0.15s;
+}
+.catchup-item.done .catchup-check { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+.catchup-name { flex: 1; }
+.catchup-del {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px;
+  transition: color 0.15s;
+}
+.catchup-del:hover { color: var(--red); }
+.quick-input {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.quick-input input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+}
+.quick-input input:focus { border-color: var(--blue); }
+.quick-input input::placeholder { color: var(--text-faint); }
+.quick-input button {
+  background: var(--blue-bg);
+  border: 1px solid var(--blue);
+  color: var(--blue);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+/* ── SHUTDOWN RITUAL ── */
+.shutdown-card {
+  background: var(--card);
+  border: 1px solid var(--purple);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.shutdown-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--purple);
+  text-align: center;
+  margin-bottom: 2px;
+}
+.shutdown-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 10px;
+}
+.sd-field { margin-bottom: 8px; }
+.sd-field label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+.sd-field input, .sd-field textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  outline: none;
+}
+.sd-field textarea { resize: vertical; min-height: 40px; }
+.sd-field input:focus, .sd-field textarea:focus { border-color: var(--purple); }
+
+/* ── TIMELINE (Center Col) ── */
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.tl-item {
+  position: relative;
+  margin-bottom: 4px;
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.15s;
+}
+.tl-item:hover { border-color: var(--text-faint); }
+.tl-item.silenced { opacity: 0.35; }
+.tl-item.current-event { border-color: var(--blue); background: rgba(88,166,255,0.04); }
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border);
+  border: 2px solid var(--bg);
+  z-index: 1;
+}
+.tl-item.flow-event::before { background: var(--blue); }
+.tl-item.cal-personal::before { background: var(--green); }
+.tl-item.cal-versa-main::before { background: var(--blue); }
+.tl-item.cal-versa-sec::before { background: var(--amber); }
+.tl-item.done-event::before { background: var(--green); }
+.tl-item.done-event { opacity: 0.5; }
+.tl-time {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.tl-title {
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tl-duration {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+.cal-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tl-now-marker {
+  position: relative;
+  height: 2px;
+  background: var(--red);
+  margin: 2px 0 2px 0;
+  border-radius: 1px;
+}
+.tl-now-marker::before {
+  content: '';
+  position: absolute;
+  left: -20px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  z-index: 1;
+}
+.tl-now-label {
+  position: absolute;
+  right: 0;
+  top: -8px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--red);
+}
+.silence-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  margin-left: auto;
+  transition: color 0.15s;
+}
+.silence-btn:hover { color: var(--text); }
+
+/* ── VP SALES SCORECARD (Right Col) ── */
+.metric-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.metric-info { flex: 1; }
+.metric-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.metric-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--teal);
+  line-height: 1;
+  margin-top: 2px;
+}
+.metric-sub {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+.metric-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--teal);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font);
+  width: 80px;
+  text-align: center;
+  outline: none;
+}
+.metric-input:focus { border-color: var(--teal); }
+.metric-progress {
+  margin-top: 4px;
+}
+
+/* ── SHIP CARDS ── */
+.ship-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
 .ship-card:hover { border-color: var(--text-dim); }
-.ship-card.shipped { opacity: 0.6; }
+.ship-card.shipped { opacity: 0.55; }
 .ship-card.shipped .ship-name { text-decoration: line-through; }
-.ship-status { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; }
+.ship-status {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+}
 .ship-status.not-started { border-color: var(--text-dim); }
-.ship-status.in-progress { border-color: var(--amber); background: var(--amber-bg); }
-.ship-status.shipped { border-color: var(--green); background: var(--green-bg); }
+.ship-status.in-progress { border-color: var(--amber); background: var(--amber-bg); color: var(--amber); }
+.ship-status.shipped { border-color: var(--green); background: var(--green-bg); color: var(--green); }
 .ship-info { flex: 1; min-width: 0; }
-.ship-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ship-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ship-meta { font-size: 10px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; margin-top: 1px; }
-.ship-category { font-size: 9px; padding: 1px 6px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
-.ship-category.work { background: var(--blue-bg); color: var(--blue); }
-.ship-category.personal { background: var(--green-bg); color: var(--green); }
-.ship-category.chore { background: var(--amber-bg); color: var(--amber); }
-.ship-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+.ship-cat-tag {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.ship-cat-tag.work { background: var(--blue-bg); color: var(--blue); }
+.ship-cat-tag.personal { background: var(--green-bg); color: var(--green); }
+.ship-cat-tag.chore { background: var(--amber-bg); color: var(--amber); }
+.ship-actions { display: flex; gap: 3px; }
+.ship-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
 .ship-btn:hover { border-color: var(--text-dim); color: var(--text); }
-.ship-btn.delete:hover { border-color: var(--red); color: var(--red); }
+.ship-btn.del:hover { border-color: var(--red); color: var(--red); }
 
-/* Quick Add */
-.quick-add { display: flex; gap: 6px; margin-bottom: 6px; }
-.quick-add input { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 13px; font-family: var(--font); outline: none; }
-.quick-add input:focus { border-color: var(--blue); }
-.quick-add input::placeholder { color: var(--text-dim); }
-.quick-add-cats { display: flex; gap: 4px; }
-.cat-btn { border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; font-size: 11px; font-weight: 600; cursor: pointer; background: none; }
+/* Ship batting avg */
+.batting-avg {
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.batting-stat { text-align: center; flex: 1; }
+.batting-stat .val { font-size: 18px; font-weight: 700; color: var(--green); }
+.batting-stat .lbl { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── QUARTERLY GOALS ── */
+.goal-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 4px;
+}
+.goal-text { font-size: 11px; margin-bottom: 4px; }
+.goal-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.goal-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.goal-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+.goal-pct {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 600;
+  width: 30px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── BACKLOG ── */
+.backlog-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  gap: 8px;
+}
+.backlog-name { flex: 1; }
+.backlog-actions { display: flex; gap: 3px; }
+.quick-add-cats { display: flex; gap: 4px; margin-top: 4px; }
+.cat-btn {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
 .cat-btn.work { color: var(--blue); }
 .cat-btn.work:hover { background: var(--blue-bg); border-color: var(--blue); }
 .cat-btn.personal { color: var(--green); }
@@ -147,193 +828,293 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); line
 .cat-btn.chore { color: var(--amber); }
 .cat-btn.chore:hover { background: var(--amber-bg); border-color: var(--amber); }
 
-/* Collapsible */
-.collapsible-header { cursor: pointer; user-select: none; }
-.collapsible-header::after { content: ' +'; color: var(--text-dim); font-weight: 400; }
-.collapsible-header.open::after { content: ' \2212'; }
-.collapsible-body { display: none; margin-top: 6px; }
-.collapsible-body.open { display: block; }
+/* ── COLLAPSIBLE ── */
+.collapse-hdr {
+  cursor: pointer;
+  user-select: none;
+}
+.collapse-hdr .toggle-icon { transition: transform 0.15s; display: inline-block; font-size: 10px; margin-left: 4px; }
+.collapse-hdr.open .toggle-icon { transform: rotate(90deg); }
+.collapse-body { display: none; }
+.collapse-body.open { display: block; }
 
-/* Backlog */
-.backlog-item { display: flex; align-items: center; padding: 7px 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 4px; font-size: 12px; gap: 8px; }
-.backlog-item .backlog-name { flex: 1; }
+/* ── FOOTER ── */
+.footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  font-size: 10px;
+  color: var(--text-faint);
+  height: 36px;
+}
+.footer-bar a {
+  color: var(--text-dim);
+  text-decoration: underline;
+  cursor: pointer;
+  margin: 0 6px;
+}
+.footer-bar a:hover { color: var(--text); }
 
-/* Goals */
-.goal-item { padding: 6px 10px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 3px; font-size: 12px; color: var(--text-dim); }
-
-/* Shutdown Ritual */
-.shutdown { background: var(--card); border: 1px solid var(--purple); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
-.shutdown .sd-title { font-size: 14px; font-weight: 600; color: var(--purple); margin-bottom: 4px; text-align: center; }
-.shutdown .sd-sub { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; text-align: center; }
-.shutdown .sd-summary { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; text-align: center; }
-.shutdown .sd-section { margin-bottom: 10px; }
-.shutdown .sd-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.shutdown input[type="text"], .shutdown textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 12px; font-family: var(--font); outline: none; margin-bottom: 4px; }
-.shutdown textarea { resize: vertical; min-height: 40px; }
-.shutdown input:focus, .shutdown textarea:focus { border-color: var(--purple); }
-.shutdown .sd-plan-row { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
-.shutdown .sd-plan-row .sd-block-label { font-size: 11px; color: var(--text-dim); width: 100px; flex-shrink: 0; }
-.shutdown .sd-plan-row input { margin-bottom: 0; }
-.shutdown .sd-actions { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
-
-/* Friday Review */
-.friday-review { background: var(--card); border: 1px solid var(--purple); border-radius: var(--radius); padding: 14px; margin-bottom: 16px; text-align: center; }
-.friday-review .fr-question { font-size: 14px; font-weight: 500; margin-bottom: 10px; color: var(--purple); }
-
-/* Morning Commit */
-.morning-commit { background: var(--card); border: 1px solid var(--blue); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; text-align: center; }
-.morning-commit .mc-title { font-size: 14px; font-weight: 600; color: var(--blue); margin-bottom: 2px; }
-.morning-commit .mc-sub { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; }
-.morning-commit .mc-blocks { text-align: left; margin-bottom: 10px; }
-.morning-commit .mc-block { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--radius); margin-bottom: 3px; font-size: 12px; }
-.morning-commit .mc-block .mc-time { color: var(--text-dim); font-size: 10px; width: 65px; flex-shrink: 0; }
-.morning-commit .mc-block .mc-start { font-size: 10px; color: var(--text-dim); font-style: italic; margin-left: auto; }
-
-/* Identity / Export */
-.identity-msg { text-align: center; padding: 8px; font-size: 11px; color: var(--green); font-style: italic; }
-.footer { text-align: center; padding: 20px 0 10px; font-size: 10px; color: var(--text-dim); }
-.footer a { color: var(--text-dim); text-decoration: underline; cursor: pointer; }
-
-/* Modal overlay */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; padding: 16px; }
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
 .modal-overlay.open { display: flex; }
-.modal { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 400px; }
-.modal h3 { font-size: 15px; margin-bottom: 12px; }
-.modal input, .modal select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--text); font-size: 13px; font-family: var(--font); margin-bottom: 10px; outline: none; }
-.modal input:focus, .modal select:focus { border-color: var(--blue); }
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--shadow-lg);
+}
+.modal h3 { font-size: 14px; margin-bottom: 12px; }
+.modal input, .modal select, .modal textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  margin-bottom: 10px;
+  outline: none;
+}
+.modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--blue); }
+.modal textarea { resize: vertical; min-height: 60px; }
 .modal-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
-.modal-btn { padding: 6px 14px; border-radius: var(--radius); font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text); font-family: var(--font); }
+.modal-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  font-family: var(--font);
+}
 .modal-btn.primary { background: var(--blue); border-color: var(--blue); color: var(--bg); }
 
-/* Slide-up confirmation modal */
-.confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; }
-.confirm-overlay.open { display: block; }
-.confirm-panel { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; padding: 20px 16px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 210; transform: translateY(100%); transition: transform 0.25s ease-out; max-width: 640px; margin: 0 auto; }
-.confirm-panel.open { transform: translateY(0); }
-.confirm-panel .cp-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
-.confirm-panel .cp-message { font-size: 13px; color: var(--text-dim); margin-bottom: 14px; line-height: 1.5; }
-.confirm-panel .cp-actions { display: flex; gap: 8px; }
-.confirm-panel .cp-btn { flex: 1; padding: 12px; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font); text-align: center; }
-.confirm-panel .cp-btn.cancel { background: var(--border); color: var(--text-dim); }
-.confirm-panel .cp-btn.confirm { background: var(--green); color: var(--bg); }
-.confirm-panel .cp-btn.start { background: var(--blue); color: var(--bg); }
+/* ── STRATEGY PLANNER MODAL ── */
+.strat-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.strat-block-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.strat-block-hdr .block-name { font-size: 12px; font-weight: 700; color: var(--blue); }
+.strat-block-hdr .block-cap { font-size: 10px; color: var(--text-dim); }
+.strat-task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 11px;
+}
+.strat-task input { margin-bottom: 0; width: auto; flex: 1; font-size: 11px; padding: 4px 8px; }
+.strat-task .mins-input { width: 50px; text-align: center; }
 
-@media (max-width: 480px) { body { padding: 10px; } .header h1 { font-size: 17px; } .score-card .value { font-size: 20px; } .focus-block .focus-timer { font-size: 26px; } }
+/* ── RESPONSIVE (mobile stack) ── */
+@media (max-width: 1024px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  .main-grid > .col {
+    max-height: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .top-bar { padding: 10px 16px; }
+  .verse-area { display: none; }
+}
 </style>
 </head>
 <body>
 
-<div id="morning-commit-container"></div>
-<div class="verse-bar" id="verse-bar"></div>
-
-<!-- Date Carousel -->
-<div class="date-carousel">
-  <button class="date-arrow" id="date-prev" onclick="navDate(-1)">&#8249;</button>
-  <div class="date-label" id="date-label"></div>
-  <button class="date-arrow" id="date-next" onclick="navDate(1)">&#8250;</button>
-</div>
-<div id="date-back-container"></div>
-
-<div id="todays-reading"></div>
-<div class="header"><h1>Stewardship OS</h1><div class="subtitle" id="header-date"></div></div>
-<div id="identity-msg"></div>
-<div class="scoreboard" id="scoreboard"></div>
-
-<!-- THE FLOW -->
-<div class="section-header"><h2>Today's Flow</h2><span class="count" id="flow-count"></span></div>
-<div id="daily-flow"></div>
-
-<!-- Focus Timer -->
-<div class="focus-block" id="focus-block"></div>
-
-<!-- Ships -->
-<div class="section-header"><h2>This Week's Ships</h2><span class="count" id="ships-count"></span></div>
-<div id="ships"></div>
-
-<!-- Quick Add -->
-<div class="section-header"><h2>Add to Backlog</h2></div>
-<div class="quick-add"><input type="text" id="backlog-input" placeholder="What needs to get done?"></div>
-<div class="quick-add-cats">
-  <button class="cat-btn work" onclick="addBacklogItem('work')">+ Work</button>
-  <button class="cat-btn personal" onclick="addBacklogItem('personal')">+ Personal</button>
-  <button class="cat-btn chore" onclick="addBacklogItem('chore')">+ Chore</button>
+<!-- ============================================================ -->
+<!-- TOP BAR -->
+<!-- ============================================================ -->
+<div class="top-bar">
+  <div class="verse-area" id="verse-area"></div>
+  <div class="date-nav">
+    <button class="date-arrow" id="date-prev" onclick="navDate(-1)">&#8249;</button>
+    <div class="date-label" id="date-label"></div>
+    <button class="date-arrow" id="date-next" onclick="navDate(1)">&#8250;</button>
+  </div>
 </div>
 
-<!-- Backlog -->
-<div class="section-header"><h2 class="collapsible-header" data-target="backlog-body">Backlog</h2><span class="count" id="backlog-count"></span></div>
-<div class="collapsible-body" id="backlog-body"><div id="backlog"></div></div>
+<!-- ============================================================ -->
+<!-- MAIN 3-COLUMN GRID -->
+<!-- ============================================================ -->
+<div class="main-grid">
 
-<!-- Quarterly Goals -->
-<div class="section-header"><h2 class="collapsible-header" data-target="goals-body">Quarterly Goals (Q2 2026)</h2></div>
-<div class="collapsible-body" id="goals-body"><div id="goals"></div></div>
+  <!-- ======== LEFT COLUMN ======== -->
+  <div class="col" id="col-left">
+    <div class="section-hdr">Morning Routine <span class="badge" id="flow-count"></span></div>
+    <div id="flow-container"></div>
 
-<div id="evening-review-container"></div>
-<div id="friday-review-container"></div>
+    <div class="section-hdr" style="border-left-color: var(--blue);">Deep Work Tracker</div>
+    <div id="dw-tracker"></div>
 
-<div class="footer">
-  Whatever you do, work heartily, as for the Lord. — Col 3:23 (ESV)<br>
-  <a onclick="exportData()">Export Data</a> | <a onclick="importData()">Import Data</a>
+    <div class="section-hdr" style="border-left-color: var(--blue);">Active Timer</div>
+    <div id="timer-card"></div>
+
+    <div class="section-hdr" style="border-left-color: var(--amber);">Catch-Up List</div>
+    <div id="catchup-container"></div>
+
+    <div id="shutdown-container"></div>
+  </div>
+
+  <!-- ======== CENTER COLUMN ======== -->
+  <div class="col" id="col-center">
+    <div class="section-hdr" style="border-left-color: var(--blue);">Today's Schedule</div>
+    <div id="timeline-container"></div>
+  </div>
+
+  <!-- ======== RIGHT COLUMN ======== -->
+  <div class="col" id="col-right">
+    <div class="section-hdr" style="border-left-color: var(--teal);">VP Sales Scorecard</div>
+    <div id="scorecard-container"></div>
+
+    <div class="section-hdr" style="border-left-color: var(--green);">Weekly Ships <span class="badge" id="ships-count"></span></div>
+    <div id="ships-batting"></div>
+    <div id="ships-container"></div>
+
+    <div class="section-hdr collapse-hdr" onclick="toggleCollapse('goals')" id="goals-hdr">
+      Quarterly Goals (Q2 2026) <span class="toggle-icon">&#9654;</span>
+    </div>
+    <div class="collapse-body" id="goals-body">
+      <div id="goals-container"></div>
+    </div>
+
+    <div class="section-hdr collapse-hdr" onclick="toggleCollapse('backlog')" id="backlog-hdr">
+      Backlog <span class="badge" id="backlog-count"></span> <span class="toggle-icon">&#9654;</span>
+    </div>
+    <div class="collapse-body" id="backlog-body">
+      <div id="backlog-container"></div>
+    </div>
+  </div>
 </div>
+
+<!-- ============================================================ -->
+<!-- FOOTER -->
+<!-- ============================================================ -->
+<div class="footer-bar">
+  <div>Whatever you do, work heartily, as for the Lord. -- Col 3:23 (ESV)</div>
+  <div>
+    <a onclick="exportData()">Export Data</a>
+    <a onclick="importData()">Import Data</a>
+    <span id="sync-status"></span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
 
 <!-- Ship Modal -->
-<div class="modal-overlay" id="ship-modal"><div class="modal">
-  <h3 id="ship-modal-title">New Ship</h3>
-  <input type="text" id="ship-name-input" placeholder="What are you shipping this week?">
-  <select id="ship-cat-input"><option value="work">Work</option><option value="personal">Personal</option><option value="chore">Chore</option></select>
-  <div class="modal-actions"><button class="modal-btn" onclick="closeShipModal()">Cancel</button><button class="modal-btn primary" onclick="saveShip()">Save</button></div>
-</div></div>
+<div class="modal-overlay" id="ship-modal">
+  <div class="modal">
+    <h3 id="ship-modal-title">New Ship</h3>
+    <input type="text" id="ship-name-input" placeholder="What are you shipping this week?">
+    <select id="ship-cat-input">
+      <option value="work">Work</option>
+      <option value="personal">Personal</option>
+      <option value="chore">Chore</option>
+    </select>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeShipModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="saveShip()">Save</button>
+    </div>
+  </div>
+</div>
 
-<!-- Slide-up Confirm Modal -->
-<div class="confirm-overlay" id="confirm-overlay" onclick="closeConfirm()"></div>
-<div class="confirm-panel" id="confirm-panel"></div>
+<!-- Strategy Planner Modal -->
+<div class="modal-overlay" id="strategy-modal">
+  <div class="modal" style="max-width:520px;">
+    <h3>Strategy Planning</h3>
+    <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Assign tasks to deep work blocks. Each block is 90 minutes.</p>
+    <div id="strategy-blocks"></div>
+    <div class="field-group" style="margin-top:8px;">
+      <label class="blue">Add from backlog or create new</label>
+      <div style="display:flex;gap:4px;">
+        <input type="text" id="strat-new-task" placeholder="Task name...">
+        <input type="text" id="strat-new-mins" placeholder="Min" style="width:60px;">
+        <select id="strat-new-block" style="width:80px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px;color:var(--text);font-size:11px;">
+          <option value="1">Block 1</option>
+          <option value="2">Block 2</option>
+          <option value="3">Block 3</option>
+        </select>
+        <button class="btn-sm blue" onclick="addStratTask()">Add</button>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="modal-btn" onclick="closeStrategyModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="saveStrategyPlan()">Save Plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" id="confirm-content"></div>
+</div>
+
 
 <script>
-// ======================================================
-// STEWARDSHIP OS v3 — Sequential Flow + Timer Integration
-// ======================================================
+// ══════════════════════════════════════════════════════════════
+// STEWARDSHIP OS v4 — Desktop-First Daily Operating Dashboard
+// ══════════════════════════════════════════════════════════════
 
-// ── Google Sheets Sync ──
-// Set this to your deployed Apps Script web app URL to enable cloud sync.
-// See: https://developers.google.com/apps-script/guides/web
+// ── CONFIG ──
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzUQLzmsWlAzFB0EyuO9fNxVgLVF9hfHKudxtqIs5S1OZQ1Z9VtdynaIEZt2vBWZWSqvQ/exec';
+const STORAGE_KEY = 'stewardship-os';
 
-function sheetsSyncEnabled() { return SHEET_URL && SHEET_URL !== 'YOUR_APPS_SCRIPT_URL'; }
+const CALENDARS = [
+  {
+    name: 'Personal',
+    url: 'https://calendar.google.com/calendar/ical/ianmarkwilliams%40gmail.com/private-e71b8a25c12ee7d9c4e363c0c02ecd08/basic.ics',
+    color: '#3fb950',
+    colorBg: 'rgba(63,185,80,0.15)',
+    cls: 'cal-personal'
+  },
+  {
+    name: 'Versa (Main)',
+    url: 'https://outlook.office365.com/owa/calendar/a63ca646562747cc81ef2f519a2fabf3@teamversa.ai/8c268fb9a25242039a71369970328dc95118603606331133545/calendar.ics',
+    color: '#58a6ff',
+    colorBg: 'rgba(88,166,255,0.15)',
+    cls: 'cal-versa-main'
+  },
+  {
+    name: 'Versa (Secondary)',
+    url: 'https://outlook.office365.com/owa/calendar/a63ca646562747cc81ef2f519a2fabf3@teamversa.ai/318729b5f4ab47c29f05c6efdc273631194010475839661672/calendar.ics',
+    color: '#d29922',
+    colorBg: 'rgba(210,153,34,0.15)',
+    cls: 'cal-versa-sec'
+  }
+];
 
-function syncCompletion(date, stepId, stepLabel, done) {
-  if (!sheetsSyncEnabled()) return;
-  const payload = { type: 'completion', date, stepId, stepLabel, done, timestamp: new Date().toISOString() };
-  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(() => {});
-}
-
-function syncSOAP(date, soapData) {
-  if (!sheetsSyncEnabled()) return;
-  const payload = { type: 'soap', date, scripture: soapData.scripture || '', observation: soapData.observation || '', application: soapData.application || '', prayer: soapData.prayer || '', reading: soapData.reading || '' };
-  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(() => {});
-}
-
-function syncFullBackup() {
-  if (!sheetsSyncEnabled()) return;
-  const payload = { type: 'full-sync', payload: APP };
-  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).catch(() => {});
-}
-
-function tryRestoreFromCloud() {
-  if (!sheetsSyncEnabled()) return;
-  const hasData = Object.keys(APP.flow || {}).length > 0;
-  if (hasData) { syncFullBackup(); return; }
-  fetch(SHEET_URL)
-    .then(r => r.json())
-    .then(data => {
-      if (data && data.flow && Object.keys(data.flow).length > 0) {
-        APP = data;
-        saveData(APP);
-        render();
-        console.log('Restored from cloud backup');
-      }
-    })
-    .catch(() => {});
-}
-
+// ── VERSES ──
 const VERSES = [
   { text: "The Lord is my shepherd; I shall not want. He makes me to lie down in green pastures; He leads me beside the still waters. He restores my soul.", ref: "Psalm 23:1-3" },
   { text: "Search me, O God, and know my heart! Try me and know my thoughts! And see if there be any grievous way in me, and lead me in the way everlasting!", ref: "Psalm 139:23-24" },
@@ -356,7 +1137,7 @@ const VERSES = [
   { text: "Do all things without grumbling or disputing.", ref: "Philippians 2:14" },
 ];
 
-// Bible Reading Plan: James (5) -> Proverbs (31) -> John (21) -> Ephesians (6) = 63 days
+// ── BIBLE READING PLAN ──
 const READING_PLAN = [
   ...[1,2,3,4,5].map(c => ({ book: "James", chapter: c })),
   ...Array.from({length: 31}, (_, i) => ({ book: "Proverbs", chapter: i+1 })),
@@ -365,83 +1146,120 @@ const READING_PLAN = [
 ];
 
 function getReadingForDate(dateStr) {
-  const start = new Date(2026, 2, 24);
+  const start = new Date(2026, 2, 24); // Mar 24, 2026
   const target = parseDate(dateStr);
   const diff = Math.floor((target - start) / 86400000);
   const idx = ((diff % READING_PLAN.length) + READING_PLAN.length) % READING_PLAN.length;
   return { ...READING_PLAN[idx], planDay: idx + 1, totalDays: READING_PLAN.length };
 }
 
-// ── Flow Steps Definition ──
+// ── FLOW STEPS ──
 const FLOW_STEPS = [
-  { id: "bible",      time: "6:00 AM",   label: "Bible Reading (SOAP)", icon: "ph-book-open",         color: "var(--purple)",  colorBg: "var(--purple-bg)" },
-  { id: "walk",       time: "6:30 AM",   label: "Treadmill Walk (30 min)", icon: "ph-person-simple-run", color: "var(--green)", colorBg: "var(--green-bg)", timerMins: 30, timerType: "treadmill" },
-  { id: "meditation", time: "10:00 AM",  label: "Meditation (10 min)", icon: "ph-brain",               color: "var(--purple)",  colorBg: "var(--purple-bg)", timerMins: 10, timerType: "meditation" },
-  { id: "strategy",   time: "10:10 AM",  label: "Strategy Planning (10 min)", icon: "ph-lightbulb",    color: "var(--blue)",    colorBg: "var(--blue-bg)" },
-  { id: "dw1",        time: "10:20 AM",  label: "Deep Work Block 1 (90 min)", icon: "ph-fire-simple",  color: "var(--blue)",    colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
-  { id: "clearing",   time: "11:50 AM",  label: "Task Clearing (10 min)", icon: "ph-checks",           color: "var(--amber)",   colorBg: "var(--amber-bg)", timerMins: 10, timerType: "clearing" },
-  { id: "dw2",        time: "12:00 PM",  label: "Deep Work Block 2 (90 min)", icon: "ph-fire-simple",  color: "var(--blue)",    colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
-  { id: "family",     time: "6:00 PM",   label: "Family Time", icon: "ph-heart",                       color: "var(--green)",   colorBg: "var(--green-bg)" },
+  { id: "bible",      time: "6:30 AM",  label: "Light Therapy + Bible", icon: "ph-sun",               color: "var(--purple)", colorBg: "var(--purple-bg)" },
+  { id: "walk",       time: "6:40 AM",  label: "Treadmill + SOAP",     icon: "ph-person-simple-run",  color: "var(--green)",  colorBg: "var(--green-bg)", timerMins: 30, timerType: "treadmill" },
+  { id: "meditation", time: "10:00 AM", label: "Meditation",            icon: "ph-brain",              color: "var(--purple)", colorBg: "var(--purple-bg)", timerMins: 10, timerType: "meditation" },
+  { id: "strategy",   time: "10:10 AM", label: "Strategy Planning",     icon: "ph-lightbulb",          color: "var(--blue)",   colorBg: "var(--blue-bg)" },
+  { id: "family",     time: "6:00 PM",  label: "Family Time",           icon: "ph-heart",              color: "var(--green)",  colorBg: "var(--green-bg)" },
 ];
 
+// ── GOALS ──
 const GOALS = {
   work: [
-    "Crush VP of Sales role at Versa \u2014 learn everything, build network",
+    "Succeed at VP of Sales role at Versa",
     "Close/advance BPO deals (VXI, ROI Solutions)",
     "Expand revenue with existing clients",
     "Start direct enterprise pipeline (MVNOs/MNOs)",
   ],
   personal: [
-    "Lock in daily quiet time (SOAP, 20 min + light)",
-    "30-min treadmill walk/day in front of 10K lux light",
+    "Daily quiet time (Bible + SOAP, 20 min + light)",
+    "30-min treadmill walk daily with 10K lux light",
     "Start date nights with wife",
     "Start 1:1 afternoons with each boy (2x/month)",
   ],
 };
 
-// ── Data Layer ──
-const STORAGE_KEY = 'stewardship-os';
+// ══════════════════════════════════════════════════════════════
+// DATA LAYER
+// ══════════════════════════════════════════════════════════════
+
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw) {
     const d = JSON.parse(raw);
-    // Ensure new fields exist
-    if (!d.flow) d.flow = {};
-    if (!d.soap) d.soap = {};
-    if (!d.meditation) d.meditation = {};
-    if (!d.strategy) d.strategy = {};
-    if (!d.ships) d.ships = [];
-    if (!d.backlog) d.backlog = [];
-    if (!d.weekHistory) d.weekHistory = [];
-    if (!d.fridayReviewed) d.fridayReviewed = {};
-    if (!d.morningCommit) d.morningCommit = {};
-    if (!d.shutdowns) d.shutdowns = {};
-    if (!d.tomorrowPlan) d.tomorrowPlan = {};
-    if (!d.timerCompletions) d.timerCompletions = {};
+    // Ensure all top-level keys exist
+    const defaults = {
+      flow: {}, soap: {}, meditation: {}, strategy: {}, ships: [], backlog: [],
+      weekHistory: [], fridayReviewed: {}, morningCommit: {}, shutdowns: {},
+      tomorrowPlan: {}, timerCompletions: {},
+      deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {}, salesMetrics: {},
+      silencedEvents: {}, goalProgress: {}, timerHistory: {}
+    };
+    Object.keys(defaults).forEach(k => { if (d[k] === undefined) d[k] = defaults[k]; });
     return d;
   }
   return {
+    flow: {}, soap: {}, meditation: {}, strategy: {},
     ships: [], backlog: [], weekHistory: [],
     fridayReviewed: {}, morningCommit: {}, shutdowns: {}, tomorrowPlan: {},
-    flow: {},
-    soap: {},
-    meditation: {},
-    strategy: {},
-    timerCompletions: {},  // { "2026-03-31": { walk: { mins: 30 }, dw1: { mins: 90 }, ... } }
+    timerCompletions: {},
+    deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {},
+    salesMetrics: {}, silencedEvents: {}, goalProgress: {}, timerHistory: {}
   };
 }
+
 function saveData(d) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
-  syncFullBackup();
+  debouncedSync();
 }
+
 let APP = loadData();
 
-// ── View State (ephemeral) ──
-let selectedDate = todayStr();
+// ── Sync ──
+let syncTimeout = null;
+let lastSyncTime = 0;
 
-// Focus timer state (ephemeral, current session only)
-let focusTimer = null; // { startedAt, duration, type, linkedStepId }
-let focusTimerInterval = null;
+function debouncedSync() {
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(() => { syncFullBackup(); }, 2000);
+}
+
+function syncFullBackup() {
+  if (!SHEET_URL) return;
+  const payload = { type: 'full-sync', payload: APP };
+  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+    .then(() => { lastSyncTime = Date.now(); updateSyncStatus(); })
+    .catch(() => {});
+}
+
+function tryRestoreFromCloud() {
+  if (!SHEET_URL) return;
+  const hasData = Object.keys(APP.flow || {}).length > 0;
+  if (hasData) { syncFullBackup(); return; }
+  fetch(SHEET_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.flow && Object.keys(data.flow).length > 0) {
+        APP = data;
+        // Re-ensure keys
+        const defaults = {
+          deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {}, salesMetrics: {},
+          silencedEvents: {}, goalProgress: {}, timerHistory: {}
+        };
+        Object.keys(defaults).forEach(k => { if (APP[k] === undefined) APP[k] = defaults[k]; });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(APP));
+        render();
+      }
+    })
+    .catch(() => {});
+}
+
+function updateSyncStatus() {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  if (lastSyncTime === 0) { el.textContent = ''; return; }
+  const ago = Math.round((Date.now() - lastSyncTime) / 60000);
+  el.textContent = ago < 1 ? 'Synced just now' : 'Synced ' + ago + ' min ago';
+}
 
 // ── Utilities ──
 function todayStr() { return new Date().toISOString().slice(0, 10); }
@@ -456,16 +1274,386 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 function dayOfYear() { const n = new Date(); return Math.floor((n - new Date(n.getFullYear(),0,0)) / 86400000); }
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function tomorrowDate() { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
-function parseTime(t) { const [time, ap] = t.split(' '); let [h,m] = time.split(':').map(Number); if (ap==='PM'&&h!==12) h+=12; if (ap==='AM'&&h===12) h=0; return h*60+m; }
-
+function parseTime(t) { const [time, ap] = t.split(' '); let [h,m] = time.split(':').map(Number); if (ap==='PM'&&h!==12) h+=12; if (ap==='AM'&&h===12) h=0; return h*60+(m||0); }
+function formatTime12(mins) {
+  let h = Math.floor(mins / 60);
+  let m = mins % 60;
+  const ap = h >= 12 ? 'PM' : 'AM';
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return h + ':' + String(m).padStart(2, '0') + ' ' + ap;
+}
 function formatDateLabel(dateString) {
   const d = parseDate(dateString);
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-// ══════════════════════════
-// DATE CAROUSEL
-// ══════════════════════════
+// ── View State ──
+let selectedDate = todayStr();
+
+// Timer state (session only)
+let activeTimer = null; // { startedAt, duration, type, label, linkedStepId }
+let timerInterval = null;
+
+// Calendar cache
+let calendarEvents = []; // [{title, start: Date, end: Date, uid, calIdx, allDay}]
+let calendarFetchTime = 0;
+
+// Notification tracking
+let notifiedMeetings = {}; // { "uid-15": true, "uid-2": true }
+
+// ══════════════════════════════════════════════════════════════
+// NOTIFICATIONS & SOUNDS
+// ══════════════════════════════════════════════════════════════
+
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playChime() {
+  try {
+    const ctx = getAudioCtx();
+    // Pleasant two-note chime: D5 then A5
+    [587.33, 880].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.3);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.3 + 1.2);
+      osc.start(ctx.currentTime + i * 0.3);
+      osc.stop(ctx.currentTime + i * 0.3 + 1.2);
+    });
+  } catch(e) {}
+}
+
+function playGentleTone() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 440; // A4
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2);
+    osc.start();
+    osc.stop(ctx.currentTime + 2);
+  } catch(e) {}
+}
+
+function playUrgentTone() {
+  try {
+    const ctx = getAudioCtx();
+    // Two quick beeps
+    for (let i = 0; i < 2; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.25);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.25 + 0.15);
+      osc.start(ctx.currentTime + i * 0.25);
+      osc.stop(ctx.currentTime + i * 0.25 + 0.2);
+    }
+  } catch(e) {}
+}
+
+function sendNotification(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(title, { body: body, icon: '' }); } catch(e) {}
+  }
+}
+
+// Request notification permission on first click
+if ('Notification' in window && Notification.permission === 'default') {
+  document.addEventListener('click', function reqNotif() {
+    Notification.requestPermission();
+    document.removeEventListener('click', reqNotif);
+  }, { once: true });
+}
+
+// ══════════════════════════════════════════════════════════════
+// ICS CALENDAR PARSER
+// ══════════════════════════════════════════════════════════════
+
+function parseICSDate(val) {
+  // Handle: 20260331T140000Z, 20260331T140000, 20260331, TZID=America/Los_Angeles:20260331T140000
+  if (!val) return null;
+  // Strip TZID prefix
+  if (val.includes(':')) val = val.split(':').pop();
+  val = val.trim();
+  if (val.length === 8) {
+    // All-day: YYYYMMDD
+    return { date: new Date(+val.slice(0,4), +val.slice(4,6)-1, +val.slice(6,8)), allDay: true };
+  }
+  // YYYYMMDDTHHMMSS or YYYYMMDDTHHMMSSZ
+  const y = +val.slice(0,4), mo = +val.slice(4,6)-1, d = +val.slice(6,8);
+  const h = +val.slice(9,11), mi = +val.slice(11,13), s = +val.slice(13,15) || 0;
+  const isUTC = val.endsWith('Z');
+  let dt;
+  if (isUTC) {
+    dt = new Date(Date.UTC(y, mo, d, h, mi, s));
+  } else {
+    dt = new Date(y, mo, d, h, mi, s);
+  }
+  return { date: dt, allDay: false };
+}
+
+function unfoldICS(text) {
+  // RFC 5545 line unfolding: lines starting with space or tab are continuations
+  return text.replace(/\r\n[ \t]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
+function parseRRULE(rrule) {
+  if (!rrule) return null;
+  const parts = {};
+  rrule.split(';').forEach(p => {
+    const [k, v] = p.split('=');
+    parts[k] = v;
+  });
+  return parts;
+}
+
+function expandRecurrence(event, targetDate) {
+  // Check if event's RRULE matches targetDate
+  // event: { dtstart, dtend, rrule, summary, uid }
+  // Returns adjusted event or null
+  const rule = parseRRULE(event.rrule);
+  if (!rule || !rule.FREQ) return null;
+
+  const startDate = event.dtstart.date;
+  const target = parseDate(targetDate);
+  const targetDay = target.getTime();
+
+  // Don't expand if target is before start
+  if (target < new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())) return null;
+
+  // Check UNTIL
+  if (rule.UNTIL) {
+    const until = parseICSDate(rule.UNTIL);
+    if (until && target > until.date) return null;
+  }
+
+  // Check COUNT (approximate -- just limit to 365 occurrences)
+  const count = rule.COUNT ? parseInt(rule.COUNT) : 9999;
+
+  const freq = rule.FREQ;
+  const interval = rule.INTERVAL ? parseInt(rule.INTERVAL) : 1;
+  const byDay = rule.BYDAY ? rule.BYDAY.split(',') : null;
+
+  const dayNames = ['SU','MO','TU','WE','TH','FR','SA'];
+  const targetDayName = dayNames[target.getDay()];
+
+  let matches = false;
+
+  if (freq === 'DAILY') {
+    const diffDays = Math.floor((target - new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())) / 86400000);
+    if (diffDays >= 0 && diffDays % interval === 0 && (diffDays / interval) < count) matches = true;
+  } else if (freq === 'WEEKLY') {
+    const startWeekDay = startDate.getDay();
+    const diffDays = Math.floor((target - new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())) / 86400000);
+    if (diffDays < 0) return null;
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks % interval === 0) {
+      if (byDay) {
+        if (byDay.includes(targetDayName)) matches = true;
+      } else {
+        if (target.getDay() === startWeekDay) matches = true;
+      }
+    }
+  } else if (freq === 'MONTHLY') {
+    const diffMonths = (target.getFullYear() - startDate.getFullYear()) * 12 + (target.getMonth() - startDate.getMonth());
+    if (diffMonths >= 0 && diffMonths % interval === 0) {
+      if (byDay) {
+        // Handle BYDAY with position like 2TU (second Tuesday)
+        for (const bd of byDay) {
+          const m = bd.match(/^(-?\d)?(\w{2})$/);
+          if (m) {
+            const pos = m[1] ? parseInt(m[1]) : null;
+            const day = m[2];
+            if (day === targetDayName) {
+              if (pos) {
+                // Calculate nth weekday of month
+                const firstOfMonth = new Date(target.getFullYear(), target.getMonth(), 1);
+                const dayIdx = dayNames.indexOf(day);
+                let d = 1 + ((dayIdx - firstOfMonth.getDay() + 7) % 7);
+                if (pos > 0) {
+                  d += (pos - 1) * 7;
+                  if (d === target.getDate()) matches = true;
+                } else {
+                  // Negative: from end of month
+                  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+                  let ld = lastDay - ((new Date(target.getFullYear(), target.getMonth(), lastDay).getDay() - dayIdx + 7) % 7);
+                  ld += (pos + 1) * 7;
+                  if (ld === target.getDate()) matches = true;
+                }
+              } else {
+                matches = true;
+              }
+            }
+          }
+        }
+      } else {
+        if (target.getDate() === startDate.getDate()) matches = true;
+      }
+    }
+  } else if (freq === 'YEARLY') {
+    const diffYears = target.getFullYear() - startDate.getFullYear();
+    if (diffYears >= 0 && diffYears % interval === 0 &&
+        target.getMonth() === startDate.getMonth() &&
+        target.getDate() === startDate.getDate()) {
+      matches = true;
+    }
+  }
+
+  if (!matches) return null;
+
+  // Build adjusted event with same time but on target date
+  const duration = event.dtend.date.getTime() - event.dtstart.date.getTime();
+  let newStart, newEnd;
+  if (event.dtstart.allDay) {
+    newStart = { date: target, allDay: true };
+    newEnd = { date: new Date(target.getTime() + duration), allDay: true };
+  } else {
+    newStart = { date: new Date(target.getFullYear(), target.getMonth(), target.getDate(), startDate.getHours(), startDate.getMinutes()), allDay: false };
+    newEnd = { date: new Date(newStart.date.getTime() + duration), allDay: false };
+  }
+
+  return {
+    summary: event.summary,
+    uid: event.uid,
+    dtstart: newStart,
+    dtend: newEnd,
+    calIdx: event.calIdx,
+    recurring: true
+  };
+}
+
+function parseICS(text, calIdx) {
+  text = unfoldICS(text);
+  const lines = text.split('\n');
+  const events = [];
+  let inEvent = false;
+  let evt = {};
+
+  for (const line of lines) {
+    if (line === 'BEGIN:VEVENT') {
+      inEvent = true;
+      evt = {};
+      continue;
+    }
+    if (line === 'END:VEVENT') {
+      inEvent = false;
+      if (evt.summary && evt.dtstart) {
+        evt.calIdx = calIdx;
+        events.push(evt);
+      }
+      continue;
+    }
+    if (!inEvent) continue;
+
+    if (line.startsWith('SUMMARY:')) {
+      evt.summary = line.slice(8).replace(/\\n/g, ' ').replace(/\\,/g, ',').replace(/\\\\/g, '\\');
+    } else if (line.startsWith('DTSTART')) {
+      const val = line.includes(':') ? line.split(':').slice(1).join(':') : line.split('=').pop();
+      // Preserve TZID info
+      evt.dtstart = parseICSDate(line.slice(line.indexOf(':') + 1));
+      evt.rawDtstart = line;
+    } else if (line.startsWith('DTEND')) {
+      evt.dtend = parseICSDate(line.slice(line.indexOf(':') + 1));
+    } else if (line.startsWith('UID:')) {
+      evt.uid = line.slice(4);
+    } else if (line.startsWith('RRULE:')) {
+      evt.rrule = line.slice(6);
+    }
+  }
+
+  return events;
+}
+
+function getEventsForDate(allEvents, dateStr) {
+  const target = parseDate(dateStr);
+  const targetStart = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0);
+  const targetEnd = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 23, 59, 59);
+  const results = [];
+
+  for (const evt of allEvents) {
+    if (!evt.dtstart) continue;
+    if (!evt.dtend) {
+      // Default: 1 hour or all day
+      if (evt.dtstart.allDay) {
+        evt.dtend = { date: new Date(evt.dtstart.date.getTime() + 86400000), allDay: true };
+      } else {
+        evt.dtend = { date: new Date(evt.dtstart.date.getTime() + 3600000), allDay: false };
+      }
+    }
+
+    const evtDate = evt.dtstart.date;
+    const evtDateOnly = new Date(evtDate.getFullYear(), evtDate.getMonth(), evtDate.getDate());
+
+    // Non-recurring: check if event falls on target date
+    if (!evt.rrule) {
+      if (evt.dtstart.allDay) {
+        if (evtDateOnly.getTime() === targetStart.getTime()) {
+          results.push(evt);
+        }
+      } else {
+        if (evtDate >= targetStart && evtDate <= targetEnd) {
+          results.push(evt);
+        }
+      }
+    } else {
+      // Recurring: expand
+      const expanded = expandRecurrence(evt, dateStr);
+      if (expanded) results.push(expanded);
+    }
+  }
+
+  // Sort by time (all-day first, then by start time)
+  results.sort((a, b) => {
+    if (a.dtstart.allDay && !b.dtstart.allDay) return -1;
+    if (!a.dtstart.allDay && b.dtstart.allDay) return 1;
+    return a.dtstart.date.getTime() - b.dtstart.date.getTime();
+  });
+
+  return results;
+}
+
+async function fetchCalendars() {
+  const allEvents = [];
+  for (let i = 0; i < CALENDARS.length; i++) {
+    try {
+      const resp = await fetch(SHEET_URL + '?action=ics&url=' + encodeURIComponent(CALENDARS[i].url));
+      if (resp.ok) {
+        const text = await resp.text();
+        const events = parseICS(text, i);
+        allEvents.push(...events);
+      }
+    } catch(e) {
+      console.warn('Failed to fetch calendar:', CALENDARS[i].name, e);
+    }
+  }
+  calendarEvents = allEvents;
+  calendarFetchTime = Date.now();
+  renderTimeline();
+}
+
+// Fetch calendars every 5 minutes
+setInterval(() => { fetchCalendars(); }, 300000);
+
+
+// ══════════════════════════════════════════════════════════════
+// DATE NAVIGATION
+// ══════════════════════════════════════════════════════════════
+
 function navDate(delta) {
   const d = parseDate(selectedDate);
   d.setDate(d.getDate() + delta);
@@ -474,114 +1662,50 @@ function navDate(delta) {
   selectedDate = dateStr(d);
   render();
 }
+
 function goToToday() { selectedDate = todayStr(); render(); }
 
-function renderDateCarousel() {
+function renderTopBar() {
+  // Verse
+  const v = VERSES[dayOfYear() % VERSES.length];
+  document.getElementById('verse-area').innerHTML = '"' + esc(v.text) + '"<span class="verse-ref">-- ' + v.ref + ' (ESV)</span>';
+
+  // Date
   const isToday = selectedDate === todayStr();
   document.getElementById('date-label').textContent = formatDateLabel(selectedDate);
   document.getElementById('date-next').className = 'date-arrow' + (isToday ? ' disabled' : '');
-  const backContainer = document.getElementById('date-back-container');
-  if (!isToday) {
-    backContainer.innerHTML = '<button class="date-back-btn" onclick="goToToday()">Back to Today</button>';
-  } else {
-    backContainer.innerHTML = '';
-  }
 }
 
-// ══════════════════════════
-// CONFIRM MODAL (slide-up)
-// ══════════════════════════
-function showConfirm(title, message, buttons) {
-  // buttons: [{ label, class, onclick }]
-  const panel = document.getElementById('confirm-panel');
-  const overlay = document.getElementById('confirm-overlay');
-  let btnsHtml = '<div class="cp-actions">';
-  buttons.forEach(b => {
-    btnsHtml += '<button class="cp-btn ' + (b.cls || '') + '" onclick="' + b.onclick + '">' + b.label + '</button>';
-  });
-  btnsHtml += '</div>';
-  panel.innerHTML = '<div class="cp-title">' + esc(title) + '</div><div class="cp-message">' + esc(message) + '</div>' + btnsHtml;
-  panel.classList.add('open');
-  overlay.classList.add('open');
-}
-function closeConfirm() {
-  document.getElementById('confirm-panel').classList.remove('open');
-  document.getElementById('confirm-overlay').classList.remove('open');
-}
 
-// ══════════════════════════
-// RENDER
-// ══════════════════════════
+// ══════════════════════════════════════════════════════════════
+// LEFT COLUMN: MORNING ROUTINE
+// ══════════════════════════════════════════════════════════════
 
-function renderVerse() {
-  const v = VERSES[dayOfYear() % VERSES.length];
-  document.getElementById('verse-bar').innerHTML = '"' + v.text + '"<span class="verse-ref">\u2014 ' + v.ref + ' (ESV)</span>';
-}
-
-function renderReading() {
-  const r = getReadingForDate(selectedDate);
-  document.getElementById('todays-reading').innerHTML = '<div class="reading-card"><div><div class="reading-book">' + r.book + ' ' + r.chapter + '</div><div class="reading-method">SOAP: Read. Observe. Apply. Pray.</div></div><div class="reading-progress"><div class="reading-pct">Day ' + r.planDay + '</div>' + r.totalDays + ' day plan</div></div>';
-}
-
-function renderHeader() {
-  // The date carousel now handles the date display, so just show a static label
-  document.getElementById('header-date').textContent = '';
-}
-
-function renderScoreboard() {
-  const weekOf = getWeekOf();
-  const cs = APP.ships.filter(s => s.weekOf === weekOf);
-  const shipped = cs.filter(s => s.status === 'shipped').length;
-  const total = cs.length || 3;
-  const fw = APP.weekHistory.slice(-4);
-  let rs = shipped, rt = total; fw.forEach(w => { rs += w.shipped; rt += w.total; });
-  const rp = rt > 0 ? Math.round(rs/rt*100) : 0;
-  const aw = [...APP.weekHistory, {shipped,total}]; let qs=0,qt=0; aw.forEach(w=>{qs+=w.shipped;qt+=w.total;});
-  const qp = qt>0?Math.round(qs/qt*100):0;
-  document.getElementById('scoreboard').innerHTML =
-    '<div class="score-card"><div class="label">This Week</div><div class="value">'+shipped+'/'+total+'</div><div class="sub">ships</div></div>' +
-    '<div class="score-card"><div class="label">4-Week</div><div class="value">'+rp+'%</div><div class="sub">'+rs+'/'+rt+'</div></div>' +
-    '<div class="score-card"><div class="label">Quarter</div><div class="value">'+qp+'%</div><div class="sub">'+qs+'/'+qt+'</div></div>';
-}
-
-// ══════════════════════════
-// THE FLOW
-// ══════════════════════════
 function renderFlow() {
   const d = selectedDate;
-  if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); saveData(APP); }
+  if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); }
   const flowData = APP.flow[d];
   const done = Object.values(flowData).filter(Boolean).length;
   document.getElementById('flow-count').textContent = done + '/' + FLOW_STEPS.length;
 
-  const now = new Date(); const nowMin = now.getHours()*60+now.getMinutes();
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
   const isToday = d === todayStr();
-  const r = getReadingForDate(d);
+  const reading = getReadingForDate(d);
 
   let html = '';
   FLOW_STEPS.forEach((step, i) => {
     const isDone = flowData[step.id];
     const stepMin = parseTime(step.time);
-    const nextMin = i < FLOW_STEPS.length-1 ? parseTime(FLOW_STEPS[i+1].time) : 1440;
+    const nextMin = i < FLOW_STEPS.length - 1 ? parseTime(FLOW_STEPS[i+1].time) : 1440;
     const isCurrent = isToday && !isDone && nowMin >= stepMin && nowMin < nextMin;
 
     let hint = '';
-    if (step.id === 'bible') hint = 'Open to ' + r.book + ' ' + r.chapter + '. Read. SOAP.';
-    else if (step.id === 'walk') hint = 'Put on shoes. Turn on treadmill.';
-    else if (step.id === 'meditation') hint = 'Were you on time?';
-    else if (step.id === 'strategy') hint = 'What are today\'s biggest priorities?';
-    else if (step.id === 'dw1') hint = 'Close door. Open document.';
-    else if (step.id === 'clearing') hint = 'Clear emails, small tasks.';
-    else if (step.id === 'dw2') hint = 'Same ritual. Next priority.';
-    else if (step.id === 'family') hint = 'Put phone down. Go find the boys.';
-
-    // Meditation on-time badge
-    let badge = '';
-    if (step.id === 'meditation' && isDone && APP.meditation[d]) {
-      badge = APP.meditation[d].onTime
-        ? '<span class="flow-badge on-time">ON TIME</span>'
-        : '<span class="flow-badge late">LATE</span>';
-    }
+    if (step.id === 'bible') hint = 'Plan suggests: ' + reading.book + ' ' + reading.chapter;
+    else if (step.id === 'walk') hint = '30 min. Turn on treadmill.';
+    else if (step.id === 'meditation') hint = '10 min. Be present.';
+    else if (step.id === 'strategy') hint = 'Assign tasks to deep work blocks.';
+    else if (step.id === 'family') hint = 'Put phone down. Find the boys.';
 
     // Timer completion info
     let timerInfo = '';
@@ -590,73 +1714,92 @@ function renderFlow() {
       if (tc.mins !== undefined) timerInfo = '<span style="font-size:10px;color:var(--green);margin-left:4px;">' + tc.mins + ' min</span>';
     }
 
-    html += '<div class="flow-item ' + (isDone?'done':'') + ' ' + (isCurrent?'current':'') + '" id="flow-' + step.id + '">' +
-      '<div class="flow-row" onclick="handleFlowTap(\'' + step.id + '\')">' +
-        '<div class="flow-icon" style="background:' + step.colorBg + ';color:' + step.color + '"><i class="ph ' + step.icon + '"></i></div>' +
-        '<div class="flow-check">' + (isDone?'&#10003;':'') + '</div>' +
-        '<div class="flow-time">' + step.time + '</div>' +
-        '<div class="flow-label">' + step.label + '</div>' +
-        badge + timerInfo +
-        (!isDone && isToday ? '<div class="flow-hint">' + hint + '</div>' : '') +
-      '</div>' +
-      (step.id === 'bible' ? renderSOAPPanel(d) : '') +
-      (step.id === 'strategy' ? renderStrategyPanel(d) : '') +
-    '</div>';
+    // Meditation badge
+    let badge = '';
+    if (step.id === 'meditation' && isDone && APP.meditation[d]) {
+      badge = APP.meditation[d].onTime
+        ? '<span class="flow-badge on-time">ON TIME</span>'
+        : '<span class="flow-badge late">LATE</span>';
+    }
+
+    html += '<div class="flow-item ' + (isDone ? 'done' : '') + ' ' + (isCurrent ? 'current' : '') + '">';
+    html += '<div class="flow-main" onclick="handleFlowTap(\'' + step.id + '\')">';
+    html += '<div class="flow-icon" style="background:' + step.colorBg + ';color:' + step.color + '"><i class="ph ' + step.icon + '"></i></div>';
+    html += '<div class="flow-check">' + (isDone ? '&#10003;' : '') + '</div>';
+    html += '<div class="flow-time">' + step.time + '</div>';
+    html += '<div class="flow-label">' + step.label + '</div>';
+    html += badge + timerInfo;
+    if (!isDone && isToday) html += '<div class="flow-hint">' + hint + '</div>';
+    html += '</div>';
+
+    // Expand panels
+    if (step.id === 'bible') html += renderBiblePanel(d, isDone);
+    if (step.id === 'walk') html += renderSOAPPanel(d, isDone);
+    if (step.id === 'strategy') html += renderStrategyTrigger(d, isDone);
+
+    html += '</div>';
   });
 
-  document.getElementById('daily-flow').innerHTML = html;
+  document.getElementById('flow-container').innerHTML = html;
 }
 
-// ── SOAP Panel ──
-function renderSOAPPanel(d) {
-  if (!APP.soap[d]) APP.soap[d] = { scripture:'', observation:'', application:'', prayer:'', reading:'' };
+function renderBiblePanel(d, isDone) {
+  if (!APP.bibleLog[d]) APP.bibleLog[d] = { whatRead: '' };
+  const reading = getReadingForDate(d);
+  const isOpen = !isDone;
+  return '<div class="expand-panel ' + (isOpen ? 'open' : '') + '">' +
+    '<div class="field-group"><label class="purple">What did you read?</label>' +
+    '<input type="text" id="bible-what" value="' + esc(APP.bibleLog[d].whatRead) + '" placeholder="' + esc(reading.book + ' ' + reading.chapter) + '" onchange="saveBibleLog()">' +
+    '</div></div>';
+}
+
+function renderSOAPPanel(d, isDone) {
+  if (!APP.soap[d]) APP.soap[d] = { scripture: '', observation: '', application: '', prayer: '', reading: '' };
   const s = APP.soap[d];
-  const r = getReadingForDate(d);
-  const isOpen = !APP.flow[d]?.bible;
-  const readingOverride = s.reading || (r.book + ' ' + r.chapter);
-  return '<div class="soap-panel ' + (isOpen?'open':'') + '" id="soap-panel">' +
-    '<div class="soap-field"><label>Today\'s Reading</label><input type="text" id="soap-reading" value="' + esc(readingOverride) + '" placeholder="' + esc(r.book + ' ' + r.chapter) + '"></div>' +
-    '<div class="soap-field"><label>S \u2014 Scripture</label><textarea id="soap-s" placeholder="Copy or summarize the verse that stands out...">' + esc(s.scripture) + '</textarea></div>' +
-    '<div class="soap-field"><label>O \u2014 Observation</label><textarea id="soap-o" placeholder="What\'s happening? Who\'s talking? What\'s the context?">' + esc(s.observation) + '</textarea></div>' +
-    '<div class="soap-field"><label>A \u2014 Application</label><textarea id="soap-a" placeholder="How does this apply to my life right now?">' + esc(s.application) + '</textarea></div>' +
-    '<div class="soap-field"><label>P \u2014 Prayer</label><textarea id="soap-p" placeholder="Pray based on what you read...">' + esc(s.prayer) + '</textarea></div>' +
-    '<div class="soap-save"><button onclick="saveSOAP()">Save SOAP</button></div>' +
-  '</div>';
+  const isOpen = !isDone;
+  return '<div class="expand-panel ' + (isOpen ? 'open' : '') + '">' +
+    '<div class="field-group"><label class="purple">S -- Scripture</label><textarea id="soap-s" placeholder="Copy or summarize the verse that stands out..." onchange="saveSOAP()">' + esc(s.scripture) + '</textarea></div>' +
+    '<div class="field-group"><label class="purple">O -- Observation</label><textarea id="soap-o" placeholder="What is happening? Who is talking?" onchange="saveSOAP()">' + esc(s.observation) + '</textarea></div>' +
+    '<div class="field-group"><label class="purple">A -- Application</label><textarea id="soap-a" placeholder="How does this apply to my life right now?" onchange="saveSOAP()">' + esc(s.application) + '</textarea></div>' +
+    '<div class="field-group"><label class="purple">P -- Prayer</label><textarea id="soap-p" placeholder="Pray based on what you read..." onchange="saveSOAP()">' + esc(s.prayer) + '</textarea></div>' +
+    '<div class="btn-row"><button class="btn-sm purple" onclick="saveSOAP()">Save SOAP</button></div>' +
+    '</div>';
+}
+
+function renderStrategyTrigger(d, isDone) {
+  if (!APP.strategy[d]) APP.strategy[d] = { planned: [] };
+  const isOpen = !isDone;
+  const planned = APP.strategy[d].planned || [];
+  const summary = planned.length > 0
+    ? planned.map(t => t.name + ' (' + t.minutes + 'm)').join(', ')
+    : 'No tasks planned yet.';
+  return '<div class="expand-panel ' + (isOpen ? 'open' : '') + '">' +
+    '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">' + esc(summary) + '</div>' +
+    '<button class="btn-sm blue" onclick="openStrategyModal()">Open Strategy Planner</button>' +
+    '</div>';
+}
+
+function saveBibleLog() {
+  const d = selectedDate;
+  if (!APP.bibleLog[d]) APP.bibleLog[d] = {};
+  const el = document.getElementById('bible-what');
+  if (el) APP.bibleLog[d].whatRead = el.value;
+  saveData(APP);
 }
 
 function saveSOAP() {
   const d = selectedDate;
   if (!APP.soap[d]) APP.soap[d] = {};
   APP.soap[d] = {
-    reading: document.getElementById('soap-reading')?.value || '',
     scripture: document.getElementById('soap-s')?.value || '',
     observation: document.getElementById('soap-o')?.value || '',
     application: document.getElementById('soap-a')?.value || '',
     prayer: document.getElementById('soap-p')?.value || '',
   };
   saveData(APP);
-  syncSOAP(d, APP.soap[d]);
 }
 
-// ── Strategy Panel ──
-function renderStrategyPanel(d) {
-  if (!APP.strategy[d]) APP.strategy[d] = { priorities: '' };
-  const isOpen = !APP.flow[d]?.strategy;
-  return '<div class="strategy-panel ' + (isOpen?'open':'') + '" id="strategy-panel">' +
-    '<div class="strategy-field"><label>Today\'s Top Priorities</label><textarea id="strat-p" placeholder="What are the 1-3 most important things to accomplish today?">' + esc(APP.strategy[d].priorities) + '</textarea></div>' +
-    '<div class="soap-save"><button onclick="saveStrategy()" style="background:var(--blue);">Save Priorities</button></div>' +
-  '</div>';
-}
-
-function saveStrategy() {
-  const d = selectedDate;
-  APP.strategy[d] = { priorities: document.getElementById('strat-p')?.value || '' };
-  saveData(APP);
-}
-
-// ══════════════════════════
-// FLOW TAP HANDLER + TIMER INTEGRATION
-// ══════════════════════════
+// ── Flow Tap Handler ──
 function handleFlowTap(id) {
   const d = selectedDate;
   if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); }
@@ -664,351 +1807,1124 @@ function handleFlowTap(id) {
   const isDone = APP.flow[d][id];
   const isToday = d === todayStr();
 
-  // If unchecking (already done), just toggle off
+  // Unchecking
   if (isDone) {
-    if (id === 'bible') saveSOAP();
-    if (id === 'strategy') saveStrategy();
+    if (id === 'walk') saveSOAP();
+    if (id === 'bible') saveBibleLog();
     APP.flow[d][id] = false;
     saveData(APP);
-    syncCompletion(d, id, step.label, false);
     renderFlow();
     return;
   }
 
   // Save associated panels
-  if (id === 'bible') saveSOAP();
-  if (id === 'strategy') saveStrategy();
+  if (id === 'walk') saveSOAP();
+  if (id === 'bible') saveBibleLog();
 
   // Meditation on-time tracking
   if (id === 'meditation' && isToday) {
     const now = new Date();
     const targetMin = parseTime('10:00 AM');
-    const nowMin = now.getHours()*60 + now.getMinutes();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
     APP.meditation[d] = { startedAt: Date.now(), onTime: nowMin <= targetMin + 2 };
   }
 
-  // Timer-linked steps: walk, dw1, dw2, clearing, meditation
+  // Strategy opens the planner
+  if (id === 'strategy' && isToday) {
+    openStrategyModal();
+    completeFlowStep(id);
+    return;
+  }
+
+  // Timer-linked steps
   if (step.timerType && isToday) {
-    // Check if a matching timer is running or was completed today
     const timerCompleted = APP.timerCompletions[d] && APP.timerCompletions[d][id];
-    const timerRunningForThis = focusTimer && focusTimer.linkedStepId === id;
+    const timerRunningForThis = activeTimer && activeTimer.linkedStepId === id;
 
     if (timerCompleted || timerRunningForThis) {
-      // Timer ran or is running for this step -- auto-check
       completeFlowStep(id);
       return;
     }
 
-    // Check if a timer of the same type completed for any step
-    if (focusTimer && focusTimer.type === step.timerType) {
-      completeFlowStep(id);
-      return;
-    }
-
-    // No timer ran -- show confirmation modal
-    const timerMins = step.timerMins || 30;
-    showConfirm(
+    showConfirmDialog(
       step.label,
-      'No timer was recorded for this step. What would you like to do?',
+      'No timer was recorded for this step.',
       [
-        { label: 'Cancel', cls: 'cancel', onclick: 'closeConfirm()' },
-        { label: 'Already Done', cls: 'confirm', onclick: 'closeConfirm();completeFlowStep("'+id+'")' },
-        { label: 'Start ' + timerMins + 'm Timer', cls: 'start', onclick: 'closeConfirm();startFocusTimer("'+step.timerType+'",'+timerMins+',"'+id+'")' },
+        { label: 'Cancel', cls: '', onclick: 'closeConfirmDialog()' },
+        { label: 'Already Done', cls: 'primary', onclick: 'closeConfirmDialog();completeFlowStep("'+id+'")' },
+        { label: 'Start ' + step.timerMins + 'm Timer', cls: 'primary', onclick: 'closeConfirmDialog();startTimer("'+step.timerType+'",'+step.timerMins+',"'+step.label+'","'+id+'")' },
       ]
     );
     return;
   }
 
-  // Non-timer steps: just toggle
   completeFlowStep(id);
 }
 
 function completeFlowStep(id) {
   const d = selectedDate;
   if (!APP.flow[d]) { APP.flow[d] = {}; FLOW_STEPS.forEach(s => APP.flow[d][s.id] = false); }
-  const step = FLOW_STEPS.find(s => s.id === id);
   APP.flow[d][id] = true;
   saveData(APP);
-  syncCompletion(d, id, step ? step.label : id, true);
   renderFlow();
 }
 
-// ══════════════════════════
-// FOCUS TIMER
-// ══════════════════════════
-function startFocusTimer(type, mins, linkedStepId) {
-  focusTimer = { startedAt: Date.now(), duration: mins * 60000, type: type, linkedStepId: linkedStepId || null };
-  if (focusTimerInterval) clearInterval(focusTimerInterval);
-  focusTimerInterval = setInterval(tickFocusTimer, 1000);
-  renderFocusBlock();
+
+// ══════════════════════════════════════════════════════════════
+// LEFT COLUMN: DEEP WORK TRACKER
+// ══════════════════════════════════════════════════════════════
+
+function renderDeepWork() {
+  const d = selectedDate;
+  if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
+  const blocks = APP.deepWorkBlocks[d];
+  const target = 270; // 3 x 90 min
+
+  let totalMins = 0;
+  let html = '<div class="card"><div class="card-body">';
+
+  for (let i = 0; i < 3; i++) {
+    const block = blocks[i];
+    if (block && block.endedAt) {
+      totalMins += block.minutes || 0;
+      html += '<div class="dw-block-row"><span class="dw-block-num">Block ' + (i+1) + '</span><span class="dw-block-time">' + (block.minutes || 0) + ' min</span><span class="dw-block-check">&#10003;</span></div>';
+    } else if (block && !block.endedAt) {
+      // Currently running
+      const elapsed = Math.round((Date.now() - block.startedAt) / 60000);
+      totalMins += elapsed;
+      html += '<div class="dw-block-row"><span class="dw-block-num">Block ' + (i+1) + '</span><span class="dw-block-time" style="color:var(--blue);">' + elapsed + ' min (running)</span></div>';
+    } else {
+      html += '<div class="dw-block-row"><span class="dw-block-num">Block ' + (i+1) + '</span><span class="dw-block-time">--</span></div>';
+    }
+  }
+
+  const pct = Math.min(100, Math.round((totalMins / target) * 100));
+  html += '<div class="dw-total"><span>Total deep work</span><span class="value">' + totalMins + ' / ' + target + ' min</span></div>';
+  html += '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + pct + '%;background:var(--blue);"></div></div>';
+  html += '</div></div>';
+
+  document.getElementById('dw-tracker').innerHTML = html;
 }
 
-function tickFocusTimer() {
-  if (!focusTimer) { clearInterval(focusTimerInterval); focusTimerInterval = null; return; }
-  const elapsed = Date.now() - focusTimer.startedAt;
-  const remaining = focusTimer.duration - elapsed;
-  if (remaining <= 0) {
-    // Timer completed
-    const d = todayStr();
-    const stepId = focusTimer.linkedStepId;
-    const actualMins = Math.round(focusTimer.duration / 60000);
 
-    // Record timer completion
+// ══════════════════════════════════════════════════════════════
+// LEFT COLUMN: TIMER
+// ══════════════════════════════════════════════════════════════
+
+function startTimer(type, mins, label, linkedStepId) {
+  activeTimer = {
+    startedAt: Date.now(),
+    duration: mins * 60000,
+    type: type,
+    label: label || type,
+    linkedStepId: linkedStepId || null,
+    notified15: false
+  };
+
+  // Record deep work block start
+  if (type === 'deep-work') {
+    const d = todayStr();
+    if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
+    APP.deepWorkBlocks[d].push({
+      startedAt: Date.now(),
+      endedAt: null,
+      minutes: 0,
+      tasks: []
+    });
+    saveData(APP);
+  }
+
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(tickTimer, 1000);
+  renderTimer();
+}
+
+function tickTimer() {
+  if (!activeTimer) { clearInterval(timerInterval); timerInterval = null; return; }
+
+  const elapsed = Date.now() - activeTimer.startedAt;
+  const remaining = activeTimer.duration - elapsed;
+
+  // 15-min warning for 90-min blocks
+  if (!activeTimer.notified15 && activeTimer.duration >= 5400000 && remaining <= 900000 && remaining > 870000) {
+    activeTimer.notified15 = true;
+    playGentleTone();
+    sendNotification('15 Minutes Remaining', activeTimer.label);
+  }
+
+  if (remaining <= 0) {
+    timerComplete();
+    return;
+  }
+
+  renderTimer();
+}
+
+function timerComplete() {
+  const d = todayStr();
+  const stepId = activeTimer.linkedStepId;
+  const actualMins = Math.round(activeTimer.duration / 60000);
+  const type = activeTimer.type;
+
+  // Record timer completion
+  if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
+  if (stepId) {
+    APP.timerCompletions[d][stepId] = { mins: actualMins, completedAt: Date.now() };
+    // Auto-check linked flow step
+    if (APP.flow[d] && !APP.flow[d][stepId]) {
+      APP.flow[d][stepId] = true;
+    }
+  }
+
+  // Record deep work block end
+  if (type === 'deep-work') {
+    if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
+    const running = APP.deepWorkBlocks[d].find(b => !b.endedAt);
+    if (running) {
+      running.endedAt = Date.now();
+      running.minutes = actualMins;
+    }
+  }
+
+  // Record timer history
+  if (!APP.timerHistory[d]) APP.timerHistory[d] = [];
+  APP.timerHistory[d].push({
+    type: type,
+    startedAt: activeTimer.startedAt,
+    endedAt: Date.now(),
+    minutes: actualMins
+  });
+
+  saveData(APP);
+
+  // Sound + notification
+  playChime();
+  sendNotification('Timer Complete', activeTimer.label + ' -- ' + actualMins + ' minutes');
+
+  activeTimer = null;
+  clearInterval(timerInterval);
+  timerInterval = null;
+
+  render();
+}
+
+function stopTimer() {
+  if (!activeTimer) return;
+  const elapsed = Date.now() - activeTimer.startedAt;
+  const actualMins = Math.round(elapsed / 60000);
+  const stepId = activeTimer.linkedStepId;
+  const type = activeTimer.type;
+  const d = todayStr();
+
+  // Record partial completion
+  if (actualMins > 0) {
     if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
-    if (stepId) {
-      APP.timerCompletions[d][stepId] = { mins: actualMins, completedAt: Date.now() };
-      // Auto-check the linked flow step
-      if (APP.flow[d] && !APP.flow[d][stepId]) {
-        APP.flow[d][stepId] = true;
-        const step = FLOW_STEPS.find(s => s.id === stepId);
-        syncCompletion(d, stepId, step ? step.label : stepId, true);
+    if (stepId) APP.timerCompletions[d][stepId] = { mins: actualMins, completedAt: Date.now() };
+
+    if (type === 'deep-work') {
+      if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
+      const running = APP.deepWorkBlocks[d].find(b => !b.endedAt);
+      if (running) {
+        running.endedAt = Date.now();
+        running.minutes = actualMins;
       }
     }
+
+    if (!APP.timerHistory[d]) APP.timerHistory[d] = [];
+    APP.timerHistory[d].push({ type: type, startedAt: activeTimer.startedAt, endedAt: Date.now(), minutes: actualMins });
 
     saveData(APP);
-    focusTimer = null;
-    clearInterval(focusTimerInterval);
-    focusTimerInterval = null;
-    renderFlow();
   }
-  renderFocusBlock();
+
+  activeTimer = null;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  render();
 }
 
-function stopFocusTimer() {
-  if (focusTimer) {
-    const elapsed = Date.now() - focusTimer.startedAt;
-    const actualMins = Math.round(elapsed / 60000);
-    const stepId = focusTimer.linkedStepId;
-    const d = todayStr();
-
-    if (actualMins > 0 && stepId) {
-      if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
-      APP.timerCompletions[d][stepId] = { mins: actualMins, completedAt: Date.now() };
-
-      const step = FLOW_STEPS.find(s => s.id === stepId);
-      const targetMins = step ? step.timerMins : 30;
-
-      if (actualMins < targetMins) {
-        // Partial completion
-        showConfirm(
-          'Timer Stopped Early',
-          'You did ' + actualMins + ' of ' + targetMins + ' minutes. Mark as complete?',
-          [
-            { label: 'No', cls: 'cancel', onclick: 'closeConfirm()' },
-            { label: 'Yes, Mark Complete', cls: 'confirm', onclick: 'closeConfirm();completeFlowStep("'+stepId+'")' },
-          ]
-        );
-      }
-      saveData(APP);
-    }
-  }
-  focusTimer = null;
-  if (focusTimerInterval) { clearInterval(focusTimerInterval); focusTimerInterval = null; }
-  renderFocusBlock();
-}
-
-function getNextDeepWorkStep() {
+function getNextDeepWorkBlockNum() {
   const d = todayStr();
-  if (!APP.flow[d]) return 'dw1';
-  if (!APP.flow[d].dw1) return 'dw1';
-  if (!APP.flow[d].dw2) return 'dw2';
-  return null;
+  if (!APP.deepWorkBlocks[d]) return 1;
+  return APP.deepWorkBlocks[d].filter(b => b.endedAt).length + 1;
 }
 
-function renderFocusBlock() {
-  const el = document.getElementById('focus-block');
-  if (focusTimer) {
-    const elapsed = Date.now() - focusTimer.startedAt;
-    const remaining = Math.max(0, focusTimer.duration - elapsed);
-    const mins = Math.floor(remaining/60000);
-    const secs = Math.floor((remaining%60000)/1000);
-    const typeLabels = { 'deep-work': 'Deep Work', 'clearing': 'Task Clearing', 'treadmill': 'Treadmill Walk', 'meditation': 'Meditation' };
-    const label = typeLabels[focusTimer.type] || 'Focus';
-    const linkedStep = focusTimer.linkedStepId ? FLOW_STEPS.find(s => s.id === focusTimer.linkedStepId) : null;
-    const linkedLabel = linkedStep ? '<div class="focus-linked">Linked to: ' + linkedStep.label + '</div>' : '';
-    el.className = 'focus-block active';
-    el.innerHTML =
-      '<div class="focus-label">' + label + ': As Unto the Lord</div>' +
-      '<div class="focus-timer">' + String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0') + '</div>' +
-      '<div class="focus-sub">' + (remaining<=0?'Complete!':'Stay focused. Finish strong.') + '</div>' +
-      linkedLabel +
-      '<div class="focus-controls"><button class="focus-btn stop" onclick="stopFocusTimer()">Stop</button></div>';
-  } else {
-    const plan = APP.tomorrowPlan?.[todayStr()] || {};
-    const hint = plan.dw1 ? '<div class="focus-sub" style="margin-bottom:6px;">Planned: ' + esc(plan.dw1) + '</div>' : '';
-    const nextDW = getNextDeepWorkStep();
+function renderTimer() {
+  const el = document.getElementById('timer-card');
 
-    el.className = 'focus-block';
-    el.innerHTML =
-      '<div class="focus-label">Start a Focus Block</div>' +
-      '<div class="focus-timer">--:--</div>' + hint +
-      '<div class="focus-controls">' +
-        '<button class="focus-btn blue" onclick="startFocusTimer(\'deep-work\',90,\'' + (nextDW || '') + '\')">Deep Work (90m)</button>' +
-        '<button class="focus-btn amber" onclick="startFocusTimer(\'clearing\',10,\'clearing\')">Clearing (10m)</button>' +
-        '<button class="focus-btn green" onclick="startFocusTimer(\'treadmill\',30,\'walk\')">Treadmill (30m)</button>' +
-        '<button class="focus-btn purple" onclick="startFocusTimer(\'meditation\',10,\'meditation\')">Meditate (10m)</button>' +
+  if (activeTimer) {
+    const elapsed = Date.now() - activeTimer.startedAt;
+    const remaining = Math.max(0, activeTimer.duration - elapsed);
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+
+    el.innerHTML = '<div class="timer-card active">' +
+      '<div class="timer-type">' + esc(activeTimer.label) + '</div>' +
+      '<div class="timer-display">' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '</div>' +
+      '<div class="timer-sub">' + (remaining <= 0 ? 'Complete!' : 'Stay focused. Finish strong.') + '</div>' +
+      (activeTimer.linkedStepId ? '<div class="timer-linked">Linked to flow step</div>' : '') +
+      '<div class="timer-buttons"><button class="timer-btn red" onclick="stopTimer()">Stop</button></div>' +
+      '</div>';
+  } else {
+    const blockNum = getNextDeepWorkBlockNum();
+    const blockLabel = blockNum <= 3 ? 'Deep Work Block ' + blockNum : 'Deep Work';
+
+    el.innerHTML = '<div class="timer-card">' +
+      '<div class="timer-type">Start a Focus Block</div>' +
+      '<div class="timer-display">--:--</div>' +
+      '<div class="timer-buttons">' +
+        '<button class="timer-btn blue" onclick="startTimer(\'deep-work\',90,\'' + blockLabel + ' (90m)\',null)">Deep Work (90m)</button>' +
+        '<button class="timer-btn green" onclick="startTimer(\'treadmill\',30,\'Treadmill Walk (30m)\',\'walk\')">Treadmill (30m)</button>' +
+        '<button class="timer-btn amber" onclick="startTimer(\'walk-break\',10,\'Walk Break (10m)\',null)">Walk Break (10m)</button>' +
+        '<button class="timer-btn purple" onclick="startTimer(\'meditation\',10,\'Meditation (10m)\',\'meditation\')">Meditate (10m)</button>' +
+        '<button class="timer-btn amber" onclick="startTimer(\'clearing\',10,\'Task Clearing (10m)\',null)">Clearing (10m)</button>' +
+      '</div>' +
       '</div>';
   }
 }
 
-// ══════════════════════════
-// SHIPS
-// ══════════════════════════
+
+// ══════════════════════════════════════════════════════════════
+// LEFT COLUMN: CATCH-UP LIST
+// ══════════════════════════════════════════════════════════════
+
+function renderCatchup() {
+  const d = selectedDate;
+  if (!APP.catchupTasks[d]) APP.catchupTasks[d] = [];
+  const tasks = APP.catchupTasks[d];
+
+  let html = '<div class="quick-input"><input type="text" id="catchup-input" placeholder="Add a task..." onkeydown="if(event.key===\'Enter\')addCatchupTask()"><button onclick="addCatchupTask()">+</button></div>';
+
+  tasks.forEach((t, i) => {
+    html += '<div class="catchup-item ' + (t.done ? 'done' : '') + '">' +
+      '<div class="catchup-check" onclick="toggleCatchup(' + i + ')">' + (t.done ? '&#10003;' : '') + '</div>' +
+      '<span class="catchup-name">' + esc(t.name) + '</span>' +
+      '<button class="catchup-del" onclick="deleteCatchup(' + i + ')">&times;</button>' +
+      '</div>';
+  });
+
+  if (tasks.length === 0) {
+    html += '<div style="font-size:11px;color:var(--text-faint);padding:6px 10px;">No tasks yet. Add small items here.</div>';
+  }
+
+  document.getElementById('catchup-container').innerHTML = html;
+}
+
+function addCatchupTask() {
+  const inp = document.getElementById('catchup-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  const d = selectedDate;
+  if (!APP.catchupTasks[d]) APP.catchupTasks[d] = [];
+  APP.catchupTasks[d].push({ id: uid(), name: name, done: false });
+  saveData(APP);
+  inp.value = '';
+  renderCatchup();
+}
+
+function toggleCatchup(idx) {
+  const d = selectedDate;
+  if (APP.catchupTasks[d] && APP.catchupTasks[d][idx]) {
+    APP.catchupTasks[d][idx].done = !APP.catchupTasks[d][idx].done;
+    saveData(APP);
+    renderCatchup();
+  }
+}
+
+function deleteCatchup(idx) {
+  const d = selectedDate;
+  if (APP.catchupTasks[d]) {
+    APP.catchupTasks[d].splice(idx, 1);
+    saveData(APP);
+    renderCatchup();
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// LEFT COLUMN: SHUTDOWN RITUAL
+// ══════════════════════════════════════════════════════════════
+
+function renderShutdown() {
+  const c = document.getElementById('shutdown-container');
+  const h = new Date().getHours();
+  const d = todayStr();
+  const isToday = selectedDate === todayStr();
+
+  if (!APP.shutdowns) APP.shutdowns = {};
+  if (!APP.tomorrowPlan) APP.tomorrowPlan = {};
+
+  // Show after 5 PM on today, or show trigger button
+  if (isToday && !APP.shutdowns[d]) {
+    if (h >= 17) {
+      renderShutdownForm(c, d);
+    } else {
+      c.innerHTML = '<div style="margin-top:16px;"><div class="section-hdr" style="border-left-color:var(--purple);">Shutdown Ritual</div>' +
+        '<button class="btn-sm outline" onclick="forceShowShutdown()" style="width:100%;">Start Shutdown Ritual</button></div>';
+    }
+  } else if (isToday && APP.shutdowns[d]) {
+    c.innerHTML = '<div style="margin-top:16px;"><div class="section-hdr" style="border-left-color:var(--purple);">Shutdown Ritual</div>' +
+      '<div class="card"><div class="card-body" style="text-align:center;color:var(--green);font-size:12px;"><i class="ph ph-check-circle" style="font-size:18px;vertical-align:middle;"></i> Shutdown complete. Rest well.</div></div></div>';
+  } else {
+    // Past day: show if completed
+    if (APP.shutdowns[d]) {
+      c.innerHTML = '<div style="margin-top:16px;"><div class="section-hdr" style="border-left-color:var(--purple);">Shutdown Ritual</div>' +
+        '<div class="card"><div class="card-body" style="text-align:center;color:var(--green);font-size:12px;">Shutdown was completed.</div></div></div>';
+    } else {
+      c.innerHTML = '';
+    }
+  }
+}
+
+function forceShowShutdown() {
+  renderShutdownForm(document.getElementById('shutdown-container'), todayStr());
+}
+
+function renderShutdownForm(container, d) {
+  const tmrw = tomorrowDate();
+  const ep = APP.tomorrowPlan[tmrw] || {};
+  const flowData = APP.flow[d] || {};
+  const done = Object.values(flowData).filter(Boolean).length;
+
+  container.innerHTML = '<div style="margin-top:16px;"><div class="section-hdr" style="border-left-color:var(--purple);">Shutdown Ritual</div>' +
+    '<div class="shutdown-card">' +
+    '<div class="shutdown-title">Shutdown Ritual</div>' +
+    '<div class="shutdown-sub">Review today. Plan tomorrow. Then rest. (' + done + '/' + FLOW_STEPS.length + ' flow steps done)</div>' +
+    '<div class="sd-field"><label>What worked today?</label><textarea id="sd-worked" placeholder="One thing that went well...">' + esc(ep.worked || '') + '</textarea></div>' +
+    '<div class="sd-field"><label>Tomorrow\'s priorities</label>' +
+    '<input type="text" id="sd-dw1" placeholder="Deep Work 1..." value="' + esc(ep.dw1 || '') + '">' +
+    '<input type="text" id="sd-dw2" placeholder="Deep Work 2..." value="' + esc(ep.dw2 || '') + '">' +
+    '</div>' +
+    '<div class="sd-field"><label>Open loops (capture so you can let go)</label><textarea id="sd-openloops" placeholder="Worries, ideas, to-dos...">' + esc(ep.openLoops || '') + '</textarea></div>' +
+    '<div class="sd-field"><label>App feedback (what to improve)</label><textarea id="sd-feedback" placeholder="Anything about this tool...">' + esc(ep.feedback || '') + '</textarea></div>' +
+    '<div class="btn-row" style="margin-top:8px;"><button class="btn-sm purple" onclick="completeShutdown()">Shutdown Complete</button></div>' +
+    '</div></div>';
+}
+
+function completeShutdown() {
+  const d = todayStr();
+  const tmrw = tomorrowDate();
+  if (!APP.shutdowns) APP.shutdowns = {};
+  if (!APP.tomorrowPlan) APP.tomorrowPlan = {};
+
+  APP.shutdowns[d] = { completedAt: Date.now() };
+  APP.tomorrowPlan[tmrw] = {
+    dw1: document.getElementById('sd-dw1')?.value || '',
+    dw2: document.getElementById('sd-dw2')?.value || '',
+    openLoops: document.getElementById('sd-openloops')?.value || '',
+    worked: document.getElementById('sd-worked')?.value || '',
+    feedback: document.getElementById('sd-feedback')?.value || ''
+  };
+  saveData(APP);
+  renderShutdown();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// CENTER COLUMN: TIMELINE
+// ══════════════════════════════════════════════════════════════
+
+function renderTimeline() {
+  const d = selectedDate;
+  const isToday = d === todayStr();
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  // Gather all events for this day
+  const items = [];
+
+  // 1. Flow steps (fixed schedule items)
+  FLOW_STEPS.forEach(step => {
+    const isDone = APP.flow[d] && APP.flow[d][step.id];
+    items.push({
+      type: 'flow',
+      time: parseTime(step.time),
+      endTime: parseTime(step.time) + (step.timerMins || 10),
+      label: step.label,
+      icon: step.icon,
+      color: step.color,
+      done: isDone,
+      stepId: step.id
+    });
+  });
+
+  // 2. Deep work blocks (dynamic)
+  const dwBlocks = APP.deepWorkBlocks[d] || [];
+  dwBlocks.forEach((block, i) => {
+    const startDt = new Date(block.startedAt);
+    const startMin = startDt.getHours() * 60 + startDt.getMinutes();
+    items.push({
+      type: 'deepwork',
+      time: startMin,
+      endTime: startMin + (block.minutes || 90),
+      label: 'Deep Work Block ' + (i + 1) + (block.endedAt ? ' (' + block.minutes + ' min)' : ' (running)'),
+      color: 'var(--blue)',
+      done: !!block.endedAt
+    });
+  });
+
+  // 3. Catch-up block at 2 PM
+  items.push({
+    type: 'flow',
+    time: 14 * 60,
+    endTime: 15 * 60,
+    label: 'Catch-Up Hour',
+    icon: 'ph-checks',
+    color: 'var(--amber)',
+    done: false,
+    virtual: true
+  });
+
+  // 4. Shutdown at 5:45 PM
+  items.push({
+    type: 'flow',
+    time: 17 * 60 + 45,
+    endTime: 18 * 60,
+    label: 'Shutdown Ritual',
+    icon: 'ph-moon-stars',
+    color: 'var(--purple)',
+    done: !!APP.shutdowns[d],
+    virtual: true
+  });
+
+  // 5. Calendar events
+  const calEvents = getEventsForDate(calendarEvents, d);
+  calEvents.forEach(evt => {
+    if (evt.dtstart.allDay) {
+      items.push({
+        type: 'calendar',
+        time: -1, // All-day at top
+        endTime: -1,
+        label: evt.summary,
+        calIdx: evt.calIdx,
+        uid: evt.uid,
+        allDay: true,
+        silenced: APP.silencedEvents[evt.uid] || false
+      });
+    } else {
+      const startMin = evt.dtstart.date.getHours() * 60 + evt.dtstart.date.getMinutes();
+      const endMin = evt.dtend ? evt.dtend.date.getHours() * 60 + evt.dtend.date.getMinutes() : startMin + 60;
+      items.push({
+        type: 'calendar',
+        time: startMin,
+        endTime: endMin,
+        label: evt.summary,
+        calIdx: evt.calIdx,
+        uid: evt.uid,
+        allDay: false,
+        silenced: APP.silencedEvents[evt.uid] || false
+      });
+    }
+  });
+
+  // Sort: all-day first, then by time
+  items.sort((a, b) => {
+    if (a.time === -1 && b.time !== -1) return -1;
+    if (a.time !== -1 && b.time === -1) return 1;
+    return a.time - b.time;
+  });
+
+  // Render
+  let html = '<div class="timeline">';
+  let nowMarkerPlaced = false;
+
+  for (const item of items) {
+    // Insert now marker
+    if (isToday && !nowMarkerPlaced && item.time >= 0 && item.time > nowMin) {
+      html += '<div class="tl-now-marker"><span class="tl-now-label">' + formatTime12(nowMin) + '</span></div>';
+      nowMarkerPlaced = true;
+    }
+
+    if (item.type === 'calendar') {
+      const cal = CALENDARS[item.calIdx] || {};
+      const cls = (cal.cls || '') +
+        (item.silenced ? ' silenced' : '') +
+        (isToday && !item.allDay && item.time <= nowMin && item.endTime > nowMin ? ' current-event' : '');
+
+      html += '<div class="tl-item ' + cls + '">';
+      html += '<div class="tl-time">';
+      if (item.allDay) {
+        html += 'ALL DAY';
+      } else {
+        html += formatTime12(item.time);
+        if (item.endTime > item.time) html += ' - ' + formatTime12(item.endTime);
+      }
+      html += '</div>';
+      html += '<div class="tl-title">';
+      html += '<span class="cal-dot" style="background:' + (cal.color || '#888') + ';"></span>';
+      html += esc(item.label);
+      if (!item.allDay) {
+        const dur = item.endTime - item.time;
+        if (dur > 0) html += '<span class="tl-duration">(' + dur + ' min)</span>';
+      }
+      html += '<button class="silence-btn" onclick="toggleSilence(\'' + esc(item.uid) + '\')" title="' + (item.silenced ? 'Unsilence' : 'Silence') + '"><i class="ph ' + (item.silenced ? 'ph-bell-slash' : 'ph-bell') + '"></i></button>';
+      html += '</div>';
+      html += '</div>';
+    } else if (item.type === 'flow' || item.type === 'deepwork') {
+      const cls = 'flow-event' + (item.done ? ' done-event' : '') +
+        (isToday && item.time <= nowMin && item.endTime > nowMin && !item.done ? ' current-event' : '');
+
+      html += '<div class="tl-item ' + cls + '">';
+      html += '<div class="tl-time">' + formatTime12(item.time) + '</div>';
+      html += '<div class="tl-title">';
+      if (item.icon) html += '<i class="ph ' + item.icon + '" style="color:' + item.color + ';font-size:14px;"></i>';
+      html += esc(item.label);
+      if (item.done) html += '<span style="color:var(--green);font-size:11px;margin-left:4px;">&#10003;</span>';
+      html += '</div>';
+      html += '</div>';
+    }
+  }
+
+  // Now marker at end if not placed
+  if (isToday && !nowMarkerPlaced) {
+    html += '<div class="tl-now-marker"><span class="tl-now-label">' + formatTime12(nowMin) + '</span></div>';
+  }
+
+  html += '</div>';
+
+  // Calendar status
+  if (calendarFetchTime > 0) {
+    const ago = Math.round((Date.now() - calendarFetchTime) / 60000);
+    html += '<div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:8px;">Calendars updated ' + (ago < 1 ? 'just now' : ago + ' min ago') + '</div>';
+  } else {
+    html += '<div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:8px;">Loading calendars...</div>';
+  }
+
+  document.getElementById('timeline-container').innerHTML = html;
+}
+
+function toggleSilence(uid) {
+  if (!APP.silencedEvents) APP.silencedEvents = {};
+  APP.silencedEvents[uid] = !APP.silencedEvents[uid];
+  if (!APP.silencedEvents[uid]) delete APP.silencedEvents[uid];
+  saveData(APP);
+  renderTimeline();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// MEETING NOTIFICATIONS
+// ══════════════════════════════════════════════════════════════
+
+function checkMeetingNotifications() {
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const todayEvents = getEventsForDate(calendarEvents, todayStr());
+
+  todayEvents.forEach(evt => {
+    if (evt.dtstart.allDay) return;
+    if (APP.silencedEvents && APP.silencedEvents[evt.uid]) return;
+
+    const startMin = evt.dtstart.date.getHours() * 60 + evt.dtstart.date.getMinutes();
+    const diff = startMin - nowMin;
+
+    // 15-min warning
+    const key15 = evt.uid + '-15';
+    if (diff >= 14 && diff <= 16 && !notifiedMeetings[key15]) {
+      notifiedMeetings[key15] = true;
+      playGentleTone();
+      sendNotification('Meeting in 15 min', evt.summary);
+    }
+
+    // 2-min warning
+    const key2 = evt.uid + '-2';
+    if (diff >= 1 && diff <= 3 && !notifiedMeetings[key2]) {
+      notifiedMeetings[key2] = true;
+      playUrgentTone();
+      sendNotification('Meeting in 2 min', evt.summary);
+    }
+  });
+}
+
+// Check every 30 seconds
+setInterval(checkMeetingNotifications, 30000);
+
+
+// ══════════════════════════════════════════════════════════════
+// RIGHT COLUMN: VP SALES SCORECARD
+// ══════════════════════════════════════════════════════════════
+
+function getCurrentWeekId() {
+  const d = new Date();
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return d.getFullYear() + '-W' + String(weekNum).padStart(2, '0');
+}
+
+function renderScorecard() {
+  const weekId = getCurrentWeekId();
+  if (!APP.salesMetrics[weekId]) APP.salesMetrics[weekId] = { outreach: 0, pipeline: 0, followups: 0 };
+  const m = APP.salesMetrics[weekId];
+
+  // Count meetings from calendar
+  const todayEvents = getEventsForDate(calendarEvents, todayStr());
+  const weekMeetings = todayEvents.filter(e => !e.dtstart.allDay).length; // Approximate
+
+  const outPct = Math.min(100, Math.round((m.outreach / 10) * 100));
+
+  let html = '';
+
+  // Outreach
+  html += '<div class="metric-card"><div class="metric-info"><div class="metric-label">Outreach Contacts</div><div class="metric-value">' + m.outreach + '<span style="font-size:12px;color:var(--text-dim);font-weight:400;"> / 10</span></div>' +
+    '<div class="metric-progress"><div class="progress-bar"><div class="progress-bar-fill" style="width:' + outPct + '%;background:var(--teal);"></div></div></div>' +
+    '</div><input type="number" class="metric-input" value="' + m.outreach + '" min="0" onchange="updateMetric(\'outreach\',this.value)"></div>';
+
+  // Pipeline
+  html += '<div class="metric-card"><div class="metric-info"><div class="metric-label">Pipeline Value</div><div class="metric-value">$' + (m.pipeline / 1000000).toFixed(1) + 'M</div></div>' +
+    '<input type="number" class="metric-input" value="' + m.pipeline + '" step="100000" onchange="updateMetric(\'pipeline\',this.value)" style="width:100px;font-size:14px;"></div>';
+
+  // Follow-ups
+  html += '<div class="metric-card"><div class="metric-info"><div class="metric-label">Follow-ups Due</div><div class="metric-value">' + m.followups + '</div></div>' +
+    '<input type="number" class="metric-input" value="' + m.followups + '" min="0" onchange="updateMetric(\'followups\',this.value)"></div>';
+
+  // Meetings
+  html += '<div class="metric-card"><div class="metric-info"><div class="metric-label">Meetings Today</div><div class="metric-value">' + weekMeetings + '</div><div class="metric-sub">auto-counted from calendar</div></div></div>';
+
+  document.getElementById('scorecard-container').innerHTML = html;
+}
+
+function updateMetric(key, val) {
+  const weekId = getCurrentWeekId();
+  if (!APP.salesMetrics[weekId]) APP.salesMetrics[weekId] = { outreach: 0, pipeline: 0, followups: 0 };
+  APP.salesMetrics[weekId][key] = parseFloat(val) || 0;
+  saveData(APP);
+  renderScorecard();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// RIGHT COLUMN: SHIPS
+// ══════════════════════════════════════════════════════════════
+
 function renderShips() {
-  const weekOf = getWeekOf(); const cs = APP.ships.filter(s=>s.weekOf===weekOf);
+  const weekOf = getWeekOf();
+  const cs = APP.ships.filter(s => s.weekOf === weekOf);
+  const shipped = cs.filter(s => s.status === 'shipped').length;
+  const total = cs.length || 3;
+
   document.getElementById('ships-count').textContent = cs.length + '/3';
+
+  // Batting average
+  const fw = APP.weekHistory.slice(-4);
+  let rs = shipped, rt = total;
+  fw.forEach(w => { rs += w.shipped; rt += w.total; });
+  const rolling = rt > 0 ? Math.round(rs / rt * 100) : 0;
+
+  document.getElementById('ships-batting').innerHTML =
+    '<div class="batting-avg">' +
+    '<div class="batting-stat"><div class="val">' + shipped + '/' + total + '</div><div class="lbl">This Week</div></div>' +
+    '<div class="batting-stat"><div class="val">' + rolling + '%</div><div class="lbl">4-Week Avg</div></div>' +
+    '</div>';
+
+  // Ship cards
   let html = '';
   cs.forEach(s => {
-    const icon = s.status==='shipped'?'&#10003;':s.status==='in-progress'?'&#9679;':'';
-    html += '<div class="ship-card '+(s.status==='shipped'?'shipped':'')+'" onclick="cycleShip(\''+s.id+'\')"><div class="ship-status '+s.status+'">'+icon+'</div><div class="ship-info"><div class="ship-name">'+esc(s.name)+'</div><div class="ship-meta"><span class="ship-category '+s.category+'">'+s.category+'</span></div></div><div style="display:flex;gap:4px"><button class="ship-btn" onclick="event.stopPropagation();editShip(\''+s.id+'\')" title="Edit">&#9998;</button><button class="ship-btn delete" onclick="event.stopPropagation();deleteShip(\''+s.id+'\')">&#10005;</button></div></div>';
+    const icon = s.status === 'shipped' ? '&#10003;' : s.status === 'in-progress' ? '&#9679;' : '';
+    html += '<div class="ship-card ' + (s.status === 'shipped' ? 'shipped' : '') + '" onclick="cycleShip(\'' + s.id + '\')">' +
+      '<div class="ship-status ' + s.status + '">' + icon + '</div>' +
+      '<div class="ship-info"><div class="ship-name">' + esc(s.name) + '</div>' +
+      '<div class="ship-meta"><span class="ship-cat-tag ' + s.category + '">' + s.category + '</span></div></div>' +
+      '<div class="ship-actions">' +
+      '<button class="ship-btn" onclick="event.stopPropagation();editShip(\'' + s.id + '\')" title="Edit">&#9998;</button>' +
+      '<button class="ship-btn del" onclick="event.stopPropagation();deleteShip(\'' + s.id + '\')">&#10005;</button>' +
+      '</div></div>';
   });
-  if (cs.length < 3) html += '<div class="ship-card" onclick="openShipModal()" style="justify-content:center;color:var(--text-dim);border-style:dashed;">+ Add Ship ('+(3-cs.length)+' remaining)</div>';
-  document.getElementById('ships').innerHTML = html;
+
+  if (cs.length < 3) {
+    html += '<div class="ship-card" onclick="openShipModal()" style="justify-content:center;color:var(--text-dim);border-style:dashed;">+ Add Ship (' + (3 - cs.length) + ' remaining)</div>';
+  }
+
+  document.getElementById('ships-container').innerHTML = html;
 }
-function cycleShip(id) { const s=APP.ships.find(x=>x.id===id); if(!s)return; const c=['not-started','in-progress','shipped']; s.status=c[(c.indexOf(s.status)+1)%3]; saveData(APP); renderShips(); renderScoreboard(); }
+
+function cycleShip(id) {
+  const s = APP.ships.find(x => x.id === id);
+  if (!s) return;
+  const c = ['not-started', 'in-progress', 'shipped'];
+  s.status = c[(c.indexOf(s.status) + 1) % 3];
+  saveData(APP);
+  renderShips();
+}
+
 function openShipModal(editId) {
-  const m=document.getElementById('ship-modal'),t=document.getElementById('ship-modal-title'),n=document.getElementById('ship-name-input'),c=document.getElementById('ship-cat-input');
-  if(editId){const s=APP.ships.find(x=>x.id===editId);t.textContent='Edit Ship';n.value=s.name;c.value=s.category;m.dataset.editId=editId;}
-  else{t.textContent='New Ship';n.value='';c.value='work';delete m.dataset.editId;}
-  m.classList.add('open');n.focus();
+  const m = document.getElementById('ship-modal');
+  const t = document.getElementById('ship-modal-title');
+  const n = document.getElementById('ship-name-input');
+  const c = document.getElementById('ship-cat-input');
+  if (editId) {
+    const s = APP.ships.find(x => x.id === editId);
+    t.textContent = 'Edit Ship';
+    n.value = s.name;
+    c.value = s.category;
+    m.dataset.editId = editId;
+  } else {
+    t.textContent = 'New Ship';
+    n.value = '';
+    c.value = 'work';
+    delete m.dataset.editId;
+  }
+  m.classList.add('open');
+  n.focus();
 }
-function closeShipModal(){document.getElementById('ship-modal').classList.remove('open');}
-function saveShip(){const n=document.getElementById('ship-name-input'),c=document.getElementById('ship-cat-input'),m=document.getElementById('ship-modal'),name=n.value.trim();if(!name)return;if(m.dataset.editId){const s=APP.ships.find(x=>x.id===m.dataset.editId);s.name=name;s.category=c.value;}else{APP.ships.push({id:uid(),name,category:c.value,status:'not-started',weekOf:getWeekOf()});}saveData(APP);closeShipModal();renderShips();renderScoreboard();}
-function editShip(id){openShipModal(id);}
-function deleteShip(id){APP.ships=APP.ships.filter(s=>s.id!==id);saveData(APP);renderShips();renderScoreboard();}
 
-// ══════════════════════════
-// BACKLOG
-// ══════════════════════════
-function renderBacklog(){document.getElementById('backlog-count').textContent=APP.backlog.length+' items';let h='';APP.backlog.forEach(i=>{h+='<div class="backlog-item"><span class="ship-category '+i.category+'">'+i.category+'</span><span class="backlog-name">'+esc(i.name)+'</span><div style="display:flex;gap:4px"><button class="ship-btn" onclick="promoteToShip(\''+i.id+'\')" title="Promote">&#8593;</button><button class="ship-btn delete" onclick="deleteBacklog(\''+i.id+'\')">&#10005;</button></div></div>';});if(!APP.backlog.length)h='<div class="backlog-item" style="color:var(--text-dim);justify-content:center;">No items yet</div>';document.getElementById('backlog').innerHTML=h;}
-function addBacklogItem(cat){const inp=document.getElementById('backlog-input'),name=inp.value.trim();if(!name)return;APP.backlog.push({id:uid(),name,category:cat,createdAt:todayStr()});saveData(APP);inp.value='';renderBacklog();}
-function deleteBacklog(id){APP.backlog=APP.backlog.filter(b=>b.id!==id);saveData(APP);renderBacklog();}
-function promoteToShip(id){const item=APP.backlog.find(b=>b.id===id);if(!item)return;const cs=APP.ships.filter(s=>s.weekOf===getWeekOf());if(cs.length>=3){showConfirm('Ships Full','3 ships max. Finish or remove one first.',[{label:'OK',cls:'confirm',onclick:'closeConfirm()'}]);return;}APP.ships.push({id:uid(),name:item.name,category:item.category,status:'not-started',weekOf:getWeekOf()});APP.backlog=APP.backlog.filter(b=>b.id!==id);saveData(APP);renderShips();renderBacklog();renderScoreboard();}
+function closeShipModal() { document.getElementById('ship-modal').classList.remove('open'); }
 
-// ══════════════════════════
-// GOALS
-// ══════════════════════════
-function renderGoals(){let h='<div style="margin-bottom:6px;font-size:11px;color:var(--blue);font-weight:600;">WORK</div>';GOALS.work.forEach(g=>{h+='<div class="goal-item">'+esc(g)+'</div>';});h+='<div style="margin:10px 0 6px;font-size:11px;color:var(--green);font-weight:600;">PERSONAL</div>';GOALS.personal.forEach(g=>{h+='<div class="goal-item">'+esc(g)+'</div>';});document.getElementById('goals').innerHTML=h;}
-
-// ══════════════════════════
-// MORNING COMMIT
-// ══════════════════════════
-const ANCHOR_BLOCKS = [
-  { time:"6:00 AM", label:"Quiet Time", type:"faith" },
-  { time:"6:30 AM", label:"Treadmill Walk + Light", type:"health" },
-  { time:"10:00 AM", label:"Meditation (10 min)", type:"faith" },
-  { time:"10:10 AM", label:"Strategy Planning", type:"deepwork" },
-  { time:"10:20 AM", label:"Deep Work Block 1", type:"deepwork" },
-  { time:"11:50 AM", label:"Task Clearing (10 min)", type:"chore" },
-  { time:"12:00 PM", label:"Deep Work Block 2", type:"deepwork" },
-  { time:"6:00 PM", label:"Family Time", type:"family" },
-];
-
-function renderMorningCommit(){
-  const c=document.getElementById('morning-commit-container'),h=new Date().getHours(),d=todayStr();
-  if(!APP.morningCommit)APP.morningCommit={};if(!APP.tomorrowPlan)APP.tomorrowPlan={};
-  if(h<10&&!APP.morningCommit[d]&&selectedDate===todayStr()){
-    const plan=APP.tomorrowPlan[d]||{},r=getReadingForDate(d);
-    const colors={faith:'rgba(188,140,255,0.1)',health:'var(--green-bg)',deepwork:'var(--blue-bg)',family:'rgba(248,81,73,0.1)',chore:'var(--amber-bg)'};
-    let blocks='';ANCHOR_BLOCKS.forEach(b=>{
-      let hint='';
-      if(b.label==='Quiet Time')hint=r.book+' '+r.chapter+' (SOAP)';
-      else if(b.label.includes('Deep Work 1')&&plan.dw1)hint=plan.dw1;
-      else if(b.label.includes('Deep Work 2')&&plan.dw2)hint=plan.dw2;
-      else if(b.label==='Family Time'&&plan.family)hint=plan.family;
-      blocks+='<div class="mc-block" style="background:'+colors[b.type]+'"><span class="mc-time">'+b.time+'</span><span>'+b.label+'</span>'+(hint?'<span class="mc-start">'+esc(hint)+'</span>':'')+'</div>';
-    });
-    let loops='';if(plan.openLoops)loops='<div style="font-size:11px;color:var(--text-dim);margin-top:8px;padding:6px 10px;background:var(--bg);border-radius:var(--radius);text-align:left;"><span style="color:var(--amber);font-weight:600;">Open loops:</span> '+esc(plan.openLoops)+'</div>';
-    const src=plan.dw1?'Planned last night. No decisions needed.':'Commit to these. Everything else flexes.';
-    c.innerHTML='<div class="morning-commit"><div class="mc-title">Today\'s Anchor Blocks</div><div class="mc-sub">'+src+'</div><div class="mc-blocks">'+blocks+'</div>'+loops+'<button class="focus-btn blue" onclick="commitMorning()" style="margin-top:10px">I commit to today</button></div>';
-  } else c.innerHTML='';
+function saveShip() {
+  const n = document.getElementById('ship-name-input');
+  const c = document.getElementById('ship-cat-input');
+  const m = document.getElementById('ship-modal');
+  const name = n.value.trim();
+  if (!name) return;
+  if (m.dataset.editId) {
+    const s = APP.ships.find(x => x.id === m.dataset.editId);
+    if (s) { s.name = name; s.category = c.value; }
+  } else {
+    APP.ships.push({ id: uid(), name, category: c.value, status: 'not-started', weekOf: getWeekOf() });
+  }
+  saveData(APP);
+  closeShipModal();
+  renderShips();
 }
-function commitMorning(){if(!APP.morningCommit)APP.morningCommit={};APP.morningCommit[todayStr()]=true;saveData(APP);renderMorningCommit();}
 
-// ══════════════════════════
-// SHUTDOWN RITUAL
-// ══════════════════════════
-function renderShutdownRitual(){
-  const c=document.getElementById('evening-review-container'),h=new Date().getHours(),d=todayStr();
-  if(!APP.shutdowns)APP.shutdowns={};if(!APP.tomorrowPlan)APP.tomorrowPlan={};
-  if(h>=17&&!APP.shutdowns[d]&&selectedDate===todayStr()){
-    const fd=APP.flow[d]||{};const done=Object.values(fd).filter(Boolean).length;
-    const weekOf=getWeekOf(),cs=APP.ships.filter(s=>s.weekOf===weekOf);
-    const shipped=cs.filter(s=>s.status==='shipped').length,ip=cs.filter(s=>s.status==='in-progress').length;
-    const tmrw=tomorrowDate(),ep=APP.tomorrowPlan[tmrw]||{};
-    c.innerHTML='<div class="shutdown"><div class="sd-title">Shutdown Ritual</div><div class="sd-sub">Review today. Plan tomorrow. Then rest.</div>'+
-      '<div class="sd-summary">Today: '+done+'/'+FLOW_STEPS.length+' flow steps | Ships: '+shipped+' shipped, '+ip+' in progress</div>'+
-      '<div class="sd-section"><div class="sd-label">What worked today?</div><textarea id="sd-worked" placeholder="One thing that went well...">'+(ep.worked||'')+'</textarea></div>'+
-      '<div class="sd-section"><div class="sd-label">Tomorrow\'s Priorities</div>'+
-        '<div class="sd-plan-row"><span class="sd-block-label">Deep Work 1:</span><input type="text" id="sd-dw1" placeholder="What will you work on?" value="'+esc(ep.dw1||'')+'"></div>'+
-        '<div class="sd-plan-row"><span class="sd-block-label">Deep Work 2:</span><input type="text" id="sd-dw2" placeholder="Next priority..." value="'+esc(ep.dw2||'')+'"></div>'+
-        '<div class="sd-plan-row"><span class="sd-block-label">Top Chore:</span><input type="text" id="sd-chore" placeholder="One chore..." value="'+esc(ep.chore||'')+'"></div>'+
-        '<div class="sd-plan-row"><span class="sd-block-label">Family Focus:</span><input type="text" id="sd-family" placeholder="Something intentional..." value="'+esc(ep.family||'')+'"></div>'+
-      '</div>'+
-      '<div class="sd-section"><div class="sd-label">Open loops (capture so you can let go)</div><textarea id="sd-openloops" placeholder="Worries, ideas, to-dos...">'+(ep.openLoops||'')+'</textarea></div>'+
-      '<div class="sd-actions"><button class="focus-btn purple" onclick="completeShutdown()">Shutdown Complete</button></div></div>';
-  } else c.innerHTML='';
+function editShip(id) { openShipModal(id); }
+function deleteShip(id) { APP.ships = APP.ships.filter(s => s.id !== id); saveData(APP); renderShips(); }
+
+
+// ══════════════════════════════════════════════════════════════
+// RIGHT COLUMN: QUARTERLY GOALS
+// ══════════════════════════════════════════════════════════════
+
+function renderGoals() {
+  const qId = 'q2-2026';
+  if (!APP.goalProgress[qId]) APP.goalProgress[qId] = {};
+  const gp = APP.goalProgress[qId];
+
+  let html = '<div style="margin-bottom:6px;font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px;">Work</div>';
+  GOALS.work.forEach((g, i) => {
+    const key = 'work-' + i;
+    const pct = gp[key] || 0;
+    const color = 'var(--blue)';
+    html += '<div class="goal-item"><div class="goal-text">' + esc(g) + '</div>' +
+      '<div class="goal-progress-row">' +
+      '<div class="goal-bar" onclick="adjustGoal(\'' + key + '\',event)"><div class="goal-bar-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+      '<span class="goal-pct">' + pct + '%</span>' +
+      '</div></div>';
+  });
+
+  html += '<div style="margin:10px 0 6px;font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;">Personal</div>';
+  GOALS.personal.forEach((g, i) => {
+    const key = 'personal-' + i;
+    const pct = gp[key] || 0;
+    const color = 'var(--green)';
+    html += '<div class="goal-item"><div class="goal-text">' + esc(g) + '</div>' +
+      '<div class="goal-progress-row">' +
+      '<div class="goal-bar" onclick="adjustGoal(\'' + key + '\',event)"><div class="goal-bar-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+      '<span class="goal-pct">' + pct + '%</span>' +
+      '</div></div>';
+  });
+
+  document.getElementById('goals-container').innerHTML = html;
 }
-function completeShutdown(){if(!APP.shutdowns)APP.shutdowns={};if(!APP.tomorrowPlan)APP.tomorrowPlan={};const t=tomorrowDate();APP.shutdowns[todayStr()]={completedAt:Date.now()};APP.tomorrowPlan[t]={dw1:document.getElementById('sd-dw1')?.value||'',dw2:document.getElementById('sd-dw2')?.value||'',chore:document.getElementById('sd-chore')?.value||'',family:document.getElementById('sd-family')?.value||'',openLoops:document.getElementById('sd-openloops')?.value||'',worked:document.getElementById('sd-worked')?.value||''};saveData(APP);renderShutdownRitual();}
 
-// ══════════════════════════
-// FRIDAY REVIEW
-// ══════════════════════════
-function renderFridayReview(){const c=document.getElementById('friday-review-container'),wk=getWeekId();if(isFriday()&&!APP.fridayReviewed?.[wk]&&selectedDate===todayStr()){c.innerHTML='<div class="friday-review"><div class="fr-question">Did I steward my time faithfully this week?</div><div style="display:flex;gap:6px;justify-content:center;"><button class="focus-btn purple" onclick="completeFridayReview()">Score This Week</button></div></div>';}else c.innerHTML='';}
-function completeFridayReview(){const wo=getWeekOf(),wk=getWeekId(),cs=APP.ships.filter(s=>s.weekOf===wo),sh=cs.filter(s=>s.status==='shipped').length;APP.weekHistory.push({weekOf:wo,shipped:sh,total:cs.length||3});if(!APP.fridayReviewed)APP.fridayReviewed={};APP.fridayReviewed[wk]=true;saveData(APP);renderScoreboard();renderFridayReview();}
+function adjustGoal(key, event) {
+  const qId = 'q2-2026';
+  if (!APP.goalProgress[qId]) APP.goalProgress[qId] = {};
+  const bar = event.currentTarget;
+  const rect = bar.getBoundingClientRect();
+  const pct = Math.round(((event.clientX - rect.left) / rect.width) * 100);
+  APP.goalProgress[qId][key] = Math.max(0, Math.min(100, pct));
+  saveData(APP);
+  renderGoals();
+}
 
-// ══════════════════════════
-// IDENTITY
-// ══════════════════════════
-function renderIdentityMessage(){const el=document.getElementById('identity-msg');const dates=Object.keys(APP.flow||{}).sort();if(dates.length<7){el.innerHTML='';return;}let good=0;dates.slice(-28).forEach(d=>{const f=APP.flow[d];if(!f)return;const done=Object.values(f).filter(Boolean).length;if(done>=Math.ceil(FLOW_STEPS.length/2))good++;});const wks=Math.floor(good/5);if(wks>=4)el.innerHTML='<div class="identity-msg">'+wks+' weeks of faithful stewardship. This is who you are now.</div>';else if(wks>=2)el.innerHTML='<div class="identity-msg">'+wks+' weeks of showing up. Building the pattern.</div>';else el.innerHTML='';}
 
-// ══════════════════════════
-// WEEK ROLLOVER
-// ══════════════════════════
-function checkWeekRollover(){if(!isMonday())return;const wo=getWeekOf();if(!APP.ships.some(s=>s.weekOf===wo)){const lw=new Date();lw.setDate(lw.getDate()-7);const lwo=getWeekOf(lw),ls=APP.ships.filter(s=>s.weekOf===lwo);if(ls.length>0&&!APP.weekHistory.some(w=>w.weekOf===lwo)){APP.weekHistory.push({weekOf:lwo,shipped:ls.filter(s=>s.status==='shipped').length,total:ls.length});saveData(APP);}}}
+// ══════════════════════════════════════════════════════════════
+// RIGHT COLUMN: BACKLOG
+// ══════════════════════════════════════════════════════════════
 
-// ══════════════════════════
-// DATA EXPORT/IMPORT
-// ══════════════════════════
-function exportData(){const blob=new Blob([JSON.stringify(APP,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='stewardship-os-backup-'+todayStr()+'.json';a.click();}
-function importData(){const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{APP=JSON.parse(ev.target.result);saveData(APP);render();}catch(err){showConfirm('Import Error','Invalid file format.',[{label:'OK',cls:'confirm',onclick:'closeConfirm()'}]);}};r.readAsText(f);};inp.click();}
+function renderBacklog() {
+  document.getElementById('backlog-count').textContent = APP.backlog.length + ' items';
 
-// ══════════════════════════
-// COLLAPSIBLES
-// ══════════════════════════
-document.querySelectorAll('.collapsible-header').forEach(h=>{h.addEventListener('click',()=>{const b=document.getElementById(h.dataset.target);h.classList.toggle('open');b.classList.toggle('open');});});
+  let html = '<div class="quick-input"><input type="text" id="backlog-input" placeholder="What needs to get done?" onkeydown="if(event.key===\'Enter\')addBacklogItem(\'work\')"></div>';
+  html += '<div class="quick-add-cats">' +
+    '<button class="cat-btn work" onclick="addBacklogItem(\'work\')">+ Work</button>' +
+    '<button class="cat-btn personal" onclick="addBacklogItem(\'personal\')">+ Personal</button>' +
+    '<button class="cat-btn chore" onclick="addBacklogItem(\'chore\')">+ Chore</button>' +
+    '</div>';
 
-// ══════════════════════════
-// KEYBOARD
-// ══════════════════════════
-document.getElementById('backlog-input').addEventListener('keydown',e=>{if(e.key==='Enter')addBacklogItem('work');});
-document.getElementById('ship-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveShip();if(e.key==='Escape')closeShipModal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeShipModal();closeConfirm();}});
+  APP.backlog.forEach(item => {
+    html += '<div class="backlog-item">' +
+      '<span class="ship-cat-tag ' + item.category + '">' + item.category + '</span>' +
+      '<span class="backlog-name">' + esc(item.name) + '</span>' +
+      '<div class="backlog-actions">' +
+      '<button class="ship-btn" onclick="promoteToShip(\'' + item.id + '\')" title="Promote to Ship">&#8593;</button>' +
+      '<button class="ship-btn del" onclick="deleteBacklog(\'' + item.id + '\')">&#10005;</button>' +
+      '</div></div>';
+  });
 
-// ══════════════════════════
-// INIT
-// ══════════════════════════
-function render(){
-  checkWeekRollover();
-  renderMorningCommit();
-  renderVerse();
-  renderDateCarousel();
-  renderReading();
-  renderHeader();
-  renderIdentityMessage();
-  renderScoreboard();
-  renderFlow();
-  renderFocusBlock();
+  if (APP.backlog.length === 0) {
+    html += '<div style="font-size:11px;color:var(--text-faint);padding:8px 10px;text-align:center;">No items yet</div>';
+  }
+
+  document.getElementById('backlog-container').innerHTML = html;
+}
+
+function addBacklogItem(cat) {
+  const inp = document.getElementById('backlog-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  APP.backlog.push({ id: uid(), name, category: cat, createdAt: todayStr() });
+  saveData(APP);
+  inp.value = '';
+  renderBacklog();
+}
+
+function deleteBacklog(id) {
+  APP.backlog = APP.backlog.filter(b => b.id !== id);
+  saveData(APP);
+  renderBacklog();
+}
+
+function promoteToShip(id) {
+  const item = APP.backlog.find(b => b.id === id);
+  if (!item) return;
+  const cs = APP.ships.filter(s => s.weekOf === getWeekOf());
+  if (cs.length >= 3) {
+    showConfirmDialog('Ships Full', 'You already have 3 ships this week. Finish or remove one first.', [
+      { label: 'OK', cls: 'primary', onclick: 'closeConfirmDialog()' }
+    ]);
+    return;
+  }
+  APP.ships.push({ id: uid(), name: item.name, category: item.category, status: 'not-started', weekOf: getWeekOf() });
+  APP.backlog = APP.backlog.filter(b => b.id !== id);
+  saveData(APP);
   renderShips();
   renderBacklog();
-  renderGoals();
-  renderShutdownRitual();
-  renderFridayReview();
 }
 
+
+// ══════════════════════════════════════════════════════════════
+// STRATEGY PLANNER MODAL
+// ══════════════════════════════════════════════════════════════
+
+let stratTempPlan = []; // Temporary plan state while modal is open
+
+function openStrategyModal() {
+  const d = selectedDate;
+  if (!APP.strategy[d]) APP.strategy[d] = { planned: [] };
+  stratTempPlan = JSON.parse(JSON.stringify(APP.strategy[d].planned || []));
+  renderStrategyBlocks();
+  document.getElementById('strategy-modal').classList.add('open');
+}
+
+function closeStrategyModal() {
+  document.getElementById('strategy-modal').classList.remove('open');
+}
+
+function renderStrategyBlocks() {
+  let html = '';
+  for (let b = 1; b <= 3; b++) {
+    const tasks = stratTempPlan.filter(t => t.blockNum === b);
+    const usedMins = tasks.reduce((s, t) => s + (t.minutes || 0), 0);
+    const remainMins = 90 - usedMins;
+
+    html += '<div class="strat-block">';
+    html += '<div class="strat-block-hdr"><span class="block-name">Block ' + b + '</span><span class="block-cap">' + usedMins + '/90 min (' + remainMins + ' remaining)</span></div>';
+    tasks.forEach((t, i) => {
+      html += '<div class="strat-task"><span>' + esc(t.name) + '</span><span style="color:var(--text-dim);font-size:10px;">' + t.minutes + 'm</span>' +
+        '<button class="ship-btn del" onclick="removeStratTask(' + stratTempPlan.indexOf(t) + ')" style="width:18px;height:18px;font-size:9px;">&#10005;</button></div>';
+    });
+    if (tasks.length === 0) {
+      html += '<div style="font-size:10px;color:var(--text-faint);padding:4px 0;">No tasks assigned</div>';
+    }
+    html += '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + Math.min(100, Math.round(usedMins / 90 * 100)) + '%;background:var(--blue);"></div></div>';
+    html += '</div>';
+  }
+  document.getElementById('strategy-blocks').innerHTML = html;
+}
+
+function addStratTask() {
+  const name = document.getElementById('strat-new-task').value.trim();
+  const mins = parseInt(document.getElementById('strat-new-mins').value) || 30;
+  const block = parseInt(document.getElementById('strat-new-block').value) || 1;
+  if (!name) return;
+  stratTempPlan.push({ name, minutes: mins, blockNum: block });
+  document.getElementById('strat-new-task').value = '';
+  document.getElementById('strat-new-mins').value = '';
+  renderStrategyBlocks();
+}
+
+function removeStratTask(idx) {
+  stratTempPlan.splice(idx, 1);
+  renderStrategyBlocks();
+}
+
+function saveStrategyPlan() {
+  const d = selectedDate;
+  if (!APP.strategy[d]) APP.strategy[d] = {};
+  APP.strategy[d].planned = stratTempPlan;
+  saveData(APP);
+  closeStrategyModal();
+  renderFlow();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// CONFIRM DIALOG
+// ══════════════════════════════════════════════════════════════
+
+function showConfirmDialog(title, message, buttons) {
+  const c = document.getElementById('confirm-content');
+  let btns = '<div class="modal-actions">';
+  buttons.forEach(b => {
+    btns += '<button class="modal-btn ' + (b.cls || '') + '" onclick="' + b.onclick + '">' + b.label + '</button>';
+  });
+  btns += '</div>';
+  c.innerHTML = '<h3>' + esc(title) + '</h3><p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">' + esc(message) + '</p>' + btns;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeConfirmDialog() {
+  document.getElementById('confirm-modal').classList.remove('open');
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// COLLAPSIBLES
+// ══════════════════════════════════════════════════════════════
+
+function toggleCollapse(id) {
+  const hdr = document.getElementById(id + '-hdr');
+  const body = document.getElementById(id + '-body');
+  hdr.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// WEEK ROLLOVER
+// ══════════════════════════════════════════════════════════════
+
+function checkWeekRollover() {
+  if (!isMonday()) return;
+  const wo = getWeekOf();
+  if (!APP.ships.some(s => s.weekOf === wo)) {
+    const lw = new Date();
+    lw.setDate(lw.getDate() - 7);
+    const lwo = getWeekOf(lw);
+    const ls = APP.ships.filter(s => s.weekOf === lwo);
+    if (ls.length > 0 && !APP.weekHistory.some(w => w.weekOf === lwo)) {
+      APP.weekHistory.push({ weekOf: lwo, shipped: ls.filter(s => s.status === 'shipped').length, total: ls.length });
+      saveData(APP);
+    }
+  }
+}
+
+// Friday review
+function checkFridayReview() {
+  if (!isFriday()) return;
+  const wk = getWeekId();
+  if (!APP.fridayReviewed[wk] && selectedDate === todayStr()) {
+    // Auto-trigger could go here, or use the shutdown ritual
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// DATA EXPORT / IMPORT
+// ══════════════════════════════════════════════════════════════
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(APP, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'stewardship-os-backup-' + todayStr() + '.json';
+  a.click();
+}
+
+function importData() {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.json';
+  inp.onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      try {
+        APP = JSON.parse(ev.target.result);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(APP));
+        syncFullBackup();
+        render();
+      } catch (err) {
+        showConfirmDialog('Import Error', 'Invalid file format.', [{ label: 'OK', cls: 'primary', onclick: 'closeConfirmDialog()' }]);
+      }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════════════════════
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeShipModal();
+    closeStrategyModal();
+    closeConfirmDialog();
+  }
+});
+
+document.getElementById('ship-name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveShip();
+  if (e.key === 'Escape') closeShipModal();
+});
+
+
+// ══════════════════════════════════════════════════════════════
+// MAIN RENDER
+// ══════════════════════════════════════════════════════════════
+
+function render() {
+  checkWeekRollover();
+  renderTopBar();
+  renderFlow();
+  renderDeepWork();
+  renderTimer();
+  renderCatchup();
+  renderShutdown();
+  renderTimeline();
+  renderScorecard();
+  renderShips();
+  renderGoals();
+  renderBacklog();
+  updateSyncStatus();
+}
+
+// Initial render
 render();
+
+// Restore from cloud if localStorage is empty
 tryRestoreFromCloud();
-setInterval(()=>{ renderFlow(); }, 60000);
+
+// Fetch calendars on load
+fetchCalendars();
+
+// Refresh flow and timeline every minute
+setInterval(() => {
+  if (selectedDate === todayStr()) {
+    renderFlow();
+    renderTimeline();
+    renderDeepWork();
+    updateSyncStatus();
+  }
+}, 60000);
+
+// Sync status updater
+setInterval(updateSyncStatus, 60000);
+
 </script>
 </body>
 </html>
