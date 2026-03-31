@@ -986,6 +986,10 @@ body {
     border-right: none;
     border-bottom: 1px solid var(--border-subtle);
   }
+  /* Schedule first on mobile */
+  #col-center { order: -1; }
+  #col-left { order: 0; }
+  #col-right { order: 1; }
   .top-bar { padding: 10px 16px; }
   .verse-area { display: none; }
 }
@@ -1025,9 +1029,29 @@ body {
   </div>
 
   <!-- ======== CENTER COLUMN ======== -->
-  <div class="col" id="col-center">
-    <div class="section-hdr" style="border-left-color: var(--blue);">Today's Schedule</div>
-    <div id="timeline-container"></div>
+  <div class="col" id="col-center" style="display:flex;flex-direction:column;">
+    <div style="flex:1;overflow-y:auto;" id="schedule-scroll">
+      <div class="section-hdr" style="border-left-color: var(--blue);">Today's Schedule</div>
+      <div id="timeline-container"></div>
+    </div>
+    <div id="notebook-panel" style="border-top:1px solid var(--border);position:relative;">
+      <div id="notebook-resize" style="height:6px;cursor:ns-resize;background:var(--border-subtle);display:flex;align-items:center;justify-content:center;" onmousedown="startNotebookResize(event)">
+        <div style="width:40px;height:3px;background:var(--border);border-radius:2px;"></div>
+      </div>
+      <div class="section-hdr" style="border-left-color: var(--amber);margin-top:4px;cursor:pointer;" onclick="toggleNotebook()">
+        Running Notebook <span class="toggle-icon" id="notebook-chevron">&#9654;</span>
+      </div>
+      <div id="notebook-body" style="display:none;">
+        <div id="notebook-setup" style="padding:8px 0;">
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Paste a Google Docs URL to embed your running notebook. Make sure the doc is set to "Anyone with the link can edit."</div>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="notebook-url-input" placeholder="https://docs.google.com/document/d/..." style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;">
+            <button class="btn-sm blue" onclick="saveNotebookUrl()">Save</button>
+          </div>
+        </div>
+        <div id="notebook-frame-container"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ======== RIGHT COLUMN ======== -->
@@ -2949,6 +2973,78 @@ function togglePastTimeline() {
     el.style.display = 'none';
     chev.innerHTML = '&#9654;';
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RUNNING NOTEBOOK
+// ══════════════════════════════════════════════════════════════
+
+let notebookOpen = false;
+let notebookHeight = 300;
+
+function toggleNotebook() {
+  notebookOpen = !notebookOpen;
+  const body = document.getElementById('notebook-body');
+  const chev = document.getElementById('notebook-chevron');
+  body.style.display = notebookOpen ? 'block' : 'none';
+  chev.innerHTML = notebookOpen ? '&#9660;' : '&#9654;';
+  renderNotebook();
+}
+
+function renderNotebook() {
+  const container = document.getElementById('notebook-frame-container');
+  const url = localStorage.getItem('stewardship-notebook-url');
+  if (!url) {
+    document.getElementById('notebook-setup').style.display = 'block';
+    container.innerHTML = '';
+    return;
+  }
+  document.getElementById('notebook-setup').style.display = 'none';
+  // Convert Google Docs URL to embed URL
+  let embedUrl = url;
+  if (url.includes('docs.google.com/document/d/')) {
+    const docId = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (docId) embedUrl = 'https://docs.google.com/document/d/' + docId[1] + '/edit?embedded=true';
+  }
+  container.innerHTML = '<iframe src="' + embedUrl + '" style="width:100%;height:' + notebookHeight + 'px;border:none;border-radius:6px;background:#fff;"></iframe>' +
+    '<div style="text-align:center;margin-top:4px;"><a style="font-size:10px;color:var(--text-faint);cursor:pointer;text-decoration:underline;" onclick="clearNotebookUrl()">Change notebook URL</a></div>';
+}
+
+function saveNotebookUrl() {
+  const url = document.getElementById('notebook-url-input')?.value?.trim();
+  if (!url) return;
+  localStorage.setItem('stewardship-notebook-url', url);
+  renderNotebook();
+}
+
+function clearNotebookUrl() {
+  localStorage.removeItem('stewardship-notebook-url');
+  document.getElementById('notebook-setup').style.display = 'block';
+  document.getElementById('notebook-frame-container').innerHTML = '';
+  document.getElementById('notebook-url-input').value = '';
+}
+
+let resizing = false;
+function startNotebookResize(e) {
+  if (!notebookOpen) return;
+  resizing = true;
+  const startY = e.clientY;
+  const startH = notebookHeight;
+  const onMove = (ev) => {
+    if (!resizing) return;
+    const delta = startY - ev.clientY;
+    notebookHeight = Math.max(150, Math.min(800, startH + delta));
+    const iframe = document.querySelector('#notebook-frame-container iframe');
+    if (iframe) iframe.style.height = notebookHeight + 'px';
+  };
+  const onUp = () => {
+    resizing = false;
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+  e.preventDefault();
 }
 
 function toggleSilence(uid) {
