@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stewardship OS — Feature Comparison</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #f0f0f0; color: #1a1a1a; line-height: 1.6; padding: 40px 24px; max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+.subtitle { color: #555; font-size: 14px; margin-bottom: 32px; }
+h2 { font-size: 20px; font-weight: 800; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #d0d0d0; }
+h3 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+th { background: #1a1a1a; color: #fff; padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 10px 14px; border-bottom: 1px solid #e0e0e0; font-size: 13px; vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8f8f8; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.tag.high { background: rgba(22,163,74,0.1); color: #16a34a; }
+.tag.med { background: rgba(202,138,4,0.1); color: #ca8a04; }
+.tag.low { background: rgba(37,99,235,0.1); color: #2563eb; }
+.tag.have { background: rgba(22,163,74,0.1); color: #16a34a; }
+.tag.missing { background: rgba(220,38,38,0.1); color: #dc2626; }
+.tag.partial { background: rgba(202,138,4,0.1); color: #ca8a04; }
+.card { background: #fff; border: 1px solid #d0d0d0; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; }
+.card h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.card p { font-size: 13px; color: #555; }
+.rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 12px; }
+.priority-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #1a1a1a; color: #fff; font-size: 11px; font-weight: 800; margin-right: 6px; }
+.insight { background: #fff; border-left: 4px solid #2563eb; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; font-size: 13px; }
+.insight strong { color: #2563eb; }
+a { color: #2563eb; }
+.back-link { display: inline-block; margin-bottom: 20px; font-size: 13px; font-weight: 600; color: #2563eb; text-decoration: none; }
+.back-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">&larr; Back to Stewardship OS</a>
+
+<h1>Stewardship OS — Feature Comparison</h1>
+<div class="subtitle">What competitors have that we should consider. Research date: March 31, 2026.</div>
+
+<div class="insight">
+<strong>Bottom line:</strong> Our SOAP Bible journal integrated with executive-grade productivity is genuinely unique — no competitor does this. Our biggest gaps are in intelligence/automation (AI rescheduling, email capture) and analytics (time tracking per deal, weekly review). The low-hanging fruit is the shutdown ritual, weekly review, and time-per-category tracking.
+</div>
+
+<h2>Competitor Landscape</h2>
+
+<table>
+<tr><th>Tool</th><th>Price</th><th>Key Differentiators</th><th>What They Have That We Don't</th></tr>
+<tr><td><strong>Sunsama</strong></td><td>$20-50/mo</td><td>Guided daily planning ritual, multi-tool task ingestion (Asana, Trello, Jira, Gmail, Slack), workload charts, time tracking per project</td><td>Shutdown ritual with guided prompts, weekly review analytics, time-per-project tracking, task import from 10+ tools</td></tr>
+<tr><td><strong>Akiflow</strong></td><td>$19-34/mo</td><td>Universal inbox from email/Slack, AI assistant "Aki", keyboard-first command bar, built-in booking links</td><td>Auto-capture tasks from email/Slack, command bar for rapid entry, scheduling links</td></tr>
+<tr><td><strong>Reclaim.ai</strong></td><td>Free-$10+/mo</td><td>AI auto-scheduling, smart habits that flex around meetings, buffer time, travel time detection, focus time defender</td><td>AI auto-rescheduling, smart habits, buffer time between meetings, focus time goals</td></tr>
+<tr><td><strong>Motion</strong></td><td>$19-34/mo</td><td>AI auto-schedules tasks with deadlines, Kanban/Gantt views, AI meeting note-taker, AI Employees for sales</td><td>Auto-scheduling with deadline awareness, project views, AI meeting notes, task dependencies</td></tr>
+<tr><td><strong>Morgen</strong></td><td>Free+</td><td>Cross-platform native apps, multi-calendar unification, AI planner for task prioritization</td><td>Multi-platform native apps, AI-assisted task prioritization</td></tr>
+<tr><td><strong>Amie</strong></td><td>$6-21/mo</td><td>Meeting recorder (listens to audio, no bot), auto-generates tasks and follow-ups from meetings</td><td>AI meeting recorder, auto-generated follow-up emails</td></tr>
+<tr><td><strong>Centered</strong></td><td>Freemium</td><td>AI flow coach with real-time nudges, focus music, distraction detection</td><td>AI coaching during deep work, distraction detection, ambient focus music</td></tr>
+<tr><td><strong>Forest</strong></td><td>$3.99</td><td>Gamified focus — plant trees that die if you leave, social focus sessions</td><td>Gamification, visual forest of completed work, social accountability</td></tr>
+</table>
+
+<h2>Top 10 Missing Features (Ranked by VP Sales Impact)</h2>
+
+<table>
+<tr><th>#</th><th>Feature</th><th>Impact</th><th>Complexity</th><th>Who Has It</th><th>Why It Matters for VP Sales</th></tr>
+<tr><td><span class="priority-num">1</span></td><td><strong>Weekly Review with Analytics</strong></td><td><span class="tag high">High</span></td><td><span class="tag med">Medium</span></td><td>Sunsama</td><td>Shows time allocation across deals, prospecting, internal work. Answers: "Am I spending enough time on $2-10M opportunities?"</td></tr>
+<tr><td><span class="priority-num">2</span></td><td><strong>Time Tracking per Category</strong></td><td><span class="tag high">High</span></td><td><span class="tag med">Medium</span></td><td>Sunsama, Reclaim</td><td>Auto-logs time by deal/client/activity. Essential for knowing your actual vs. intended time allocation as a revenue leader.</td></tr>
+<tr><td><span class="priority-num">3</span></td><td><strong>Guided Shutdown Ritual</strong></td><td><span class="tag high">High</span></td><td><span class="tag high">Low</span></td><td>Sunsama</td><td>Prevents open loops. Forces daily accountability on pipeline actions. We have a version but it needs to be simpler and more guided.</td></tr>
+<tr><td><span class="priority-num">4</span></td><td><strong>Buffer Time After Meetings</strong></td><td><span class="tag high">High</span></td><td><span class="tag high">Low</span></td><td>Reclaim, Clockwise</td><td>After a prospect call, you need 10 min to update CRM, send follow-up, log notes. Without buffers, context is lost.</td></tr>
+<tr><td><span class="priority-num">5</span></td><td><strong>Streak/Habit Visualization</strong></td><td><span class="tag med">Med</span></td><td><span class="tag high">Low</span></td><td>Forest, Habitify</td><td>Visual streaks for daily habits (prospecting, quiet time). Creates psychological commitment to non-urgent-but-important activities.</td></tr>
+<tr><td><span class="priority-num">6</span></td><td><strong>Scheduling Links</strong></td><td><span class="tag high">High</span></td><td><span class="tag med">Medium</span></td><td>Akiflow, Reclaim, Amie</td><td>Eliminates "when are you free?" with prospects. Speeds deal velocity. Table stakes for sales.</td></tr>
+<tr><td><span class="priority-num">7</span></td><td><strong>Dark Mode Toggle</strong></td><td><span class="tag low">Low</span></td><td><span class="tag high">Low</span></td><td>Almost everyone</td><td>We had dark mode but switched to light. A toggle would give you both options.</td></tr>
+<tr><td><span class="priority-num">8</span></td><td><strong>AI Auto-Rescheduling</strong></td><td><span class="tag high">High</span></td><td><span class="tag missing">High</span></td><td>Motion, Reclaim</td><td>When meetings shift, tasks auto-reshuffle to next best slot. Critical for chaotic sales exec calendars.</td></tr>
+<tr><td><span class="priority-num">9</span></td><td><strong>Email/Slack Task Capture</strong></td><td><span class="tag high">High</span></td><td><span class="tag missing">High</span></td><td>Akiflow, Sunsama</td><td>Flag an email → it becomes a task. Action items from CEO, prospects, team arrive in email/Slack. Without capture, they're lost.</td></tr>
+<tr><td><span class="priority-num">10</span></td><td><strong>AI Meeting Notes</strong></td><td><span class="tag med">Med</span></td><td><span class="tag missing">High</span></td><td>Motion, Amie</td><td>Auto-records, transcribes, generates follow-ups. Saves 30-60 min/day for a VP in 5-10 meetings.</td></tr>
+</table>
+
+<h2>What We Already Have That Others Don't</h2>
+
+<table>
+<tr><th>Our Feature</th><th>Competitive Advantage</th></tr>
+<tr><td><strong>SOAP Bible Journal</strong></td><td>No competitor integrates faith-based journaling with executive productivity. This is a genuine moat for faith-driven professionals.</td></tr>
+<tr><td><strong>VP Sales Scorecard</strong></td><td>Built-in sales metrics (outreach, pipeline, follow-ups). Productivity tools are generic — ours is role-specific.</td></tr>
+<tr><td><strong>Weekly Ships System</strong></td><td>Deliverable-focused (not activity-focused) weekly accountability with batting averages. Unique framing.</td></tr>
+<tr><td><strong>Google Sheets Database</strong></td><td>No vendor lock-in. All data is yours in a spreadsheet. Export anytime. No subscription to lose your data.</td></tr>
+<tr><td><strong>Running Notebook (Google Docs)</strong></td><td>Live-editing a shared doc from within the dashboard. No competitor does this inline.</td></tr>
+</table>
+
+<h2>My Recommendation: Build These Next</h2>
+
+<div class="rec-grid">
+<div class="card">
+<h4><span class="priority-num">1</span> Weekly Review Page</h4>
+<p>A separate view (or modal) that shows: time spent per category this week, ships progress, flow completion rates, deep work total, and a guided "what went well / what to improve" reflection. Data is already in Google Sheets — we just need to visualize it.</p>
+</div>
+<div class="card">
+<h4><span class="priority-num">2</span> Time Tracking by Category</h4>
+<p>Add a "category" field to deep work blocks (e.g., "Pipeline", "Outreach", "Internal", "Strategy"). Auto-calculate weekly time per category. Show a simple pie or bar chart on the weekly review.</p>
+</div>
+<div class="card">
+<h4><span class="priority-num">3</span> Streak Visualization</h4>
+<p>For each daily routine item, show current streak and 30-day completion rate. Add a small calendar heat map (like GitHub contribution graph) to the stats. Motivates consistency on prospecting and quiet time.</p>
+</div>
+<div class="card">
+<h4><span class="priority-num">4</span> Buffer Time Indicators</h4>
+<p>After each calendar meeting, show a subtle "buffer" zone in the timeline (5-10 min). Not blocking — just a visual reminder to do follow-ups before jumping to next thing. Add a "Post-meeting notes" quick capture.</p>
+</div>
+<div class="card">
+<h4><span class="priority-num">5</span> Dark/Light Mode Toggle</h4>
+<p>Store both color palettes, add a toggle in the top bar. Low effort, high user satisfaction. We already have both themes built — just need a switch.</p>
+</div>
+<div class="card">
+<h4><span class="priority-num">6</span> Keyboard Command Bar</h4>
+<p>Press Cmd+K to open a quick-entry bar. Type "add task: Review proposal 60m" or "start deep work" or "log clearing: printer setup". Rapid entry without clicking through modals.</p>
+</div>
+</div>
+
+<h2>Design Inspiration</h2>
+<p style="font-size:13px;color:#555;margin-bottom:12px;">Browse these for visual ideas:</p>
+<ul style="font-size:13px;padding-left:20px;">
+<li><a href="https://dribbble.com/shots/26483779-Dark-Mode-Productivity-Dashboard-Smart-Focus-Analytics-UI" target="_blank">Dark Mode Productivity Dashboard — Focus & Analytics UI</a></li>
+<li><a href="https://dribbble.com/shots/25870001-Productivity-Dashboard-Task-Management-Kanban-View" target="_blank">Task Management Kanban View</a></li>
+<li><a href="https://muz.li/inspiration/dashboard-inspiration/" target="_blank">Muzli — 60+ Dashboard Designs (2026)</a></li>
+<li><a href="https://muz.li/blog/best-dashboard-design-examples-inspirations-for-2026/" target="_blank">Best Dashboard Design Examples 2026</a></li>
+<li><a href="https://dribbble.com/search/dark-task-management-dashboard" target="_blank">Dark Task Management Dashboards (Dribbble)</a></li>
+</ul>
+
+<div style="margin-top:40px;padding-top:20px;border-top:1px solid #d0d0d0;font-size:11px;color:#888;text-align:center;">
+Stewardship OS Feature Comparison — Generated March 31, 2026
+</div>
+
+</body>
+</html>
