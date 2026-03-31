@@ -1728,9 +1728,26 @@ function renderTopBar() {
 // LEFT COLUMN: MORNING ROUTINE
 // ══════════════════════════════════════════════════════════════
 
+function isTaskDueOnDate(task, dateStr) {
+  const freq = task.frequency || 'daily';
+  if (freq === 'daily') return true;
+  if (freq === 'one-time') return task.oneTimeDate === dateStr;
+  if (freq === 'specific-days') {
+    const dayKeys = ['sun','mon','tue','wed','thu','fri','sat'];
+    const d = parseDate(dateStr);
+    return (task.freqDays || []).includes(dayKeys[d.getDay()]);
+  }
+  if (freq === 'x-per-week') {
+    // Always show — the count is informational (X times per week target)
+    return true;
+  }
+  return true;
+}
+
 function getAllFlowSteps() {
-  // Merge built-in FLOW_STEPS with user's custom tasks, sorted by time
-  const custom = (APP.customTasks || []).map(t => ({
+  // Merge built-in FLOW_STEPS with user's custom tasks due today, sorted by time
+  const d = selectedDate;
+  const custom = (APP.customTasks || []).filter(t => isTaskDueOnDate(t, d)).map(t => ({
     id: 'custom_' + t.id,
     time: t.time,
     label: t.label,
@@ -1742,6 +1759,7 @@ function getAllFlowSteps() {
     hint: t.hint || '',
     isCustom: true,
     customId: t.id,
+    frequency: t.frequency || 'daily',
   }));
   const all = [...FLOW_STEPS.map(s => ({...s, isCustom: false})), ...custom];
   all.sort((a, b) => parseTime(a.time) - parseTime(b.time));
@@ -2018,64 +2036,92 @@ const TASK_COLORS = [
 
 let editingTaskId = null;
 
-function openAddTaskModal() {
-  editingTaskId = null;
+function buildTaskFormHTML(task) {
+  // task = null for new, or existing task object for edit
+  const t = task || {};
+  const freq = t.frequency || 'daily';
+  const freqDays = t.freqDays || [];
+  const freqCount = t.freqCount || 7;
+  const oneTimeDate = t.oneTimeDate || todayStr();
+
   const iconGrid = TASK_ICONS.map(ic =>
-    '<div class="icon-pick" data-icon="' + ic + '" onclick="pickTaskIcon(this,\'' + ic + '\')" style="cursor:pointer;padding:6px;border:2px solid var(--border);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;font-size:18px;"><i class="ph ' + ic + '"></i></div>'
+    '<div class="icon-pick" data-icon="' + ic + '" onclick="pickTaskIcon(this,\'' + ic + '\')" style="cursor:pointer;padding:6px;border:2px solid ' + (ic === (t.icon || 'ph-check-circle') ? 'var(--blue)' : 'var(--border)') + ';border-radius:8px;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;font-size:18px;"><i class="ph ' + ic + '"></i></div>'
   ).join('');
+  const colorIdx = t.color ? (TASK_COLORS.findIndex(c => c.color === t.color) || 0) : 0;
   const colorBtns = TASK_COLORS.map((c, i) =>
-    '<div class="color-pick" data-idx="' + i + '" onclick="pickTaskColor(this,' + i + ')" style="cursor:pointer;width:28px;height:28px;border-radius:50%;border:3px solid transparent;background:' + c.color + ';display:inline-block;"></div>'
+    '<div class="color-pick" data-idx="' + i + '" onclick="pickTaskColor(this,' + i + ')" style="cursor:pointer;width:28px;height:28px;border-radius:50%;border:3px solid ' + (i === colorIdx ? 'var(--text)' : 'transparent') + ';background:' + c.color + ';display:inline-block;"></div>'
   ).join('');
 
-  showConfirmDialog('Add Daily Task',
-    '<div class="field-group"><label class="blue">Task Name</label><input type="text" id="task-name" placeholder="e.g., Check email, Call prospect..."></div>' +
-    '<div class="field-group"><label class="blue">Time</label><input type="text" id="task-time" placeholder="e.g., 10:30 AM" value="10:00 AM"></div>' +
-    '<div class="field-group"><label class="blue">Timer Minutes (0 = no timer)</label><input type="number" id="task-timer" value="0" min="0" style="width:80px;"></div>' +
-    '<div class="field-group"><label class="blue">Hint / Reminder</label><input type="text" id="task-hint" placeholder="Optional reminder text..."></div>' +
-    '<div class="field-group"><label class="blue">Icon</label><div id="task-icon-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:120px;overflow-y:auto;">' + iconGrid + '</div></div>' +
+  const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dayKeys = ['sun','mon','tue','wed','thu','fri','sat'];
+  const dayBtns = dayKeys.map((dk, i) =>
+    '<button type="button" class="day-pick-btn" data-day="' + dk + '" onclick="toggleTaskDay(this)" style="padding:4px 8px;border:1px solid ' + (freqDays.includes(dk) ? 'var(--blue)' : 'var(--border)') + ';border-radius:6px;background:' + (freqDays.includes(dk) ? 'var(--blue-bg)' : 'none') + ';color:' + (freqDays.includes(dk) ? 'var(--blue)' : 'var(--text-dim)') + ';font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);">' + dayLabels[i] + '</button>'
+  ).join('');
+
+  return '<div class="field-group"><label class="blue">Task Name</label><input type="text" id="task-name" value="' + esc(t.label || '') + '" placeholder="e.g., Check email, Call prospect..."></div>' +
+    '<div class="field-group"><label class="blue">Time</label><input type="text" id="task-time" value="' + esc(t.time || '10:00 AM') + '" placeholder="e.g., 10:30 AM"></div>' +
+    '<div class="field-group"><label class="blue">Frequency</label>' +
+    '<div style="display:flex;gap:4px;margin-bottom:6px;">' +
+    '<button type="button" class="freq-pick" onclick="pickFreq(this,\'daily\')" style="flex:1;padding:6px;border:1px solid ' + (freq === 'daily' ? 'var(--blue)' : 'var(--border)') + ';border-radius:6px;background:' + (freq === 'daily' ? 'var(--blue-bg)' : 'none') + ';color:' + (freq === 'daily' ? 'var(--blue)' : 'var(--text-dim)') + ';font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);">Daily</button>' +
+    '<button type="button" class="freq-pick" onclick="pickFreq(this,\'specific-days\')" style="flex:1;padding:6px;border:1px solid ' + (freq === 'specific-days' ? 'var(--blue)' : 'var(--border)') + ';border-radius:6px;background:' + (freq === 'specific-days' ? 'var(--blue-bg)' : 'none') + ';color:' + (freq === 'specific-days' ? 'var(--blue)' : 'var(--text-dim)') + ';font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);">Specific Days</button>' +
+    '<button type="button" class="freq-pick" onclick="pickFreq(this,\'x-per-week\')" style="flex:1;padding:6px;border:1px solid ' + (freq === 'x-per-week' ? 'var(--blue)' : 'var(--border)') + ';border-radius:6px;background:' + (freq === 'x-per-week' ? 'var(--blue-bg)' : 'none') + ';color:' + (freq === 'x-per-week' ? 'var(--blue)' : 'var(--text-dim)') + ';font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);">X / Week</button>' +
+    '<button type="button" class="freq-pick" onclick="pickFreq(this,\'one-time\')" style="flex:1;padding:6px;border:1px solid ' + (freq === 'one-time' ? 'var(--blue)' : 'var(--border)') + ';border-radius:6px;background:' + (freq === 'one-time' ? 'var(--blue-bg)' : 'none') + ';color:' + (freq === 'one-time' ? 'var(--blue)' : 'var(--text-dim)') + ';font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);">One-Time</button>' +
+    '</div>' +
+    '<div id="freq-days-row" style="display:' + (freq === 'specific-days' ? 'flex' : 'none') + ';gap:4px;margin-bottom:6px;">' + dayBtns + '</div>' +
+    '<div id="freq-count-row" style="display:' + (freq === 'x-per-week' ? 'flex' : 'none') + ';align-items:center;gap:6px;margin-bottom:6px;"><input type="number" id="task-freq-count" value="' + freqCount + '" min="1" max="7" style="width:60px;text-align:center;"> <span style="font-size:12px;color:var(--text-dim);">times per week</span></div>' +
+    '<div id="freq-date-row" style="display:' + (freq === 'one-time' ? 'flex' : 'none') + ';align-items:center;gap:6px;margin-bottom:6px;"><input type="date" id="task-one-date" value="' + oneTimeDate + '" style="font-size:13px;"> <span style="font-size:12px;color:var(--text-dim);">on this date only</span></div>' +
+    '<input type="hidden" id="task-freq-val" value="' + freq + '">' +
+    '</div>' +
+    '<div class="field-group"><label class="blue">Timer Minutes (0 = no timer)</label><input type="number" id="task-timer" value="' + (t.timerMins || 0) + '" min="0" style="width:80px;"></div>' +
+    '<div class="field-group"><label class="blue">Hint / Reminder</label><input type="text" id="task-hint" value="' + esc(t.hint || '') + '" placeholder="Optional reminder text..."></div>' +
+    '<div class="field-group"><label class="blue">Icon</label><div id="task-icon-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:100px;overflow-y:auto;">' + iconGrid + '</div></div>' +
     '<div class="field-group"><label class="blue">Color</label><div id="task-color-grid" style="display:flex;gap:6px;">' + colorBtns + '</div></div>' +
-    '<input type="hidden" id="task-icon-val" value="ph-check-circle"><input type="hidden" id="task-color-idx" value="0">',
-    [
-      { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
-      { label: 'Add Task', cls: 'primary', onclick: 'saveCustomTask()' },
-    ]
-  );
-  // Select defaults
-  setTimeout(() => {
-    const firstIcon = document.querySelector('.icon-pick');
-    if (firstIcon) firstIcon.style.borderColor = 'var(--blue)';
-    const firstColor = document.querySelector('.color-pick');
-    if (firstColor) firstColor.style.borderColor = 'var(--text)';
-  }, 50);
+    '<input type="hidden" id="task-icon-val" value="' + (t.icon || 'ph-check-circle') + '"><input type="hidden" id="task-color-idx" value="' + colorIdx + '">';
+}
+
+function pickFreq(el, freq) {
+  document.querySelectorAll('.freq-pick').forEach(b => { b.style.borderColor = 'var(--border)'; b.style.background = 'none'; b.style.color = 'var(--text-dim)'; });
+  el.style.borderColor = 'var(--blue)'; el.style.background = 'var(--blue-bg)'; el.style.color = 'var(--blue)';
+  document.getElementById('task-freq-val').value = freq;
+  document.getElementById('freq-days-row').style.display = freq === 'specific-days' ? 'flex' : 'none';
+  document.getElementById('freq-count-row').style.display = freq === 'x-per-week' ? 'flex' : 'none';
+  document.getElementById('freq-date-row').style.display = freq === 'one-time' ? 'flex' : 'none';
+}
+
+function toggleTaskDay(el) {
+  const isOn = el.style.borderColor.includes('blue') || el.dataset.selected === 'true';
+  if (isOn) {
+    el.style.borderColor = 'var(--border)'; el.style.background = 'none'; el.style.color = 'var(--text-dim)';
+    el.dataset.selected = 'false';
+  } else {
+    el.style.borderColor = 'var(--blue)'; el.style.background = 'var(--blue-bg)'; el.style.color = 'var(--blue)';
+    el.dataset.selected = 'true';
+  }
+}
+
+function getSelectedDays() {
+  return Array.from(document.querySelectorAll('.day-pick-btn')).filter(b => {
+    return b.style.color.includes('blue') || b.style.borderColor.includes('blue') || b.dataset.selected === 'true';
+  }).map(b => b.dataset.day);
+}
+
+function openAddTaskModal() {
+  editingTaskId = null;
+  showConfirmDialog('Add Task', buildTaskFormHTML(null), [
+    { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
+    { label: 'Add Task', cls: 'primary', onclick: 'saveCustomTask()' },
+  ]);
 }
 
 function editCustomTask(customId) {
   editingTaskId = customId;
   const task = APP.customTasks.find(t => t.id === customId);
   if (!task) return;
-
-  const colorIdx = TASK_COLORS.findIndex(c => c.color === task.color) || 0;
-  const iconGrid = TASK_ICONS.map(ic =>
-    '<div class="icon-pick" data-icon="' + ic + '" onclick="pickTaskIcon(this,\'' + ic + '\')" style="cursor:pointer;padding:6px;border:2px solid ' + (ic === task.icon ? 'var(--blue)' : 'var(--border)') + ';border-radius:8px;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;font-size:18px;"><i class="ph ' + ic + '"></i></div>'
-  ).join('');
-  const colorBtns = TASK_COLORS.map((c, i) =>
-    '<div class="color-pick" data-idx="' + i + '" onclick="pickTaskColor(this,' + i + ')" style="cursor:pointer;width:28px;height:28px;border-radius:50%;border:3px solid ' + (i === colorIdx ? 'var(--text)' : 'transparent') + ';background:' + c.color + ';display:inline-block;"></div>'
-  ).join('');
-
-  showConfirmDialog('Edit Task',
-    '<div class="field-group"><label class="blue">Task Name</label><input type="text" id="task-name" value="' + esc(task.label) + '"></div>' +
-    '<div class="field-group"><label class="blue">Time</label><input type="text" id="task-time" value="' + esc(task.time) + '"></div>' +
-    '<div class="field-group"><label class="blue">Timer Minutes (0 = no timer)</label><input type="number" id="task-timer" value="' + (task.timerMins || 0) + '" min="0" style="width:80px;"></div>' +
-    '<div class="field-group"><label class="blue">Hint / Reminder</label><input type="text" id="task-hint" value="' + esc(task.hint || '') + '"></div>' +
-    '<div class="field-group"><label class="blue">Icon</label><div id="task-icon-grid" style="display:flex;flex-wrap:wrap;gap:4px;max-height:120px;overflow-y:auto;">' + iconGrid + '</div></div>' +
-    '<div class="field-group"><label class="blue">Color</label><div id="task-color-grid" style="display:flex;gap:6px;">' + colorBtns + '</div></div>' +
-    '<input type="hidden" id="task-icon-val" value="' + (task.icon || 'ph-check-circle') + '"><input type="hidden" id="task-color-idx" value="' + colorIdx + '">',
-    [
-      { label: 'Delete', cls: '', style: 'color:var(--red);margin-right:auto;', onclick: "deleteCustomTask('" + customId + "')" },
-      { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
-      { label: 'Save', cls: 'primary', onclick: 'saveCustomTask()' },
-    ]
-  );
+  showConfirmDialog('Edit Task', buildTaskFormHTML(task), [
+    { label: 'Delete', cls: '', style: 'color:var(--red);margin-right:auto;', onclick: "deleteCustomTask('" + customId + "')" },
+    { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
+    { label: 'Save', cls: 'primary', onclick: 'saveCustomTask()' },
+  ]);
 }
 
 function pickTaskIcon(el, icon) {
@@ -2098,33 +2144,36 @@ function saveCustomTask() {
   const icon = document.getElementById('task-icon-val')?.value || 'ph-check-circle';
   const colorIdx = parseInt(document.getElementById('task-color-idx')?.value) || 0;
   const col = TASK_COLORS[colorIdx] || TASK_COLORS[0];
+  const freq = document.getElementById('task-freq-val')?.value || 'daily';
+  const freqDays = getSelectedDays();
+  const freqCount = parseInt(document.getElementById('task-freq-count')?.value) || 7;
+  const oneTimeDate = document.getElementById('task-one-date')?.value || todayStr();
 
   if (!name || !time) return;
 
   if (!APP.customTasks) APP.customTasks = [];
 
+  const taskData = {
+    label: name,
+    time: time,
+    timerMins: timerMins,
+    hint: hint,
+    icon: icon,
+    color: col.color,
+    colorBg: col.bg,
+    frequency: freq,
+    freqDays: freqDays,
+    freqCount: freqCount,
+    oneTimeDate: oneTimeDate,
+  };
+
   if (editingTaskId) {
     const task = APP.customTasks.find(t => t.id === editingTaskId);
-    if (task) {
-      task.label = name;
-      task.time = time;
-      task.timerMins = timerMins;
-      task.hint = hint;
-      task.icon = icon;
-      task.color = col.color;
-      task.colorBg = col.bg;
-    }
+    if (task) Object.assign(task, taskData);
   } else {
-    APP.customTasks.push({
-      id: uid(),
-      label: name,
-      time: time,
-      timerMins: timerMins,
-      hint: hint,
-      icon: icon,
-      color: col.color,
-      colorBg: col.bg,
-    });
+    taskData.id = uid();
+    taskData.createdAt = todayStr();
+    APP.customTasks.push(taskData);
   }
 
   saveData(APP);
