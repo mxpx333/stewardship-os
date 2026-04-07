@@ -185,6 +185,9 @@ body {
 }
 .flow-item.done { border-color: rgba(22,163,74,0.4); }
 .flow-item.done .flow-main { opacity: 0.55; }
+.flow-item.skipped { border-color: var(--border-subtle); opacity: 0.5; }
+.flow-item.skipped .flow-main { opacity: 0.55; }
+.flow-item.skipped .flow-label { text-decoration: line-through; color: var(--text-faint); }
 .flow-item.current { border-color: var(--blue); }
 .flow-main {
   display: flex;
@@ -254,6 +257,31 @@ body {
 }
 .flow-badge.on-time { background: var(--green-bg); color: var(--green); }
 .flow-badge.late { background: var(--amber-bg); color: var(--amber); }
+.flow-skip-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.flow-skip-btn:hover { opacity: 1; background: rgba(0,0,0,0.04); }
+.flow-unskip-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 4px;
+  font-family: var(--font);
+}
+.flow-unskip-btn:hover { color: var(--text-dim); border-color: var(--text-dim); }
 
 /* ── COMPLETED DIVIDER ── */
 .completed-divider {
@@ -1489,11 +1517,12 @@ function getReadingForDate(dateStr) {
 
 // ── FLOW STEPS ──
 const FLOW_STEPS = [
-  { id: "bible",      time: "6:30 AM",  label: "Light Therapy + Bible", icon: "ph-sun",               color: "var(--purple)", colorBg: "var(--purple-bg)" },
-  { id: "walk",       time: "6:40 AM",  label: "Treadmill + SOAP",     icon: "ph-person-simple-run",  color: "var(--green)",  colorBg: "var(--green-bg)", timerMins: 30, timerType: "treadmill" },
+  { id: "light",      time: "6:30 AM",  label: "Light Therapy",         icon: "ph-sun-dim",            color: "var(--amber)",  colorBg: "var(--amber-bg)" },
+  { id: "bible",      time: "6:35 AM",  label: "Bible Reading",         icon: "ph-book-open",          color: "var(--purple)", colorBg: "var(--purple-bg)" },
+  { id: "walk",       time: "6:40 AM",  label: "Treadmill",             icon: "ph-person-simple-run",  color: "var(--green)",  colorBg: "var(--green-bg)", timerMins: 30, timerType: "treadmill" },
+  { id: "soap",       time: "7:10 AM",  label: "SOAP Journal",          icon: "ph-notebook",           color: "var(--purple)", colorBg: "var(--purple-bg)" },
   { id: "meditation", time: "10:00 AM", label: "Meditation",            icon: "ph-brain",              color: "var(--purple)", colorBg: "var(--purple-bg)", timerMins: 10, timerType: "meditation" },
   { id: "strategy",   time: "10:10 AM", label: "Strategy Planning",     icon: "ph-lightbulb",          color: "var(--blue)",   colorBg: "var(--blue-bg)" },
-  { id: "family",     time: "6:00 PM",  label: "Family Time",           icon: "ph-heart",              color: "var(--green)",  colorBg: "var(--green-bg)" },
 ];
 
 // ── DEEP WORK CATEGORIES ──
@@ -1516,8 +1545,6 @@ const GOALS = {
   personal: [
     "Daily quiet time (Bible + SOAP, 20 min + light)",
     "30-min treadmill walk daily with 10K lux light",
-    "Start date nights with wife",
-    "Start 1:1 afternoons with each boy (2x/month)",
   ],
 };
 
@@ -1664,9 +1691,9 @@ function formatDateLabel(dateString) {
 // ── View State ──
 let selectedDate = todayStr();
 
-// Timer state (session only)
-let activeTimer = null; // { startedAt, duration, type, label, linkedStepId }
-let timerInterval = null;
+// Timer state (session only) — supports multiple simultaneous timers
+let activeTimers = []; // [{ id, startedAt, duration, type, label, linkedStepId, notified15, paused, pausedAt, totalPausedMs }]
+let timerIntervalId = null;
 
 // Calendar cache
 let calendarEvents = []; // [{title, start: Date, end: Date, uid, calIdx, allDay}]
@@ -2107,17 +2134,20 @@ function renderFlow() {
   const isToday = d === todayStr();
   const reading = getReadingForDate(d);
 
-  // Split into incomplete and complete
+  // Split into incomplete, complete, and skipped
   const incomplete = [];
   const complete = [];
+  const skipped = [];
   allSteps.forEach((step, i) => {
-    const isDone = flowData[step.id];
-    if (isDone) complete.push(step);
+    const val = flowData[step.id];
+    if (val === 'skip') skipped.push(step);
+    else if (val) complete.push(step);
     else incomplete.push(step);
   });
 
   const totalCount = allSteps.length;
   const doneCount = complete.length;
+  const skippedCount = skipped.length;
   document.getElementById('flow-count').textContent = doneCount + '/' + totalCount;
 
   let html = '';
@@ -2130,7 +2160,7 @@ function renderFlow() {
     const nextMin = nextIncomplete ? parseTime(nextIncomplete.time) : 1440;
     const isCurrent = isToday && nowMin >= stepMin && nowMin < nextMin;
 
-    html += renderFlowItem(step, false, isCurrent, isToday, d, reading);
+    html += renderFlowItem(step, false, isCurrent, isToday, d, reading, false);
   });
 
   // Add task button
@@ -2147,7 +2177,21 @@ function renderFlow() {
       '</div>';
     html += '<div id="completed-flow" style="display:none;">';
     complete.forEach(step => {
-      html += renderFlowItem(step, true, false, isToday, d, reading);
+      html += renderFlowItem(step, true, false, isToday, d, reading, false);
+    });
+    html += '</div>';
+  }
+
+  // Skipped items (collapsed)
+  if (skippedCount > 0) {
+    html += '<div class="completed-divider" onclick="toggleSkippedFlow()" style="cursor:pointer;">' +
+      '<div class="completed-line"></div>' +
+      '<span class="completed-label" style="color:var(--text-faint);"><i class="ph ph-fast-forward" style="margin-right:4px;"></i>' + skippedCount + ' item' + (skippedCount !== 1 ? 's' : '') + ' skipped</span>' +
+      '<span class="completed-chevron" id="skipped-chevron">&#9654;</span>' +
+      '</div>';
+    html += '<div id="skipped-flow" style="display:none;">';
+    skipped.forEach(step => {
+      html += renderFlowItem(step, false, false, isToday, d, reading, true);
     });
     html += '</div>';
   }
@@ -2155,13 +2199,14 @@ function renderFlow() {
   document.getElementById('flow-container').innerHTML = html;
 }
 
-function renderFlowItem(step, isDone, isCurrent, isToday, d, reading) {
+function renderFlowItem(step, isDone, isCurrent, isToday, d, reading, isSkipped) {
   let hint = step.hint || '';
-  if (step.id === 'bible') hint = 'Plan suggests: ' + reading.book + ' ' + reading.chapter;
+  if (step.id === 'light') hint = '10K lux. Start the light.';
+  else if (step.id === 'bible') hint = 'Plan suggests: ' + reading.book + ' ' + reading.chapter;
   else if (step.id === 'walk') hint = '30 min. Turn on treadmill.';
+  else if (step.id === 'soap') hint = 'Reflect on your reading.';
   else if (step.id === 'meditation') hint = '10 min. Be present.';
   else if (step.id === 'strategy') hint = 'Assign tasks to deep work blocks.';
-  else if (step.id === 'family') hint = 'Put phone down. Find the boys.';
 
   let timerInfo = '';
   if (isDone && APP.timerCompletions[d] && APP.timerCompletions[d][step.id]) {
@@ -2181,20 +2226,29 @@ function renderFlowItem(step, isDone, isCurrent, isToday, d, reading) {
     editBtn = '<button class="ship-btn" onclick="event.stopPropagation();editCustomTask(\'' + step.customId + '\')" title="Edit" style="margin-left:4px;">&#9998;</button>';
   }
 
-  let html = '<div class="flow-item ' + (isDone ? 'done' : '') + ' ' + (isCurrent ? 'current' : '') + '">';
-  html += '<div class="flow-main" onclick="handleFlowTap(\'' + step.id + '\')">';
+  let skipBtn = '';
+  if (!isDone && !isSkipped) {
+    skipBtn = '<button class="flow-skip-btn" onclick="event.stopPropagation();skipFlowStep(\'' + step.id + '\')" title="Skip"><i class="ph ph-fast-forward"></i></button>';
+  }
+  let unskipBtn = '';
+  if (isSkipped) {
+    unskipBtn = '<button class="flow-unskip-btn" onclick="event.stopPropagation();unskipFlowStep(\'' + step.id + '\')">Unskip</button>';
+  }
+
+  let html = '<div class="flow-item ' + (isDone ? 'done' : '') + ' ' + (isSkipped ? 'skipped' : '') + ' ' + (isCurrent ? 'current' : '') + '">';
+  html += '<div class="flow-main" onclick="' + (isSkipped ? '' : 'handleFlowTap(\'' + step.id + '\')') + '">';
   html += '<div class="flow-icon" style="background:' + step.colorBg + ';color:' + step.color + '"><i class="ph ' + step.icon + '"></i></div>';
-  html += '<div class="flow-check">' + (isDone ? '&#10003;' : '') + '</div>';
+  html += '<div class="flow-check">' + (isDone ? '&#10003;' : (isSkipped ? '<i class="ph ph-fast-forward" style="font-size:10px;color:var(--text-faint);"></i>' : '')) + '</div>';
   html += '<div class="flow-time">' + step.time + '</div>';
   html += '<div class="flow-text"><div class="flow-label">' + step.label + '</div>';
-  if (!isDone && isToday && hint) html += '<div class="flow-hint">' + hint + '</div>';
+  if (!isDone && !isSkipped && isToday && hint) html += '<div class="flow-hint">' + hint + '</div>';
   html += '</div>';
-  html += badge + timerInfo + editBtn;
+  html += badge + timerInfo + editBtn + skipBtn + unskipBtn;
   html += '</div>';
 
   // Expand panels for built-in steps
   if (step.id === 'bible') html += renderBiblePanel(d, isDone);
-  if (step.id === 'walk') html += renderSOAPPanel(d, isDone);
+  if (step.id === 'soap') html += renderSOAPPanel(d, isDone);
   if (step.id === 'strategy') html += renderStrategyTrigger(d, isDone);
 
   html += '</div>';
@@ -2211,6 +2265,34 @@ function toggleCompletedFlow() {
     el.style.display = 'none';
     chev.innerHTML = '&#9654;';
   }
+}
+
+function toggleSkippedFlow() {
+  const el = document.getElementById('skipped-flow');
+  const chev = document.getElementById('skipped-chevron');
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    chev.innerHTML = '&#9660;';
+  } else {
+    el.style.display = 'none';
+    chev.innerHTML = '&#9654;';
+  }
+}
+
+function skipFlowStep(id) {
+  const d = selectedDate;
+  if (!APP.flow[d]) APP.flow[d] = {};
+  APP.flow[d][id] = 'skip';
+  saveData(APP);
+  renderFlow();
+}
+
+function unskipFlowStep(id) {
+  const d = selectedDate;
+  if (!APP.flow[d]) APP.flow[d] = {};
+  APP.flow[d][id] = false;
+  saveData(APP);
+  renderFlow();
 }
 
 function renderBiblePanel(d, isDone) {
@@ -2277,12 +2359,12 @@ function handleFlowTap(id) {
   allSteps.forEach(s => { if (APP.flow[d][s.id] === undefined) APP.flow[d][s.id] = false; });
   const step = allSteps.find(s => s.id === id);
   if (!step) return;
-  const isDone = APP.flow[d][id];
+  const isDone = APP.flow[d][id] === true;
   const isToday = d === todayStr();
 
   // Unchecking
   if (isDone) {
-    if (id === 'walk') saveSOAP();
+    if (id === 'soap') saveSOAP();
     if (id === 'bible') saveBibleLog();
     APP.flow[d][id] = false;
     saveData(APP);
@@ -2291,7 +2373,7 @@ function handleFlowTap(id) {
   }
 
   // Save associated panels
-  if (id === 'walk') saveSOAP();
+  if (id === 'soap') saveSOAP();
   if (id === 'bible') saveBibleLog();
 
   // Meditation on-time tracking
@@ -2312,7 +2394,7 @@ function handleFlowTap(id) {
   // Timer-linked steps
   if (step.timerType && isToday) {
     const timerCompleted = APP.timerCompletions[d] && APP.timerCompletions[d][id];
-    const timerRunningForThis = activeTimer && activeTimer.linkedStepId === id;
+    const timerRunningForThis = activeTimers.some(t => t.linkedStepId === id);
 
     if (timerCompleted || timerRunningForThis) {
       completeFlowStep(id);
@@ -2538,7 +2620,7 @@ function ensureBlockAssignments(d) {
 }
 
 function getActiveDeepWorkBlockNum() {
-  if (!activeTimer || activeTimer.type !== 'deep-work') return null;
+  if (!activeTimers.some(t => t.type === 'deep-work')) return null;
   const d = todayStr();
   const blocks = APP.deepWorkBlocks[d] || [];
   const runningIdx = blocks.findIndex(b => !b.endedAt);
@@ -2572,7 +2654,10 @@ function renderDeepWork() {
     const timerRunning = timerBlock && !timerBlock.endedAt;
     let timerMins = 0;
     if (timerDone) timerMins = timerBlock.minutes || 0;
-    else if (timerRunning) timerMins = activeTimer ? Math.round(getTimerElapsed() / 60000) : Math.round((Date.now() - timerBlock.startedAt) / 60000);
+    else if (timerRunning) {
+      const dwTimer = activeTimers.find(t => t.type === 'deep-work');
+      timerMins = dwTimer ? Math.round(getTimerElapsed(dwTimer) / 60000) : Math.round((Date.now() - timerBlock.startedAt) / 60000);
+    }
     if (timerDone || timerRunning) totalMins += timerMins;
 
     html += '<div class="dw-block-container' + (isActive ? ' active-block' : '') + '">';
@@ -2802,7 +2887,8 @@ function saveManualDeepWorkBlock() {
 // ══════════════════════════════════════════════════════════════
 
 function startTimer(type, mins, label, linkedStepId) {
-  activeTimer = {
+  const timer = {
+    id: uid(),
     startedAt: Date.now(),
     duration: mins * 60000,
     type: type,
@@ -2813,6 +2899,7 @@ function startTimer(type, mins, label, linkedStepId) {
     pausedAt: null,
     totalPausedMs: 0
   };
+  activeTimers.push(timer);
 
   // Record deep work block start
   if (type === 'deep-work') {
@@ -2828,51 +2915,66 @@ function startTimer(type, mins, label, linkedStepId) {
     saveData(APP);
   }
 
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(tickTimer, 1000);
+  if (!timerIntervalId) {
+    timerIntervalId = setInterval(tickTimer, 1000);
+  }
   renderTimer();
 }
 
-function getTimerElapsed() {
-  if (!activeTimer) return 0;
-  const now = activeTimer.paused ? activeTimer.pausedAt : Date.now();
-  return (now - activeTimer.startedAt) - activeTimer.totalPausedMs;
+function getTimerElapsed(timer) {
+  if (!timer) return 0;
+  const now = timer.paused ? timer.pausedAt : Date.now();
+  return (now - timer.startedAt) - timer.totalPausedMs;
 }
 
 function tickTimer() {
-  if (!activeTimer) { clearInterval(timerInterval); timerInterval = null; return; }
-  if (activeTimer.paused) { renderTimer(); return; }
-
-  const elapsed = getTimerElapsed();
-  const remaining = activeTimer.duration - elapsed;
-
-  // 15-min warning for 90-min blocks
-  if (!activeTimer.notified15 && activeTimer.duration >= 5400000 && remaining <= 900000 && remaining > 870000) {
-    activeTimer.notified15 = true;
-    playGentleTone();
-    sendNotification('15 Minutes Remaining', activeTimer.label);
-  }
-
-  if (remaining <= 0) {
-    timerComplete();
+  if (activeTimers.length === 0) {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
     return;
   }
 
-  renderTimer();
+  let anyCompleted = false;
+  // Iterate in reverse so we can safely remove completed timers
+  for (let i = activeTimers.length - 1; i >= 0; i--) {
+    const timer = activeTimers[i];
+    if (timer.paused) continue;
+
+    const elapsed = getTimerElapsed(timer);
+    const remaining = timer.duration - elapsed;
+
+    // 15-min warning for 90-min blocks
+    if (!timer.notified15 && timer.duration >= 5400000 && remaining <= 900000 && remaining > 870000) {
+      timer.notified15 = true;
+      playGentleTone();
+      sendNotification('15 Minutes Remaining', timer.label);
+    }
+
+    if (remaining <= 0) {
+      timerComplete(timer);
+      anyCompleted = true;
+    }
+  }
+
+  if (anyCompleted) {
+    render();
+  } else {
+    renderTimer();
+  }
 }
 
-function timerComplete() {
+function timerComplete(timer) {
   const d = todayStr();
-  const stepId = activeTimer.linkedStepId;
-  const actualMins = Math.round(activeTimer.duration / 60000);
-  const type = activeTimer.type;
+  const stepId = timer.linkedStepId;
+  const actualMins = Math.round(timer.duration / 60000);
+  const type = timer.type;
 
   // Record timer completion
   if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
   if (stepId) {
     APP.timerCompletions[d][stepId] = { mins: actualMins, completedAt: Date.now() };
     // Auto-check linked flow step
-    if (APP.flow[d] && !APP.flow[d][stepId]) {
+    if (APP.flow[d] && APP.flow[d][stepId] !== true && APP.flow[d][stepId] !== 'skip') {
       APP.flow[d][stepId] = true;
     }
   }
@@ -2891,7 +2993,7 @@ function timerComplete() {
   if (!APP.timerHistory[d]) APP.timerHistory[d] = [];
   APP.timerHistory[d].push({
     type: type,
-    startedAt: activeTimer.startedAt,
+    startedAt: timer.startedAt,
     endedAt: Date.now(),
     minutes: actualMins
   });
@@ -2900,70 +3002,83 @@ function timerComplete() {
 
   // Sound + notification
   playChime();
-  sendNotification('Timer Complete', activeTimer.label + ' -- ' + actualMins + ' minutes');
+  sendNotification('Timer Complete', timer.label + ' -- ' + actualMins + ' minutes');
 
-  activeTimer = null;
-  clearInterval(timerInterval);
-  timerInterval = null;
+  // Remove from active timers
+  activeTimers = activeTimers.filter(t => t.id !== timer.id);
 
-  render();
+  if (activeTimers.length === 0) {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+  }
 }
 
-function pauseTimer() {
-  if (!activeTimer || activeTimer.paused) return;
-  activeTimer.paused = true;
-  activeTimer.pausedAt = Date.now();
+function pauseTimer(timerId) {
+  const timer = timerId ? activeTimers.find(t => t.id === timerId) : activeTimers[0];
+  if (!timer || timer.paused) return;
+  timer.paused = true;
+  timer.pausedAt = Date.now();
   renderTimer();
 }
 
-function resumeTimer() {
-  if (!activeTimer || !activeTimer.paused) return;
-  activeTimer.totalPausedMs += Date.now() - activeTimer.pausedAt;
-  activeTimer.paused = false;
-  activeTimer.pausedAt = null;
+function resumeTimer(timerId) {
+  const timer = timerId ? activeTimers.find(t => t.id === timerId) : activeTimers[0];
+  if (!timer || !timer.paused) return;
+  timer.totalPausedMs += Date.now() - timer.pausedAt;
+  timer.paused = false;
+  timer.pausedAt = null;
   renderTimer();
 }
 
-function showTimerActions() {
-  if (!activeTimer) return;
-  const elapsed = getTimerElapsed();
+function showTimerActions(timerId) {
+  const timer = timerId ? activeTimers.find(t => t.id === timerId) : activeTimers[0];
+  if (!timer) return;
+  const elapsed = getTimerElapsed(timer);
   const elapsedMins = Math.round(elapsed / 60000);
-  const wasPaused = activeTimer.paused;
+  const wasPaused = timer.paused;
 
   // Auto-pause while dialog is open
-  if (!wasPaused) pauseTimer();
+  if (!wasPaused) pauseTimer(timer.id);
 
   showConfirmDialog(
-    activeTimer.label,
+    timer.label,
     '<div style="text-align:center;margin-bottom:8px;"><span style="font-size:14px;font-weight:700;">' + elapsedMins + ' min elapsed</span></div>' +
     '<div class="field-group"><label class="blue">Edit Time Remaining (minutes)</label>' +
-    '<input type="number" id="edit-timer-mins" value="' + Math.max(0, Math.round((activeTimer.duration - elapsed) / 60000)) + '" min="0" style="width:80px;text-align:center;font-size:16px;font-weight:700;"></div>',
+    '<input type="number" id="edit-timer-mins" value="' + Math.max(0, Math.round((timer.duration - elapsed) / 60000)) + '" min="0" style="width:80px;text-align:center;font-size:16px;font-weight:700;"></div>' +
+    '<input type="hidden" id="edit-timer-id" value="' + timer.id + '">',
     [
-      { label: 'Cancel Timer', cls: '', style: 'color:var(--red);margin-right:auto;', onclick: 'closeConfirm();cancelTimer()' },
-      { label: wasPaused ? 'Resume' : 'Pause', cls: '', onclick: wasPaused ? 'closeConfirm();resumeTimer()' : 'closeConfirm();pauseTimer()' },
+      { label: 'Cancel Timer', cls: '', style: 'color:var(--red);margin-right:auto;', onclick: 'closeConfirm();cancelTimerById(document.getElementById("edit-timer-id").value)' },
+      { label: wasPaused ? 'Resume' : 'Pause', cls: '', onclick: wasPaused ? 'closeConfirm();resumeTimer("' + timer.id + '")' : 'closeConfirm();pauseTimer("' + timer.id + '")' },
       { label: 'Save & Resume', cls: 'primary', onclick: 'applyTimerEdit()' },
     ]
   );
 }
 
 function applyTimerEdit() {
-  if (!activeTimer) { closeConfirm(); return; }
+  const timerId = document.getElementById('edit-timer-id')?.value;
+  const timer = activeTimers.find(t => t.id === timerId);
+  if (!timer) { closeConfirm(); return; }
   const newRemaining = parseInt(document.getElementById('edit-timer-mins')?.value) || 0;
-  const elapsed = getTimerElapsed();
-  activeTimer.duration = elapsed + (newRemaining * 60000);
+  const elapsed = getTimerElapsed(timer);
+  timer.duration = elapsed + (newRemaining * 60000);
   // Resume if paused
-  if (activeTimer.paused) {
-    activeTimer.totalPausedMs += Date.now() - activeTimer.pausedAt;
-    activeTimer.paused = false;
-    activeTimer.pausedAt = null;
+  if (timer.paused) {
+    timer.totalPausedMs += Date.now() - timer.pausedAt;
+    timer.paused = false;
+    timer.pausedAt = null;
   }
   closeConfirm();
   renderTimer();
 }
 
-function cancelTimer() {
-  if (!activeTimer) return;
-  const type = activeTimer.type;
+function cancelTimer(timerId) {
+  cancelTimerById(timerId);
+}
+
+function cancelTimerById(timerId) {
+  const timer = activeTimers.find(t => t.id === timerId);
+  if (!timer) return;
+  const type = timer.type;
   const d = todayStr();
   // Remove unfinished deep work block
   if (type === 'deep-work' && APP.deepWorkBlocks[d]) {
@@ -2971,18 +3086,21 @@ function cancelTimer() {
     if (idx !== -1) APP.deepWorkBlocks[d].splice(idx, 1);
     saveData(APP);
   }
-  activeTimer = null;
-  clearInterval(timerInterval);
-  timerInterval = null;
+  activeTimers = activeTimers.filter(t => t.id !== timerId);
+  if (activeTimers.length === 0) {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+  }
   render();
 }
 
-function stopTimer() {
-  if (!activeTimer) return;
-  const elapsed = getTimerElapsed();
+function stopTimer(timerId) {
+  const timer = timerId ? activeTimers.find(t => t.id === timerId) : activeTimers[0];
+  if (!timer) return;
+  const elapsed = getTimerElapsed(timer);
   const actualMins = Math.round(elapsed / 60000);
-  const stepId = activeTimer.linkedStepId;
-  const type = activeTimer.type;
+  const stepId = timer.linkedStepId;
+  const type = timer.type;
   const d = todayStr();
 
   // Record partial completion
@@ -3000,14 +3118,16 @@ function stopTimer() {
     }
 
     if (!APP.timerHistory[d]) APP.timerHistory[d] = [];
-    APP.timerHistory[d].push({ type: type, startedAt: activeTimer.startedAt, endedAt: Date.now(), minutes: actualMins });
+    APP.timerHistory[d].push({ type: type, startedAt: timer.startedAt, endedAt: Date.now(), minutes: actualMins });
 
     saveData(APP);
   }
 
-  activeTimer = null;
-  clearInterval(timerInterval);
-  timerInterval = null;
+  activeTimers = activeTimers.filter(t => t.id !== timer.id);
+  if (activeTimers.length === 0) {
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+  }
   render();
 }
 
@@ -3017,46 +3137,136 @@ function getNextDeepWorkBlockNum() {
   return APP.deepWorkBlocks[d].filter(b => b.endedAt).length + 1;
 }
 
+function showDeepWorkSetup(mins) {
+  ensureDeepWorkTasks();
+  const d = todayStr();
+  ensureBlockAssignments(d);
+  const blockNum = getNextDeepWorkBlockNum();
+  const blockLabel = blockNum <= 3 ? 'Deep Work Block ' + blockNum : 'Deep Work';
+
+  // Get unassigned tasks
+  const assignments = APP.strategy[d] ? APP.strategy[d].blockAssignments || {} : {};
+  const allAssigned = new Set();
+  for (let b = 1; b <= 3; b++) (assignments[b] || []).forEach(tid => allAssigned.add(tid));
+  const unassigned = (APP.deepWorkTasks || []).filter(t => t.status !== 'done' && !allAssigned.has(t.id));
+
+  let body = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Select tasks for this block, or add new ones:</div>';
+
+  if (unassigned.length > 0) {
+    body += '<div style="max-height:180px;overflow-y:auto;margin-bottom:8px;">';
+    unassigned.forEach(t => {
+      body += '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;">' +
+        '<input type="checkbox" class="dw-setup-check" value="' + t.id + '"> ' +
+        '<span>' + esc(t.name) + '</span>' +
+        '<span style="color:var(--text-faint);font-size:11px;margin-left:auto;">' + (t.estimatedMins || 0) + 'm</span>' +
+        '</label>';
+    });
+    body += '</div>';
+  } else {
+    body += '<div style="font-size:11px;color:var(--text-faint);margin-bottom:8px;">No unassigned tasks.</div>';
+  }
+
+  body += '<div style="display:flex;gap:4px;margin-bottom:4px;">' +
+    '<input type="text" id="dw-setup-new-name" placeholder="New task name..." style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--font);">' +
+    '<input type="number" id="dw-setup-new-mins" placeholder="Min" value="30" style="width:55px;text-align:center;font-size:13px;padding:6px 4px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--font);">' +
+    '<button class="btn-sm blue" onclick="addDwTaskFromSetup()">+</button>' +
+    '</div>';
+
+  showConfirmDialog(
+    blockLabel + ' (' + mins + 'm)',
+    body,
+    [
+      { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
+      { label: 'Start Block', cls: 'primary', onclick: 'startDeepWorkFromSetup(' + mins + ')' },
+    ]
+  );
+}
+
+function addDwTaskFromSetup() {
+  const nameEl = document.getElementById('dw-setup-new-name');
+  const minsEl = document.getElementById('dw-setup-new-mins');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const estMins = parseInt(minsEl ? minsEl.value : '30') || 30;
+  if (!name) return;
+  ensureDeepWorkTasks();
+  const task = { id: uid(), name: name, estimatedMins: estMins, status: 'todo', createdAt: todayStr() };
+  APP.deepWorkTasks.push(task);
+  saveData(APP);
+  // Re-open the dialog to refresh
+  closeConfirm();
+  showDeepWorkSetup(90);
+}
+
+function startDeepWorkFromSetup(mins) {
+  const d = todayStr();
+  const blockNum = getNextDeepWorkBlockNum();
+  const blockLabel = blockNum <= 3 ? 'Deep Work Block ' + blockNum : 'Deep Work';
+  ensureBlockAssignments(d);
+
+  // Get checked task IDs
+  const checks = document.querySelectorAll('.dw-setup-check:checked');
+  const selectedIds = Array.from(checks).map(cb => cb.value);
+
+  // Assign selected tasks to the block
+  if (selectedIds.length > 0 && blockNum <= 3) {
+    if (!APP.strategy[d].blockAssignments[blockNum]) APP.strategy[d].blockAssignments[blockNum] = [];
+    selectedIds.forEach(tid => {
+      if (!APP.strategy[d].blockAssignments[blockNum].includes(tid)) {
+        APP.strategy[d].blockAssignments[blockNum].push(tid);
+      }
+    });
+    saveData(APP);
+  }
+
+  closeConfirm();
+  startTimer('deep-work', mins, blockLabel + ' (' + mins + 'm)', null);
+}
+
 function renderTimer() {
   const el = document.getElementById('timer-card');
+  let html = '';
 
-  if (activeTimer) {
-    const elapsed = getTimerElapsed();
-    const remaining = Math.max(0, activeTimer.duration - elapsed);
+  // Render all active timers stacked
+  activeTimers.forEach(timer => {
+    const elapsed = getTimerElapsed(timer);
+    const remaining = Math.max(0, timer.duration - elapsed);
     const mins = Math.floor(remaining / 60000);
     const secs = Math.floor((remaining % 60000) / 1000);
-    const isPaused = activeTimer.paused;
+    const isPaused = timer.paused;
 
     let sub = 'Stay focused. Finish strong.';
     if (remaining <= 0) sub = 'Complete!';
-    else if (isPaused) sub = 'PAUSED — click to resume';
+    else if (isPaused) sub = 'PAUSED -- click to resume';
 
-    el.innerHTML = '<div class="timer-card active" style="cursor:pointer;' + (isPaused ? 'border-color:var(--amber);' : '') + '" onclick="showTimerActions()">' +
-      '<div class="timer-type">' + esc(activeTimer.label) + (isPaused ? ' <span style="color:var(--amber);">PAUSED</span>' : '') + '</div>' +
+    html += '<div class="timer-card active" style="cursor:pointer;margin-bottom:8px;' + (isPaused ? 'border-color:var(--amber);' : '') + '" onclick="showTimerActions(\'' + timer.id + '\')">' +
+      '<div class="timer-type">' + esc(timer.label) + (isPaused ? ' <span style="color:var(--amber);">PAUSED</span>' : '') + '</div>' +
       '<div class="timer-display" style="' + (isPaused ? 'color:var(--amber);' : '') + '">' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0') + '</div>' +
       '<div class="timer-sub">' + sub + '</div>' +
-      (activeTimer.linkedStepId ? '<div class="timer-linked">Linked to flow step</div>' : '') +
+      (timer.linkedStepId ? '<div class="timer-linked">Linked to flow step</div>' : '') +
       '<div class="timer-buttons">' +
-        (isPaused ? '<button class="timer-btn green" onclick="event.stopPropagation();resumeTimer()">Resume</button>' : '<button class="timer-btn amber" onclick="event.stopPropagation();pauseTimer()">Pause</button>') +
-        '<button class="timer-btn red" onclick="event.stopPropagation();stopTimer()">Stop</button>' +
+        (isPaused ? '<button class="timer-btn green" onclick="event.stopPropagation();resumeTimer(\'' + timer.id + '\')">Resume</button>' : '<button class="timer-btn amber" onclick="event.stopPropagation();pauseTimer(\'' + timer.id + '\')">Pause</button>') +
+        '<button class="timer-btn red" onclick="event.stopPropagation();stopTimer(\'' + timer.id + '\')">Stop</button>' +
       '</div>' +
       '</div>';
-  } else {
-    const blockNum = getNextDeepWorkBlockNum();
-    const blockLabel = blockNum <= 3 ? 'Deep Work Block ' + blockNum : 'Deep Work';
+  });
 
-    el.innerHTML = '<div class="timer-card">' +
-      '<div class="timer-type">Start a Focus Block</div>' +
-      '<div class="timer-display">--:--</div>' +
-      '<div class="timer-buttons">' +
-        '<button class="timer-btn blue" onclick="startTimer(\'deep-work\',90,\'' + blockLabel + ' (90m)\',null)">Deep Work (90m)</button>' +
-        '<button class="timer-btn green" onclick="startTimer(\'treadmill\',30,\'Treadmill Walk (30m)\',\'walk\')">Treadmill (30m)</button>' +
-        '<button class="timer-btn amber" onclick="startTimer(\'walk-break\',10,\'Walk Break (10m)\',null)">Walk Break (10m)</button>' +
-        '<button class="timer-btn purple" onclick="startTimer(\'meditation\',10,\'Meditation (10m)\',\'meditation\')">Meditate (10m)</button>' +
-        '<button class="timer-btn amber" onclick="startTimer(\'clearing\',10,\'Task Clearing (10m)\',null)">Clearing (10m)</button>' +
-      '</div>' +
-      '</div>';
-  }
+  // Always show the start buttons
+  const blockNum = getNextDeepWorkBlockNum();
+  const blockLabel = blockNum <= 3 ? 'Deep Work Block ' + blockNum : 'Deep Work';
+
+  html += '<div class="timer-card">' +
+    '<div class="timer-type">Start a Focus Block</div>' +
+    (activeTimers.length === 0 ? '<div class="timer-display">--:--</div>' : '') +
+    '<div class="timer-buttons">' +
+      '<button class="timer-btn blue" onclick="showDeepWorkSetup(90)">Deep Work (90m)</button>' +
+      '<button class="timer-btn green" onclick="startTimer(\'treadmill\',30,\'Treadmill Walk (30m)\',\'walk\')">Treadmill (30m)</button>' +
+      '<button class="timer-btn amber" onclick="startTimer(\'walk-break\',10,\'Walk Break (10m)\',null)">Walk Break (10m)</button>' +
+      '<button class="timer-btn purple" onclick="startTimer(\'meditation\',10,\'Meditation (10m)\',\'meditation\')">Meditate (10m)</button>' +
+      '<button class="timer-btn amber" onclick="startTimer(\'clearing\',10,\'Task Clearing (10m)\',null)">Clearing (10m)</button>' +
+    '</div>' +
+    '</div>';
+
+  el.innerHTML = html;
 }
 
 
@@ -3230,7 +3440,7 @@ function renderTimeline() {
 
   // 1. Flow steps (built-in + custom, merged)
   getAllFlowSteps().forEach(step => {
-    const isDone = APP.flow[d] && APP.flow[d][step.id];
+    const isDone = APP.flow[d] && APP.flow[d][step.id] === true;
     items.push({
       type: 'flow',
       time: parseTime(step.time),
@@ -3389,10 +3599,11 @@ function renderTimelineItem(item, isToday, nowMin) {
       html += '<div class="tl-buffer"><i class="ph ph-clock"></i> 10 min buffer &mdash; follow-ups, notes</div>';
     }
   } else if (item.type === 'flow' || item.type === 'deepwork') {
-    const isRunning = item.type === 'deepwork' && !item.done && activeTimer && activeTimer.type === 'deep-work';
+    const isRunning = item.type === 'deepwork' && !item.done && activeTimers.some(t => t.type === 'deep-work');
     const cls = 'flow-event' + (item.done ? ' done-event' : '') +
       (isToday && item.time <= nowMin && item.endTime > nowMin && !item.done ? ' current-event' : '');
-    html += '<div class="tl-item ' + cls + '"' + (isRunning ? ' style="cursor:pointer;" onclick="showTimerActions()"' : '') + '>';
+    const dwTimerForTL = isRunning ? activeTimers.find(t => t.type === 'deep-work') : null;
+    html += '<div class="tl-item ' + cls + '"' + (isRunning && dwTimerForTL ? ' style="cursor:pointer;" onclick="showTimerActions(\'' + dwTimerForTL.id + '\')"' : '') + '>';
     html += '<div class="tl-time">' + formatTime12(item.time) + '</div>';
     html += '<div class="tl-title">';
     if (item.icon) html += '<i class="ph ' + item.icon + '" style="color:' + item.color + ';font-size:14px;"></i>';
@@ -3953,7 +4164,9 @@ function calcStreak(stepId) {
   let streak = 0;
   let d = todayStr();
   while (true) {
-    if (APP.flow[d] && APP.flow[d][stepId]) { streak++; d = addDays(d, -1); }
+    const val = APP.flow[d] && APP.flow[d][stepId];
+    if (val === true) { streak++; d = addDays(d, -1); }
+    else if (val === 'skip') { d = addDays(d, -1); } // skip is neutral — don't break streak
     else break;
   }
   return streak;
@@ -3961,11 +4174,15 @@ function calcStreak(stepId) {
 
 function calc30DayRate(stepId) {
   let done = 0;
+  let applicable = 0;
   for (let i = 0; i < 30; i++) {
     const d = addDays(todayStr(), -i);
-    if (APP.flow[d] && APP.flow[d][stepId]) done++;
+    const val = APP.flow[d] && APP.flow[d][stepId];
+    if (val === 'skip') continue; // skipped days don't count
+    applicable++;
+    if (val === true) done++;
   }
-  return Math.round(done / 30 * 100);
+  return applicable > 0 ? Math.round(done / applicable * 100) : 0;
 }
 
 function renderStreaks() {
@@ -4041,7 +4258,7 @@ function openWeeklyReview() {
     let dayTotal = allSteps.length;
     let dayDone = 0;
     allSteps.forEach(s => {
-      if (APP.flow[d] && APP.flow[d][s.id]) dayDone++;
+      if (APP.flow[d] && APP.flow[d][s.id] === true) dayDone++;
     });
     totalFlowSteps += dayTotal;
     completedFlowSteps += dayDone;
@@ -4126,7 +4343,7 @@ let cmdFilteredCommands = [];
 
 const COMMANDS = [
   { match: /^(add )?task[: ](.+)/i, label: 'Add Task', icon: 'ph-plus-circle', action: (m) => { closeCmd(); openAddTaskModal(); } },
-  { match: /^(start )?(deep ?work|dw)/i, label: 'Start Deep Work (90m)', icon: 'ph-fire-simple', action: () => { closeCmd(); startTimer('deep-work', 90, 'Deep Work Block (90m)', null); } },
+  { match: /^(start )?(deep ?work|dw)/i, label: 'Start Deep Work (90m)', icon: 'ph-fire-simple', action: () => { closeCmd(); showDeepWorkSetup(90); } },
   { match: /^(start )?treadmill/i, label: 'Start Treadmill (30m)', icon: 'ph-person-simple-run', action: () => { closeCmd(); startTimer('treadmill', 30, 'Treadmill Walk (30m)', 'walk'); } },
   { match: /^(start )?meditat/i, label: 'Start Meditation (10m)', icon: 'ph-brain', action: () => { closeCmd(); startTimer('meditation', 10, 'Meditation (10m)', 'meditation'); } },
   { match: /^(log )?(clear|clearing)[: ](.+)/i, label: 'Add to Clearing List', icon: 'ph-checks', action: (m) => { closeCmd(); addClearingItem(m[3] || m[2]); } },
