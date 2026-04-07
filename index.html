@@ -3208,6 +3208,7 @@ function showDeepWorkSetup(mins) {
     body,
     [
       { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
+      { label: 'Complete', cls: '', style: 'color:var(--green);', onclick: 'completeDeepWorkWithoutTimer()' },
       { label: 'Start Block', cls: 'primary', onclick: 'startDeepWorkFromSetup(' + mins + ')' },
     ]
   );
@@ -3239,6 +3240,35 @@ function startDeepWorkFromSetup(mins) {
 
   closeConfirm();
   startTimer('deep-work', mins, blockLabel + ' (' + mins + 'm)', linkedStep);
+}
+
+function completeDeepWorkWithoutTimer() {
+  // Mark checked tasks as done
+  const checks = document.querySelectorAll('.dw-setup-check:checked');
+  Array.from(checks).forEach(cb => {
+    const task = APP.tasks.find(t => t.id === cb.value);
+    if (task) {
+      task.status = 'done';
+      task.completedAt = Date.now();
+      task.completedDate = todayStr();
+    }
+  });
+
+  // Auto-check the linked deep work flow step
+  const d = todayStr();
+  if (!APP.flow[d]) APP.flow[d] = {};
+  if (pendingDeepWorkStepId) {
+    APP.flow[d][pendingDeepWorkStepId] = true;
+  } else {
+    // Check deepwork1 first, then deepwork2
+    if (!APP.flow[d]['deepwork1']) APP.flow[d]['deepwork1'] = true;
+    else if (!APP.flow[d]['deepwork2']) APP.flow[d]['deepwork2'] = true;
+  }
+  pendingDeepWorkStepId = null;
+
+  saveData(APP);
+  closeConfirm();
+  render();
 }
 
 function showClearingSetup(mins) {
