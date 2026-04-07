@@ -964,6 +964,12 @@ body {
 }
 .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--blue); }
 .modal textarea { resize: vertical; min-height: 60px; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.modal-header h2 { font-size: 16px; font-weight: 700; margin: 0; }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-dim); padding: 0 4px; line-height: 1; }
+.modal-close:hover { color: var(--text); }
+.modal-body { max-height: 70vh; overflow-y: auto; }
+.triage-type-btn { opacity: 0.5; } .triage-type-btn.active { opacity: 1; font-weight: 700; }
 .modal-actions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 6px; }
 .modal-btn {
   padding: 6px 14px;
@@ -1368,28 +1374,13 @@ body {
 </div>
 
 <!-- Strategy Planner Modal -->
-<div class="modal-overlay" id="strategy-modal">
-  <div class="modal" style="max-width:520px;">
-    <h3>Strategy Planning</h3>
-    <p style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Assign tasks to deep work blocks. Each block is 90 minutes.</p>
-    <div id="strategy-blocks"></div>
-    <div class="field-group" style="margin-top:8px;">
-      <label class="blue">Add from backlog or create new</label>
-      <div style="display:flex;gap:4px;">
-        <input type="text" id="strat-new-task" placeholder="Task name...">
-        <input type="text" id="strat-new-mins" placeholder="Min" style="width:60px;">
-        <select id="strat-new-block" style="width:80px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px;color:var(--text);font-size:11px;">
-          <option value="1">Block 1</option>
-          <option value="2">Block 2</option>
-          <option value="3">Block 3</option>
-        </select>
-        <button class="btn-sm blue" onclick="addStratTask()">Add</button>
-      </div>
+<div class="modal-overlay" id="triage-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Task Triage</h2>
+      <button class="modal-close" onclick="closeTriageModal()">&times;</button>
     </div>
-    <div class="modal-actions" style="margin-top:12px;">
-      <button class="modal-btn" onclick="closeStrategyModal()">Cancel</button>
-      <button class="modal-btn primary" onclick="saveStrategyPlan()">Save Plan</button>
-    </div>
+    <div class="modal-body" id="triage-body"></div>
   </div>
 </div>
 
@@ -1522,7 +1513,7 @@ const FLOW_STEPS = [
   { id: "walk",       time: "6:40 AM",  label: "Treadmill",             icon: "ph-person-simple-run",  color: "var(--green)",  colorBg: "var(--green-bg)", timerMins: 30, timerType: "treadmill" },
   { id: "soap",       time: "7:10 AM",  label: "SOAP Journal",          icon: "ph-notebook",           color: "var(--purple)", colorBg: "var(--purple-bg)" },
   { id: "meditation", time: "10:00 AM", label: "Meditation",            icon: "ph-brain",              color: "var(--purple)", colorBg: "var(--purple-bg)", timerMins: 10, timerType: "meditation" },
-  { id: "strategy",   time: "10:10 AM", label: "Strategy Planning",     icon: "ph-lightbulb",          color: "var(--blue)",   colorBg: "var(--blue-bg)" },
+  { id: "strategy",   time: "10:10 AM", label: "Task Triage",           icon: "ph-list-checks",        color: "var(--blue)",   colorBg: "var(--blue-bg)" },
 ];
 
 // ── DEEP WORK CATEGORIES ──
@@ -1564,6 +1555,7 @@ function loadData() {
       deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {}, salesMetrics: {},
       silencedEvents: {}, goalProgress: {}, timerHistory: {},
       customTasks: [], deepWorkTasks: [], clearingItems: [],
+      tasks: [], _tasksMigrated: false,
       weeklyReviews: {}
     };
     Object.keys(defaults).forEach(k => { if (d[k] === undefined) d[k] = defaults[k]; });
@@ -1578,6 +1570,7 @@ function loadData() {
     deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {},
     salesMetrics: {}, silencedEvents: {}, goalProgress: {}, timerHistory: {},
     customTasks: [], deepWorkTasks: [], clearingItems: [],
+    tasks: [], _tasksMigrated: false,
     weeklyReviews: {}
   };
 }
@@ -1588,6 +1581,49 @@ function saveData(d) {
 }
 
 let APP = loadData();
+
+function migrateToUnifiedTasks() {
+  if (APP._tasksMigrated) return;
+  if (!APP.tasks) APP.tasks = [];
+  // Migrate deepWorkTasks
+  if (Array.isArray(APP.deepWorkTasks)) {
+    APP.deepWorkTasks.forEach(t => {
+      APP.tasks.push({
+        id: t.id,
+        name: t.name,
+        type: 'deep',
+        estimatedMins: t.estimatedMins || null,
+        priority: null,
+        dueDate: null,
+        status: t.status === 'done' ? 'done' : 'todo',
+        createdAt: t.createdAt || todayStr(),
+        completedAt: t.completedAt || null,
+        completedDate: t.completedDate || null
+      });
+    });
+  }
+  // Migrate clearingItems
+  if (Array.isArray(APP.clearingItems)) {
+    APP.clearingItems.forEach(t => {
+      APP.tasks.push({
+        id: t.id,
+        name: t.name,
+        type: 'clearing',
+        estimatedMins: null,
+        priority: null,
+        dueDate: null,
+        status: t.done ? 'done' : 'todo',
+        createdAt: t.createdAt || todayStr(),
+        completedAt: t.completedAt || null,
+        completedDate: t.completedDate || null
+      });
+    });
+  }
+  APP._tasksMigrated = true;
+  saveData(APP);
+}
+
+migrateToUnifiedTasks();
 
 // ── Sync ──
 let syncTimeout = null;
@@ -1633,14 +1669,15 @@ function tryRestoreFromCloud() {
           deepWorkBlocks: {}, catchupTasks: {}, bibleLog: {}, salesMetrics: {},
           silencedEvents: {}, goalProgress: {}, timerHistory: {},
           customTasks: [], deepWorkTasks: [], clearingItems: [],
+          tasks: [], _tasksMigrated: false,
           weeklyReviews: {}
         };
         Object.keys(defaults).forEach(k => {
           if (APP[k] === undefined) APP[k] = defaults[k];
         });
         if (!Array.isArray(APP.customTasks)) APP.customTasks = [];
-        if (!Array.isArray(APP.deepWorkTasks)) APP.deepWorkTasks = [];
-        if (!Array.isArray(APP.clearingItems)) APP.clearingItems = [];
+        if (!Array.isArray(APP.tasks)) APP.tasks = [];
+        migrateToUnifiedTasks();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(APP));
         render();
         lastSyncTime = Date.now();
@@ -2206,7 +2243,7 @@ function renderFlowItem(step, isDone, isCurrent, isToday, d, reading, isSkipped)
   else if (step.id === 'walk') hint = '30 min. Turn on treadmill.';
   else if (step.id === 'soap') hint = 'Reflect on your reading.';
   else if (step.id === 'meditation') hint = '10 min. Be present.';
-  else if (step.id === 'strategy') hint = 'Assign tasks to deep work blocks.';
+  else if (step.id === 'strategy') hint = 'Review tasks, set priorities and due dates.';
 
   let timerInfo = '';
   if (isDone && APP.timerCompletions[d] && APP.timerCompletions[d][step.id]) {
@@ -2319,15 +2356,16 @@ function renderSOAPPanel(d, isDone) {
 }
 
 function renderStrategyTrigger(d, isDone) {
-  if (!APP.strategy[d]) APP.strategy[d] = { planned: [] };
+  if (!APP.strategy[d]) APP.strategy[d] = {};
   const isOpen = !isDone;
-  const planned = APP.strategy[d].planned || [];
-  const summary = planned.length > 0
-    ? planned.map(t => t.name + ' (' + t.minutes + 'm)').join(', ')
-    : 'No tasks planned yet.';
+  const today = todayStr();
+  const urgent = sortTasks(APP.tasks.filter(t => t.status === 'todo' && (t.priority === 'high' || (t.dueDate && t.dueDate <= today))));
+  const summary = urgent.length > 0
+    ? urgent.slice(0, 3).map(t => t.name).join(', ') + (urgent.length > 3 ? ' +' + (urgent.length - 3) + ' more' : '')
+    : 'No high-priority or due tasks.';
   return '<div class="expand-panel ' + (isOpen ? 'open' : '') + '">' +
     '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">' + esc(summary) + '</div>' +
-    '<button class="btn-sm blue" onclick="openStrategyModal()">Open Strategy Planner</button>' +
+    '<button class="btn-sm blue" onclick="openTriageModal()">Open Task Triage</button>' +
     '</div>';
 }
 
@@ -2384,9 +2422,9 @@ function handleFlowTap(id) {
     APP.meditation[d] = { startedAt: Date.now(), onTime: nowMin <= targetMin + 2 };
   }
 
-  // Strategy opens the planner
+  // Strategy opens the triage modal
   if (id === 'strategy' && isToday) {
-    openStrategyModal();
+    openTriageModal();
     completeFlowStep(id);
     return;
   }
@@ -2604,21 +2642,6 @@ function deleteCustomTask(customId) {
 // LEFT COLUMN: DEEP WORK TRACKER
 // ══════════════════════════════════════════════════════════════
 
-function ensureDeepWorkTasks() {
-  if (!APP.deepWorkTasks) APP.deepWorkTasks = [];
-}
-
-function ensureBlockAssignments(d) {
-  if (!APP.strategy[d]) APP.strategy[d] = { planned: [] };
-  if (!APP.strategy[d].blockAssignments) APP.strategy[d].blockAssignments = { 1: [], 2: [], 3: [] };
-  for (let b = 1; b <= 3; b++) {
-    APP.strategy[d].blockAssignments[b] = (APP.strategy[d].blockAssignments[b] || []).filter(tid => {
-      const t = (APP.deepWorkTasks || []).find(x => x.id === tid);
-      return t && t.status !== 'done';
-    });
-  }
-}
-
 function getActiveDeepWorkBlockNum() {
   if (!activeTimers.some(t => t.type === 'deep-work')) return null;
   const d = todayStr();
@@ -2630,70 +2653,53 @@ function getActiveDeepWorkBlockNum() {
 function renderDeepWork() {
   const d = selectedDate;
   if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
-  ensureDeepWorkTasks();
-  ensureBlockAssignments(d);
 
   const blocks = APP.deepWorkBlocks[d];
-  const assignments = APP.strategy[d].blockAssignments;
   const target = 270;
   const activeBlockNum = getActiveDeepWorkBlockNum();
+  const deepTasks = sortTasks(APP.tasks.filter(t => t.type === 'deep' && t.status === 'todo'));
+  const today = todayStr();
 
   let totalMins = 0;
   let html = '<div class="card"><div class="card-body">';
 
-  for (let bn = 1; bn <= 3; bn++) {
-    const taskIds = assignments[bn] || [];
-    const tasks = taskIds.map(tid => (APP.deepWorkTasks || []).find(t => t.id === tid)).filter(Boolean);
-    const usedMins = tasks.reduce((s, t) => s + (t.estimatedMins || 0), 0);
-    const pctUsed = Math.round((usedMins / 90) * 100);
-    const capColor = pctUsed > 90 ? 'var(--red)' : pctUsed > 70 ? 'var(--amber)' : 'var(--green)';
-    const isActive = activeBlockNum === bn;
-
-    const timerBlock = blocks[bn - 1];
-    const timerDone = timerBlock && timerBlock.endedAt;
-    const timerRunning = timerBlock && !timerBlock.endedAt;
-    let timerMins = 0;
-    if (timerDone) timerMins = timerBlock.minutes || 0;
+  // Completed blocks as retrospective entries
+  blocks.forEach((block, idx) => {
+    const timerDone = block.endedAt;
+    const timerRunning = !block.endedAt;
+    let blockMins = 0;
+    if (timerDone) blockMins = block.minutes || 0;
     else if (timerRunning) {
       const dwTimer = activeTimers.find(t => t.type === 'deep-work');
-      timerMins = dwTimer ? Math.round(getTimerElapsed(dwTimer) / 60000) : Math.round((Date.now() - timerBlock.startedAt) / 60000);
+      blockMins = dwTimer ? Math.round(getTimerElapsed(dwTimer) / 60000) : Math.round((Date.now() - block.startedAt) / 60000);
     }
-    if (timerDone || timerRunning) totalMins += timerMins;
+    totalMins += blockMins;
+
+    const blockCat = block.category || 'other';
+    const catInfo = DW_CATEGORIES.find(c => c.id === blockCat) || DW_CATEGORIES[4];
+    const isActive = activeBlockNum === (idx + 1);
+    const taskNames = (block.taskIds || []).map(tid => {
+      const t = APP.tasks.find(x => x.id === tid);
+      return t ? t.name : null;
+    }).filter(Boolean);
 
     html += '<div class="dw-block-container' + (isActive ? ' active-block' : '') + '">';
     html += '<div class="dw-block-hdr">';
-    const blockData = blocks[bn - 1];
-    const blockCat = blockData ? (blockData.category || 'other') : 'other';
-    const catInfo = DW_CATEGORIES.find(c => c.id === blockCat) || DW_CATEGORIES[4];
-    html += '<span class="block-label"><span class="dw-cat-dot" style="background:' + catInfo.color + ';margin-right:6px;"></span>Block ' + bn;
-    if (timerDone) html += ' <span style="color:var(--green);font-size:11px;">&#10003; ' + timerMins + ' min</span>';
-    else if (timerRunning) html += ' <span style="color:var(--blue);font-size:11px;">' + timerMins + ' min (running)</span>';
-    html += '</span>';
-    html += '<span class="block-cap">' + usedMins + ' / 90 min</span>';
-    html += '</div>';
-    html += '<div class="capacity-bar"><div class="capacity-bar-fill" style="width:' + Math.min(100, pctUsed) + '%;background:' + capColor + ';"></div></div>';
-
-    if (tasks.length > 0) {
-      tasks.forEach(t => {
-        html += '<div class="dw-task-item" style="margin-top:4px;">';
-        html += '<span class="task-name">' + esc(t.name) + '</span>';
-        html += '<span class="task-mins">' + (t.estimatedMins || 0) + 'm</span>';
-        if (bn > 1) html += '<button class="dw-task-btn" onclick="moveDwTask(\'' + t.id + '\',' + bn + ',' + (bn - 1) + ')" title="Move to Block ' + (bn - 1) + '">&larr;</button>';
-        if (bn < 3) html += '<button class="dw-task-btn" onclick="moveDwTask(\'' + t.id + '\',' + bn + ',' + (bn + 1) + ')" title="Move to Block ' + (bn + 1) + '">&rarr;</button>';
-        html += '<button class="dw-task-btn check" onclick="completeDwTask(\'' + t.id + '\')" title="Complete">&#10003;</button>';
-        html += '</div>';
-      });
-    } else {
-      html += '<div style="font-size:10px;color:var(--text-faint);padding:4px 0;margin-top:4px;">No tasks assigned</div>';
+    html += '<span class="block-label"><span class="dw-cat-dot" style="background:' + catInfo.color + ';margin-right:6px;"></span>Block ' + (idx + 1);
+    if (timerDone) html += ' <span style="color:var(--green);font-size:11px;">&#10003; ' + blockMins + ' min</span>';
+    else if (timerRunning) html += ' <span style="color:var(--blue);font-size:11px;">' + blockMins + ' min (running)</span>';
+    if (block.label) html += ' <span style="color:var(--text-dim);font-size:11px;">(' + esc(block.label) + ')</span>';
+    html += '</span></div>';
+    if (taskNames.length > 0) {
+      html += '<div style="font-size:11px;color:var(--text-dim);padding:2px 0 0 20px;">' + taskNames.map(n => esc(n)).join(', ') + '</div>';
     }
-
     if (timerDone) {
-      html += '<div style="text-align:right;margin-top:4px;"><button class="dw-task-btn" style="display:inline-flex;width:auto;padding:2px 6px;font-size:9px;" onclick="editDeepWorkBlock(' + (bn - 1) + ')">Edit block</button></div>';
+      html += '<div style="text-align:right;margin-top:4px;"><button class="dw-task-btn" style="display:inline-flex;width:auto;padding:2px 6px;font-size:9px;" onclick="editDeepWorkBlock(' + idx + ')">Edit block</button></div>';
     }
-
     html += '</div>';
-  }
+  });
 
+  // Total progress bar
   const pct = Math.min(100, Math.round((totalMins / target) * 100));
   html += '<div class="dw-total"><span>Total deep work</span><span class="value">' + totalMins + ' / ' + target + ' min</span></div>';
   html += '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + pct + '%;background:var(--blue);"></div></div>';
@@ -2704,30 +2710,28 @@ function renderDeepWork() {
       '+ Log Deep Work Block</div>';
   }
 
-  const allAssigned = new Set();
-  for (let b = 1; b <= 3; b++) (assignments[b] || []).forEach(tid => allAssigned.add(tid));
-  const unassigned = (APP.deepWorkTasks || []).filter(t => t.status !== 'done' && !allAssigned.has(t.id));
-
+  // Active deep tasks
   html += '<div class="dw-unassigned">';
-  html += '<div class="dw-unassigned-label">Unassigned Tasks (' + unassigned.length + ')</div>';
-  html += '<div class="quick-input" style="margin-bottom:6px;"><input type="text" id="dw-task-input" placeholder="New task name..." onkeydown="if(event.key===\'Enter\')addDwTaskQuick()">' +
+  html += '<div class="dw-unassigned-label">Deep Work Tasks (' + deepTasks.length + ')</div>';
+  html += '<div class="quick-input" style="margin-bottom:6px;"><input type="text" id="dw-task-input" placeholder="New deep task..." onkeydown="if(event.key===\'Enter\')addDwTaskQuick()">' +
     '<input type="number" id="dw-task-mins-input" placeholder="Min" style="width:55px;text-align:center;" value="30" onkeydown="if(event.key===\'Enter\')addDwTaskQuick()">' +
     '<button onclick="addDwTaskQuick()">+</button></div>';
 
-  unassigned.forEach(t => {
+  deepTasks.forEach(t => {
+    const isOverdue = t.dueDate && t.dueDate < today;
+    const prioDot = t.priority === 'high' ? 'var(--red)' : t.priority === 'medium' ? 'var(--amber)' : t.priority === 'low' ? 'var(--blue)' : '';
     html += '<div class="dw-task-item">';
+    if (prioDot) html += '<span style="width:6px;height:6px;border-radius:50%;background:' + prioDot + ';flex-shrink:0;margin-right:4px;"></span>';
     html += '<span class="task-name">' + esc(t.name) + '</span>';
-    html += '<span class="task-mins">' + (t.estimatedMins || 0) + 'm</span>';
-    html += '<button class="dw-task-btn" onclick="assignDwTask(\'' + t.id + '\',1)" title="Block 1" style="font-size:8px;width:auto;padding:1px 4px;">B1</button>';
-    html += '<button class="dw-task-btn" onclick="assignDwTask(\'' + t.id + '\',2)" title="Block 2" style="font-size:8px;width:auto;padding:1px 4px;">B2</button>';
-    html += '<button class="dw-task-btn" onclick="assignDwTask(\'' + t.id + '\',3)" title="Block 3" style="font-size:8px;width:auto;padding:1px 4px;">B3</button>';
+    if (t.estimatedMins) html += '<span class="task-mins">' + t.estimatedMins + 'm</span>';
+    if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';margin-left:4px;">' + t.dueDate + '</span>';
     html += '<button class="dw-task-btn check" onclick="completeDwTask(\'' + t.id + '\')" title="Complete">&#10003;</button>';
     html += '<button class="dw-task-btn del" onclick="deleteDwTask(\'' + t.id + '\')" title="Delete">&#10005;</button>';
     html += '</div>';
   });
 
-  if (unassigned.length === 0) {
-    html += '<div style="font-size:10px;color:var(--text-faint);padding:4px 0;">All tasks assigned or none created.</div>';
+  if (deepTasks.length === 0) {
+    html += '<div style="font-size:10px;color:var(--text-faint);padding:4px 0;">No active deep work tasks.</div>';
   }
 
   html += '</div></div></div>';
@@ -2740,58 +2744,24 @@ function addDwTaskQuick() {
   const name = inp.value.trim();
   if (!name) return;
   const mins = parseInt(minsInp.value) || 30;
-  ensureDeepWorkTasks();
-  APP.deepWorkTasks.push({ id: uid(), name: name, estimatedMins: mins, status: 'todo', completedAt: null, completedDate: null });
+  APP.tasks.push({ id: uid(), name: name, type: 'deep', estimatedMins: mins, priority: null, dueDate: null, status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null });
   saveData(APP);
   inp.value = '';
   renderDeepWork();
 }
 
-function assignDwTask(taskId, blockNum) {
-  const d = selectedDate;
-  ensureBlockAssignments(d);
-  for (let b = 1; b <= 3; b++) {
-    APP.strategy[d].blockAssignments[b] = (APP.strategy[d].blockAssignments[b] || []).filter(tid => tid !== taskId);
-  }
-  APP.strategy[d].blockAssignments[blockNum].push(taskId);
-  saveData(APP);
-  renderDeepWork();
-}
-
-function moveDwTask(taskId, fromBlock, toBlock) {
-  const d = selectedDate;
-  ensureBlockAssignments(d);
-  APP.strategy[d].blockAssignments[fromBlock] = (APP.strategy[d].blockAssignments[fromBlock] || []).filter(tid => tid !== taskId);
-  if (!APP.strategy[d].blockAssignments[toBlock]) APP.strategy[d].blockAssignments[toBlock] = [];
-  APP.strategy[d].blockAssignments[toBlock].push(taskId);
-  saveData(APP);
-  renderDeepWork();
-}
-
 function completeDwTask(taskId) {
-  ensureDeepWorkTasks();
-  const task = APP.deepWorkTasks.find(t => t.id === taskId);
+  const task = APP.tasks.find(t => t.id === taskId);
   if (!task) return;
   task.status = 'done';
   task.completedAt = Date.now();
   task.completedDate = todayStr();
-  const d = selectedDate;
-  ensureBlockAssignments(d);
-  for (let b = 1; b <= 3; b++) {
-    APP.strategy[d].blockAssignments[b] = (APP.strategy[d].blockAssignments[b] || []).filter(tid => tid !== taskId);
-  }
   saveData(APP);
   renderDeepWork();
 }
 
 function deleteDwTask(taskId) {
-  ensureDeepWorkTasks();
-  APP.deepWorkTasks = APP.deepWorkTasks.filter(t => t.id !== taskId);
-  const d = selectedDate;
-  ensureBlockAssignments(d);
-  for (let b = 1; b <= 3; b++) {
-    APP.strategy[d].blockAssignments[b] = (APP.strategy[d].blockAssignments[b] || []).filter(tid => tid !== taskId);
-  }
+  APP.tasks = APP.tasks.filter(t => t.id !== taskId);
   saveData(APP);
   renderDeepWork();
 }
@@ -2910,8 +2880,10 @@ function startTimer(type, mins, label, linkedStepId) {
       endedAt: null,
       minutes: 0,
       tasks: [],
+      taskIds: pendingDwTaskIds.length > 0 ? pendingDwTaskIds.slice() : [],
       category: 'other'
     });
+    pendingDwTaskIds = [];
     saveData(APP);
   }
 
@@ -3137,24 +3109,18 @@ function getNextDeepWorkBlockNum() {
   return APP.deepWorkBlocks[d].filter(b => b.endedAt).length + 1;
 }
 
+let pendingDwTaskIds = [];
+
 function showDeepWorkSetup(mins) {
-  ensureDeepWorkTasks();
-  const d = todayStr();
-  ensureBlockAssignments(d);
+  const deepTasks = sortTasks(APP.tasks.filter(t => t.type === 'deep' && t.status === 'todo'));
   const blockNum = getNextDeepWorkBlockNum();
   const blockLabel = blockNum <= 3 ? 'Deep Work Block ' + blockNum : 'Deep Work';
 
-  // Get unassigned tasks
-  const assignments = APP.strategy[d] ? APP.strategy[d].blockAssignments || {} : {};
-  const allAssigned = new Set();
-  for (let b = 1; b <= 3; b++) (assignments[b] || []).forEach(tid => allAssigned.add(tid));
-  const unassigned = (APP.deepWorkTasks || []).filter(t => t.status !== 'done' && !allAssigned.has(t.id));
-
   let body = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Select tasks for this block, or add new ones:</div>';
 
-  if (unassigned.length > 0) {
+  if (deepTasks.length > 0) {
     body += '<div style="max-height:180px;overflow-y:auto;margin-bottom:8px;">';
-    unassigned.forEach(t => {
+    deepTasks.forEach(t => {
       body += '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;">' +
         '<input type="checkbox" class="dw-setup-check" value="' + t.id + '"> ' +
         '<span>' + esc(t.name) + '</span>' +
@@ -3163,7 +3129,7 @@ function showDeepWorkSetup(mins) {
     });
     body += '</div>';
   } else {
-    body += '<div style="font-size:11px;color:var(--text-faint);margin-bottom:8px;">No unassigned tasks.</div>';
+    body += '<div style="font-size:11px;color:var(--text-faint);margin-bottom:8px;">No deep work tasks.</div>';
   }
 
   body += '<div style="display:flex;gap:4px;margin-bottom:4px;">' +
@@ -3188,38 +3154,71 @@ function addDwTaskFromSetup() {
   const name = nameEl ? nameEl.value.trim() : '';
   const estMins = parseInt(minsEl ? minsEl.value : '30') || 30;
   if (!name) return;
-  ensureDeepWorkTasks();
-  const task = { id: uid(), name: name, estimatedMins: estMins, status: 'todo', createdAt: todayStr() };
-  APP.deepWorkTasks.push(task);
+  const task = { id: uid(), name: name, type: 'deep', estimatedMins: estMins, priority: null, dueDate: null, status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null };
+  APP.tasks.push(task);
   saveData(APP);
-  // Re-open the dialog to refresh
   closeConfirm();
   showDeepWorkSetup(90);
 }
 
 function startDeepWorkFromSetup(mins) {
-  const d = todayStr();
   const blockNum = getNextDeepWorkBlockNum();
   const blockLabel = blockNum <= 3 ? 'Deep Work Block ' + blockNum : 'Deep Work';
-  ensureBlockAssignments(d);
 
   // Get checked task IDs
   const checks = document.querySelectorAll('.dw-setup-check:checked');
-  const selectedIds = Array.from(checks).map(cb => cb.value);
-
-  // Assign selected tasks to the block
-  if (selectedIds.length > 0 && blockNum <= 3) {
-    if (!APP.strategy[d].blockAssignments[blockNum]) APP.strategy[d].blockAssignments[blockNum] = [];
-    selectedIds.forEach(tid => {
-      if (!APP.strategy[d].blockAssignments[blockNum].includes(tid)) {
-        APP.strategy[d].blockAssignments[blockNum].push(tid);
-      }
-    });
-    saveData(APP);
-  }
+  pendingDwTaskIds = Array.from(checks).map(cb => cb.value);
 
   closeConfirm();
   startTimer('deep-work', mins, blockLabel + ' (' + mins + 'm)', null);
+}
+
+function showClearingSetup(mins) {
+  const clearingTasks = sortTasks(APP.tasks.filter(t => t.type === 'clearing' && t.status === 'todo'));
+
+  let body = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Select clearing tasks, or add new ones:</div>';
+
+  if (clearingTasks.length > 0) {
+    body += '<div style="max-height:180px;overflow-y:auto;margin-bottom:8px;">';
+    clearingTasks.forEach(t => {
+      body += '<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;">' +
+        '<input type="checkbox" class="clearing-setup-check" value="' + t.id + '"> ' +
+        '<span>' + esc(t.name) + '</span>' +
+        '</label>';
+    });
+    body += '</div>';
+  } else {
+    body += '<div style="font-size:11px;color:var(--text-faint);margin-bottom:8px;">No clearing tasks.</div>';
+  }
+
+  body += '<div style="display:flex;gap:4px;margin-bottom:4px;">' +
+    '<input type="text" id="clearing-setup-new-name" placeholder="New clearing task..." style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--font);">' +
+    '<button class="btn-sm" style="background:var(--teal-bg);color:var(--teal);" onclick="addClearingTaskFromSetup()">+</button>' +
+    '</div>';
+
+  showConfirmDialog(
+    'Task Clearing (' + mins + 'm)',
+    body,
+    [
+      { label: 'Cancel', cls: '', onclick: 'closeConfirm()' },
+      { label: 'Start Clearing', cls: 'primary', onclick: 'startClearingFromSetup(' + mins + ')' },
+    ]
+  );
+}
+
+function addClearingTaskFromSetup() {
+  const nameEl = document.getElementById('clearing-setup-new-name');
+  const name = nameEl ? nameEl.value.trim() : '';
+  if (!name) return;
+  APP.tasks.push({ id: uid(), name: name, type: 'clearing', estimatedMins: null, priority: null, dueDate: null, status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null });
+  saveData(APP);
+  closeConfirm();
+  showClearingSetup(10);
+}
+
+function startClearingFromSetup(mins) {
+  closeConfirm();
+  startTimer('clearing', mins, 'Task Clearing (' + mins + 'm)', null);
 }
 
 function renderTimer() {
@@ -3262,7 +3261,7 @@ function renderTimer() {
       '<button class="timer-btn green" onclick="startTimer(\'treadmill\',30,\'Treadmill Walk (30m)\',\'walk\')">Treadmill (30m)</button>' +
       '<button class="timer-btn amber" onclick="startTimer(\'walk-break\',10,\'Walk Break (10m)\',null)">Walk Break (10m)</button>' +
       '<button class="timer-btn purple" onclick="startTimer(\'meditation\',10,\'Meditation (10m)\',\'meditation\')">Meditate (10m)</button>' +
-      '<button class="timer-btn amber" onclick="startTimer(\'clearing\',10,\'Task Clearing (10m)\',null)">Clearing (10m)</button>' +
+      '<button class="timer-btn amber" onclick="showClearingSetup(10)">Clearing (10m)</button>' +
     '</div>' +
     '</div>';
 
@@ -3274,40 +3273,9 @@ function renderTimer() {
 // LEFT COLUMN: CATCH-UP LIST
 // ══════════════════════════════════════════════════════════════
 
-function migrateCatchupToClearingItems() {
-  if (!APP.clearingItems) APP.clearingItems = [];
-  // Migrate any existing catchupTasks into clearingItems (one-time)
-  if (APP.catchupTasks && typeof APP.catchupTasks === 'object') {
-    const migrated = new Set(APP.clearingItems.map(i => i.id));
-    Object.keys(APP.catchupTasks).forEach(dateKey => {
-      const tasks = APP.catchupTasks[dateKey];
-      if (Array.isArray(tasks)) {
-        tasks.forEach(t => {
-          if (!migrated.has(t.id)) {
-            APP.clearingItems.push({
-              id: t.id,
-              name: t.name,
-              done: t.done || false,
-              createdAt: dateKey,
-              completedAt: t.done ? Date.now() : null,
-              completedDate: t.done ? dateKey : null
-            });
-            migrated.add(t.id);
-          }
-        });
-      }
-    });
-    // Mark migration done by clearing old data
-    APP.catchupTasks = {};
-    saveData(APP);
-  }
-}
-
 function renderCatchup() {
-  if (!APP.clearingItems) APP.clearingItems = [];
-
-  const active = APP.clearingItems.filter(t => !t.done);
-  const completed = APP.clearingItems.filter(t => t.done).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  const active = APP.tasks.filter(t => t.type === 'clearing' && t.status === 'todo');
+  const completed = APP.tasks.filter(t => t.type === 'clearing' && t.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
 
   let html = '<div class="quick-input"><input type="text" id="catchup-input" placeholder="Add a clearing task..." onkeydown="if(event.key===\'Enter\')addCatchupTask()"><button onclick="addCatchupTask()">+</button></div>';
 
@@ -3360,32 +3328,30 @@ function addCatchupTask() {
   const inp = document.getElementById('catchup-input');
   const name = inp.value.trim();
   if (!name) return;
-  if (!APP.clearingItems) APP.clearingItems = [];
-  APP.clearingItems.push({ id: uid(), name: name, done: false, createdAt: todayStr(), completedAt: null, completedDate: null });
+  APP.tasks.push({ id: uid(), name: name, type: 'clearing', estimatedMins: null, priority: null, dueDate: null, status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null });
   saveData(APP);
   inp.value = '';
   renderCatchup();
 }
 
 function toggleClearing(id) {
-  if (!APP.clearingItems) return;
-  const item = APP.clearingItems.find(t => t.id === id);
+  const item = APP.tasks.find(t => t.id === id);
   if (!item) return;
-  item.done = !item.done;
-  if (item.done) {
-    item.completedAt = Date.now();
-    item.completedDate = todayStr();
-  } else {
+  if (item.status === 'done') {
+    item.status = 'todo';
     item.completedAt = null;
     item.completedDate = null;
+  } else {
+    item.status = 'done';
+    item.completedAt = Date.now();
+    item.completedDate = todayStr();
   }
   saveData(APP);
   renderCatchup();
 }
 
 function deleteClearing(id) {
-  if (!APP.clearingItems) return;
-  APP.clearingItems = APP.clearingItems.filter(t => t.id !== id);
+  APP.tasks = APP.tasks.filter(t => t.id !== id);
   saveData(APP);
   renderCatchup();
 }
@@ -4013,65 +3979,169 @@ function promoteToShip(id) {
 // STRATEGY PLANNER MODAL
 // ══════════════════════════════════════════════════════════════
 
-let stratTempPlan = []; // Temporary plan state while modal is open
+// ── Task Triage Modal ──
 
-function openStrategyModal() {
-  const d = selectedDate;
-  if (!APP.strategy[d]) APP.strategy[d] = { planned: [] };
-  stratTempPlan = JSON.parse(JSON.stringify(APP.strategy[d].planned || []));
-  renderStrategyBlocks();
-  document.getElementById('strategy-modal').classList.add('open');
+function sortTasks(tasks) {
+  const today = todayStr();
+  const prioOrder = { high: 0, medium: 1, low: 2 };
+  return tasks.slice().sort((a, b) => {
+    // Overdue first
+    const aOverdue = a.dueDate && a.dueDate < today ? 1 : 0;
+    const bOverdue = b.dueDate && b.dueDate < today ? 1 : 0;
+    if (bOverdue !== aOverdue) return bOverdue - aOverdue;
+    // Due date ascending (null last)
+    if (a.dueDate && b.dueDate) { if (a.dueDate !== b.dueDate) return a.dueDate < b.dueDate ? -1 : 1; }
+    else if (a.dueDate && !b.dueDate) return -1;
+    else if (!a.dueDate && b.dueDate) return 1;
+    // Priority (high>med>low>null)
+    const ap = a.priority ? prioOrder[a.priority] : 3;
+    const bp = b.priority ? prioOrder[b.priority] : 3;
+    return ap - bp;
+  });
 }
 
-function closeStrategyModal() {
-  document.getElementById('strategy-modal').classList.remove('open');
+function openTriageModal() {
+  renderTriageBody();
+  document.getElementById('triage-modal').classList.add('open');
 }
 
-function renderStrategyBlocks() {
+function closeTriageModal() {
+  document.getElementById('triage-modal').classList.remove('open');
+}
+
+function renderTriageBody() {
+  const today = todayStr();
+  const todoTasks = sortTasks(APP.tasks.filter(t => t.status === 'todo'));
+
   let html = '';
-  for (let b = 1; b <= 3; b++) {
-    const tasks = stratTempPlan.filter(t => t.blockNum === b);
-    const usedMins = tasks.reduce((s, t) => s + (t.minutes || 0), 0);
-    const remainMins = 90 - usedMins;
+  // Add task form
+  html += '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:12px;background:var(--bg);">';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;">Add Task</div>';
+  html += '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
+  html += '<input type="text" id="triage-name" placeholder="Task name..." style="flex:1;min-width:120px;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);">';
+  html += '<div id="triage-type-btns" style="display:flex;gap:2px;">';
+  html += '<button class="btn-sm blue triage-type-btn active" data-type="deep" onclick="setTriageType(\'deep\')">Deep</button>';
+  html += '<button class="btn-sm triage-type-btn" style="background:var(--teal-bg);color:var(--teal);" data-type="clearing" onclick="setTriageType(\'clearing\')">Clearing</button>';
+  html += '</div>';
+  html += '<select id="triage-priority" style="width:70px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:4px;color:var(--text);font-size:11px;">';
+  html += '<option value="">None</option><option value="high">High</option><option value="medium">Med</option><option value="low">Low</option></select>';
+  html += '<input type="date" id="triage-due" style="width:120px;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);">';
+  html += '<input type="number" id="triage-mins" placeholder="Min" style="width:50px;text-align:center;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);" value="30">';
+  html += '<button class="btn-sm blue" onclick="addTriageTask()">Add</button>';
+  html += '</div>';
+  html += '<input type="hidden" id="triage-type-val" value="deep">';
+  html += '</div>';
 
-    html += '<div class="strat-block">';
-    html += '<div class="strat-block-hdr"><span class="block-name">Block ' + b + '</span><span class="block-cap">' + usedMins + '/90 min (' + remainMins + ' remaining)</span></div>';
-    tasks.forEach((t, i) => {
-      html += '<div class="strat-task"><span>' + esc(t.name) + '</span><span style="color:var(--text-dim);font-size:10px;">' + t.minutes + 'm</span>' +
-        '<button class="ship-btn del" onclick="removeStratTask(' + stratTempPlan.indexOf(t) + ')" style="width:18px;height:18px;font-size:9px;">&#10005;</button></div>';
+  // Task list
+  if (todoTasks.length === 0) {
+    html += '<div style="font-size:12px;color:var(--text-faint);padding:12px;text-align:center;">No tasks. Add one above.</div>';
+  } else {
+    html += '<div style="max-height:400px;overflow-y:auto;">';
+    todoTasks.forEach(t => {
+      const isOverdue = t.dueDate && t.dueDate < today;
+      const prioDot = t.priority === 'high' ? 'var(--red)' : t.priority === 'medium' ? 'var(--amber)' : t.priority === 'low' ? 'var(--blue)' : 'var(--border)';
+      const typeBadge = t.type === 'deep'
+        ? '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--blue-bg);color:var(--blue);">Deep</span>'
+        : '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--teal-bg);color:var(--teal);">Clearing</span>';
+
+      html += '<div style="display:flex;align-items:center;gap:6px;padding:6px 4px;border-bottom:1px solid var(--border-subtle);">';
+      // Priority dot
+      html += '<span style="width:8px;height:8px;border-radius:50%;background:' + prioDot + ';flex-shrink:0;"></span>';
+      // Name + badges
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<span style="font-size:13px;">' + esc(t.name) + '</span> ' + typeBadge;
+      if (t.dueDate) {
+        html += ' <span style="font-size:10px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';">' + t.dueDate + '</span>';
+      }
+      if (t.estimatedMins) {
+        html += ' <span style="font-size:10px;color:var(--text-faint);">' + t.estimatedMins + 'm</span>';
+      }
+      html += '</div>';
+      // Inline controls
+      html += '<select onchange="updateTaskPriority(\'' + t.id + '\',this.value)" style="width:55px;font-size:10px;padding:2px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);">';
+      html += '<option value=""' + (!t.priority ? ' selected' : '') + '>--</option>';
+      html += '<option value="high"' + (t.priority === 'high' ? ' selected' : '') + '>High</option>';
+      html += '<option value="medium"' + (t.priority === 'medium' ? ' selected' : '') + '>Med</option>';
+      html += '<option value="low"' + (t.priority === 'low' ? ' selected' : '') + '>Low</option>';
+      html += '</select>';
+      html += '<input type="date" value="' + (t.dueDate || '') + '" onchange="updateTaskDue(\'' + t.id + '\',this.value)" style="width:110px;font-size:10px;padding:2px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);">';
+      html += '<button class="dw-task-btn check" onclick="completeTask(\'' + t.id + '\')" title="Complete" style="width:22px;height:22px;">&#10003;</button>';
+      html += '<button class="dw-task-btn del" onclick="deleteTask(\'' + t.id + '\')" title="Delete" style="width:22px;height:22px;">&#10005;</button>';
+      html += '</div>';
     });
-    if (tasks.length === 0) {
-      html += '<div style="font-size:10px;color:var(--text-faint);padding:4px 0;">No tasks assigned</div>';
-    }
-    html += '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + Math.min(100, Math.round(usedMins / 90 * 100)) + '%;background:var(--blue);"></div></div>';
     html += '</div>';
   }
-  document.getElementById('strategy-blocks').innerHTML = html;
+
+  document.getElementById('triage-body').innerHTML = html;
 }
 
-function addStratTask() {
-  const name = document.getElementById('strat-new-task').value.trim();
-  const mins = parseInt(document.getElementById('strat-new-mins').value) || 30;
-  const block = parseInt(document.getElementById('strat-new-block').value) || 1;
+let triageTypeVal = 'deep';
+function setTriageType(type) {
+  triageTypeVal = type;
+  const hidden = document.getElementById('triage-type-val');
+  if (hidden) hidden.value = type;
+  const btns = document.querySelectorAll('.triage-type-btn');
+  btns.forEach(b => {
+    b.classList.toggle('active', b.dataset.type === type);
+  });
+  // Show/hide mins input
+  const minsEl = document.getElementById('triage-mins');
+  if (minsEl) minsEl.style.display = type === 'deep' ? '' : 'none';
+}
+
+function addTriageTask() {
+  const nameEl = document.getElementById('triage-name');
+  const name = nameEl ? nameEl.value.trim() : '';
   if (!name) return;
-  stratTempPlan.push({ name, minutes: mins, blockNum: block });
-  document.getElementById('strat-new-task').value = '';
-  document.getElementById('strat-new-mins').value = '';
-  renderStrategyBlocks();
-}
-
-function removeStratTask(idx) {
-  stratTempPlan.splice(idx, 1);
-  renderStrategyBlocks();
-}
-
-function saveStrategyPlan() {
-  const d = selectedDate;
-  if (!APP.strategy[d]) APP.strategy[d] = {};
-  APP.strategy[d].planned = stratTempPlan;
+  const type = document.getElementById('triage-type-val').value || 'deep';
+  const priority = document.getElementById('triage-priority').value || null;
+  const dueDate = document.getElementById('triage-due').value || null;
+  const mins = type === 'deep' ? (parseInt(document.getElementById('triage-mins').value) || null) : null;
+  APP.tasks.push({
+    id: uid(), name: name, type: type,
+    estimatedMins: mins, priority: priority || null, dueDate: dueDate || null,
+    status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null
+  });
   saveData(APP);
-  closeStrategyModal();
-  renderFlow();
+  renderTriageBody();
+  renderDeepWork();
+  renderCatchup();
+}
+
+function updateTaskPriority(taskId, priority) {
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.priority = priority || null;
+  saveData(APP);
+  renderTriageBody();
+}
+
+function updateTaskDue(taskId, dueDate) {
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.dueDate = dueDate || null;
+  saveData(APP);
+  renderTriageBody();
+}
+
+function completeTask(taskId) {
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.status = 'done';
+  task.completedAt = Date.now();
+  task.completedDate = todayStr();
+  saveData(APP);
+  renderTriageBody();
+  renderDeepWork();
+  renderCatchup();
+}
+
+function deleteTask(taskId) {
+  APP.tasks = APP.tasks.filter(t => t.id !== taskId);
+  saveData(APP);
+  renderTriageBody();
+  renderDeepWork();
+  renderCatchup();
 }
 
 
@@ -4355,8 +4425,7 @@ const COMMANDS = [
 
 function addClearingItem(name) {
   if (!name || !name.trim()) return;
-  if (!APP.clearingItems) APP.clearingItems = [];
-  APP.clearingItems.push({ id: uid(), name: name.trim(), done: false, createdAt: todayStr(), completedAt: null, completedDate: null });
+  APP.tasks.push({ id: uid(), name: name.trim(), type: 'clearing', estimatedMins: null, priority: null, dueDate: null, status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null });
   saveData(APP);
   renderCatchup();
 }
@@ -4484,7 +4553,7 @@ document.addEventListener('keydown', e => {
     closeCmd();
     closeWeeklyReview();
     closeShipModal();
-    closeStrategyModal();
+    closeTriageModal();
     closeConfirmDialog();
   }
 });
@@ -4515,9 +4584,6 @@ function render() {
   renderBacklog();
   updateSyncStatus();
 }
-
-// Migrate old catchupTasks to clearingItems
-migrateCatchupToClearingItems();
 
 // Initial render
 render();
