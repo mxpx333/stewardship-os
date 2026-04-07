@@ -1264,18 +1264,10 @@ body {
     <div class="section-hdr">Daily Routine <span class="badge" id="flow-count"></span></div>
     <div id="flow-container"></div>
 
-    <div class="section-hdr collapse-hdr" style="border-left-color: var(--amber);" onclick="toggleCollapse('streaks')" id="streaks-hdr">
-      Streaks <span class="toggle-icon">&#9654;</span>
+    <div class="section-hdr" style="border-left-color: var(--teal);">
+      Task List <span class="badge" id="task-list-count"></span>
     </div>
-    <div class="collapse-body" id="streaks-body">
-      <div id="streaks-container"></div>
-    </div>
-
-    <div class="section-hdr" style="border-left-color: var(--blue);">Deep Work Tracker</div>
-    <div id="dw-tracker"></div>
-
-    <div class="section-hdr" style="border-left-color: var(--amber);">Clearing List</div>
-    <div id="catchup-container"></div>
+    <div id="task-list-container"></div>
 
     <div id="shutdown-container"></div>
   </div>
@@ -1325,11 +1317,11 @@ body {
       <div id="goals-container"></div>
     </div>
 
-    <div class="section-hdr collapse-hdr" onclick="toggleCollapse('backlog')" id="backlog-hdr">
-      Backlog <span class="badge" id="backlog-count"></span> <span class="toggle-icon">&#9654;</span>
+    <div class="section-hdr collapse-hdr" style="border-left-color: var(--amber);" onclick="toggleCollapse('streaks')" id="streaks-hdr">
+      Streaks <span class="toggle-icon">&#9654;</span>
     </div>
-    <div class="collapse-body" id="backlog-body">
-      <div id="backlog-container"></div>
+    <div class="collapse-body" id="streaks-body">
+      <div id="streaks-container"></div>
     </div>
 
     <div style="margin-top:16px;">
@@ -1513,7 +1505,8 @@ const FLOW_STEPS = [
   { id: "walk",       time: "6:40 AM",  label: "Treadmill",             icon: "ph-person-simple-run",  color: "var(--green)",  colorBg: "var(--green-bg)", timerMins: 30, timerType: "treadmill" },
   { id: "soap",       time: "7:10 AM",  label: "SOAP Journal",          icon: "ph-notebook",           color: "var(--purple)", colorBg: "var(--purple-bg)" },
   { id: "meditation", time: "10:00 AM", label: "Meditation",            icon: "ph-brain",              color: "var(--purple)", colorBg: "var(--purple-bg)", timerMins: 10, timerType: "meditation" },
-  { id: "strategy",   time: "10:10 AM", label: "Task Triage",           icon: "ph-list-checks",        color: "var(--blue)",   colorBg: "var(--blue-bg)" },
+  { id: "deepwork1",  time: "",         label: "Deep Work Session 1",   icon: "ph-fire-simple",        color: "var(--blue)",   colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
+  { id: "deepwork2",  time: "",         label: "Deep Work Session 2",   icon: "ph-fire-simple",        color: "var(--blue)",   colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
 ];
 
 // ── DEEP WORK CATEGORIES ──
@@ -1711,7 +1704,7 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 function dayOfYear() { const n = new Date(); return Math.floor((n - new Date(n.getFullYear(),0,0)) / 86400000); }
 function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function tomorrowDate() { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
-function parseTime(t) { const [time, ap] = t.split(' '); let [h,m] = time.split(':').map(Number); if (ap==='PM'&&h!==12) h+=12; if (ap==='AM'&&h===12) h=0; return h*60+(m||0); }
+function parseTime(t) { if (!t || !t.trim()) return 9999; const [time, ap] = t.split(' '); let [h,m] = time.split(':').map(Number); if (ap==='PM'&&h!==12) h+=12; if (ap==='AM'&&h===12) h=0; return h*60+(m||0); }
 function formatTime12(mins) {
   let h = Math.floor(mins / 60);
   let m = mins % 60;
@@ -2153,7 +2146,12 @@ function getAllFlowSteps() {
     frequency: t.frequency || 'daily',
   }));
   const all = [...FLOW_STEPS.map(s => ({...s, isCustom: false})), ...custom];
-  all.sort((a, b) => parseTime(a.time) - parseTime(b.time));
+  all.sort((a, b) => {
+    const ta = parseTime(a.time);
+    const tb = parseTime(b.time);
+    if (ta !== tb) return ta - tb;
+    return 0;
+  });
   return all;
 }
 
@@ -2195,7 +2193,7 @@ function renderFlow() {
     // Find next incomplete step for "current" highlight
     const nextIncomplete = incomplete.find(s => parseTime(s.time) > stepMin);
     const nextMin = nextIncomplete ? parseTime(nextIncomplete.time) : 1440;
-    const isCurrent = isToday && nowMin >= stepMin && nowMin < nextMin;
+    const isCurrent = isToday && stepMin < 9999 && nowMin >= stepMin && nowMin < nextMin;
 
     html += renderFlowItem(step, false, isCurrent, isToday, d, reading, false);
   });
@@ -2243,7 +2241,8 @@ function renderFlowItem(step, isDone, isCurrent, isToday, d, reading, isSkipped)
   else if (step.id === 'walk') hint = '30 min. Turn on treadmill.';
   else if (step.id === 'soap') hint = 'Reflect on your reading.';
   else if (step.id === 'meditation') hint = '10 min. Be present.';
-  else if (step.id === 'strategy') hint = 'Review tasks, set priorities and due dates.';
+  else if (step.id === 'deepwork1') hint = '90 min focus block. Pick tasks from the list below.';
+  else if (step.id === 'deepwork2') hint = 'Second focus block. Keep the momentum.';
 
   let timerInfo = '';
   if (isDone && APP.timerCompletions[d] && APP.timerCompletions[d][step.id]) {
@@ -2276,7 +2275,7 @@ function renderFlowItem(step, isDone, isCurrent, isToday, d, reading, isSkipped)
   html += '<div class="flow-main" onclick="' + (isSkipped ? '' : 'handleFlowTap(\'' + step.id + '\')') + '">';
   html += '<div class="flow-icon" style="background:' + step.colorBg + ';color:' + step.color + '"><i class="ph ' + step.icon + '"></i></div>';
   html += '<div class="flow-check">' + (isDone ? '&#10003;' : (isSkipped ? '<i class="ph ph-fast-forward" style="font-size:10px;color:var(--text-faint);"></i>' : '')) + '</div>';
-  html += '<div class="flow-time">' + step.time + '</div>';
+  html += '<div class="flow-time">' + (step.time || '') + '</div>';
   html += '<div class="flow-text"><div class="flow-label">' + step.label + '</div>';
   if (!isDone && !isSkipped && isToday && hint) html += '<div class="flow-hint">' + hint + '</div>';
   html += '</div>';
@@ -2286,7 +2285,6 @@ function renderFlowItem(step, isDone, isCurrent, isToday, d, reading, isSkipped)
   // Expand panels for built-in steps
   if (step.id === 'bible') html += renderBiblePanel(d, isDone);
   if (step.id === 'soap') html += renderSOAPPanel(d, isDone);
-  if (step.id === 'strategy') html += renderStrategyTrigger(d, isDone);
 
   html += '</div>';
   return html;
@@ -2355,20 +2353,6 @@ function renderSOAPPanel(d, isDone) {
     '</div>';
 }
 
-function renderStrategyTrigger(d, isDone) {
-  if (!APP.strategy[d]) APP.strategy[d] = {};
-  const isOpen = !isDone;
-  const today = todayStr();
-  const urgent = sortTasks(APP.tasks.filter(t => t.status === 'todo' && (t.priority === 'high' || (t.dueDate && t.dueDate <= today))));
-  const summary = urgent.length > 0
-    ? urgent.slice(0, 3).map(t => t.name).join(', ') + (urgent.length > 3 ? ' +' + (urgent.length - 3) + ' more' : '')
-    : 'No high-priority or due tasks.';
-  return '<div class="expand-panel ' + (isOpen ? 'open' : '') + '">' +
-    '<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">' + esc(summary) + '</div>' +
-    '<button class="btn-sm blue" onclick="openTriageModal()">Open Task Triage</button>' +
-    '</div>';
-}
-
 function saveBibleLog() {
   const d = selectedDate;
   if (!APP.bibleLog[d]) APP.bibleLog[d] = {};
@@ -2422,9 +2406,16 @@ function handleFlowTap(id) {
     APP.meditation[d] = { startedAt: Date.now(), onTime: nowMin <= targetMin + 2 };
   }
 
-  // Strategy opens the triage modal
-  if (id === 'strategy' && isToday) {
-    openTriageModal();
+  // Deep-work flow steps open deep work setup
+  if (step.timerType === 'deep-work' && isToday) {
+    const timerCompleted = APP.timerCompletions[d] && APP.timerCompletions[d][id];
+    const timerRunningForThis = activeTimers.some(t => t.linkedStepId === id);
+    if (!timerCompleted && !timerRunningForThis) {
+      pendingDeepWorkStepId = id;
+      showDeepWorkSetup(step.timerMins);
+      return;
+    }
+    // If already completed or running, just check it off
     completeFlowStep(id);
     return;
   }
@@ -2650,120 +2641,169 @@ function getActiveDeepWorkBlockNum() {
   return runningIdx >= 0 ? runningIdx + 1 : null;
 }
 
-function renderDeepWork() {
-  const d = selectedDate;
-  if (!APP.deepWorkBlocks[d]) APP.deepWorkBlocks[d] = [];
-
-  const blocks = APP.deepWorkBlocks[d];
-  const target = 270;
-  const activeBlockNum = getActiveDeepWorkBlockNum();
-  const deepTasks = sortTasks(APP.tasks.filter(t => t.type === 'deep' && t.status === 'todo'));
+function renderTaskList() {
+  const container = document.getElementById('task-list-container');
+  if (!container) return;
   const today = todayStr();
+  const deepTasks = sortTasks(APP.tasks.filter(t => t.type === 'deep' && t.status === 'todo'));
+  const clearingTasks = sortTasks(APP.tasks.filter(t => t.type === 'clearing' && t.status === 'todo'));
+  const completedTasks = APP.tasks.filter(t => t.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)).slice(0, 20);
+  const activeCount = deepTasks.length + clearingTasks.length;
 
-  let totalMins = 0;
-  let html = '<div class="card"><div class="card-body">';
+  // Update badge
+  const badge = document.getElementById('task-list-count');
+  if (badge) badge.textContent = activeCount;
 
-  // Completed blocks as retrospective entries
-  blocks.forEach((block, idx) => {
-    const timerDone = block.endedAt;
-    const timerRunning = !block.endedAt;
-    let blockMins = 0;
-    if (timerDone) blockMins = block.minutes || 0;
-    else if (timerRunning) {
-      const dwTimer = activeTimers.find(t => t.type === 'deep-work');
-      blockMins = dwTimer ? Math.round(getTimerElapsed(dwTimer) / 60000) : Math.round((Date.now() - block.startedAt) / 60000);
-    }
-    totalMins += blockMins;
+  let html = '';
 
-    const blockCat = block.category || 'other';
-    const catInfo = DW_CATEGORIES.find(c => c.id === blockCat) || DW_CATEGORIES[4];
-    const isActive = activeBlockNum === (idx + 1);
-    const taskNames = (block.taskIds || []).map(tid => {
-      const t = APP.tasks.find(x => x.id === tid);
-      return t ? t.name : null;
-    }).filter(Boolean);
+  // Quick-add input row
+  html += '<div style="display:flex;gap:4px;padding:6px 0;align-items:center;">';
+  html += '<input type="text" id="tasklist-add-input" placeholder="Add a task..." style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--font);" onkeydown="if(event.key===\'Enter\')addTaskListItem()">';
+  html += '<div id="tasklist-type-toggle" style="display:flex;gap:2px;">';
+  html += '<button class="btn-sm" id="tasklist-type-clearing" onclick="setTaskListType(\'clearing\')" style="padding:3px 8px;font-size:11px;background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal);border-radius:4px;cursor:pointer;">Clearing</button>';
+  html += '<button class="btn-sm" id="tasklist-type-deep" onclick="setTaskListType(\'deep\')" style="padding:3px 8px;font-size:11px;background:none;color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Deep</button>';
+  html += '</div>';
+  html += '<select id="tasklist-priority" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:var(--font);">';
+  html += '<option value="">None</option><option value="high">High</option><option value="medium">Med</option><option value="low">Low</option>';
+  html += '</select>';
+  html += '<button class="btn-sm blue" onclick="addTaskListItem()" style="padding:3px 8px;font-size:13px;">+</button>';
+  html += '</div>';
 
-    html += '<div class="dw-block-container' + (isActive ? ' active-block' : '') + '">';
-    html += '<div class="dw-block-hdr">';
-    html += '<span class="block-label"><span class="dw-cat-dot" style="background:' + catInfo.color + ';margin-right:6px;"></span>Block ' + (idx + 1);
-    if (timerDone) html += ' <span style="color:var(--green);font-size:11px;">&#10003; ' + blockMins + ' min</span>';
-    else if (timerRunning) html += ' <span style="color:var(--blue);font-size:11px;">' + blockMins + ' min (running)</span>';
-    if (block.label) html += ' <span style="color:var(--text-dim);font-size:11px;">(' + esc(block.label) + ')</span>';
-    html += '</span></div>';
-    if (taskNames.length > 0) {
-      html += '<div style="font-size:11px;color:var(--text-dim);padding:2px 0 0 20px;">' + taskNames.map(n => esc(n)).join(', ') + '</div>';
-    }
-    if (timerDone) {
-      html += '<div style="text-align:right;margin-top:4px;"><button class="dw-task-btn" style="display:inline-flex;width:auto;padding:2px 6px;font-size:9px;" onclick="editDeepWorkBlock(' + idx + ')">Edit block</button></div>';
-    }
+  // Deep Work tasks section
+  if (deepTasks.length > 0) {
+    html += '<div style="border-left:3px solid var(--blue);padding-left:8px;margin:8px 0 4px 0;">';
+    html += '<div style="font-size:11px;font-weight:600;color:var(--blue);margin-bottom:4px;">Deep Work (' + deepTasks.length + ')</div>';
+    deepTasks.forEach(t => {
+      html += renderTaskListItem(t, today);
+    });
     html += '</div>';
-  });
-
-  // Total progress bar
-  const pct = Math.min(100, Math.round((totalMins / target) * 100));
-  html += '<div class="dw-total"><span>Total deep work</span><span class="value">' + totalMins + ' / ' + target + ' min</span></div>';
-  html += '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + pct + '%;background:var(--blue);"></div></div>';
-
-  const hasRunning = blocks.some(b => !b.endedAt);
-  if (!hasRunning) {
-    html += '<div class="dw-block-row" style="cursor:pointer;border-style:dashed;justify-content:center;color:var(--text-dim);margin-top:6px;" onclick="addManualDeepWorkBlock()">' +
-      '+ Log Deep Work Block</div>';
   }
 
-  // Active deep tasks
-  html += '<div class="dw-unassigned">';
-  html += '<div class="dw-unassigned-label">Deep Work Tasks (' + deepTasks.length + ')</div>';
-  html += '<div class="quick-input" style="margin-bottom:6px;"><input type="text" id="dw-task-input" placeholder="New deep task..." onkeydown="if(event.key===\'Enter\')addDwTaskQuick()">' +
-    '<input type="number" id="dw-task-mins-input" placeholder="Min" style="width:55px;text-align:center;" value="30" onkeydown="if(event.key===\'Enter\')addDwTaskQuick()">' +
-    '<button onclick="addDwTaskQuick()">+</button></div>';
-
-  deepTasks.forEach(t => {
-    const isOverdue = t.dueDate && t.dueDate < today;
-    const prioDot = t.priority === 'high' ? 'var(--red)' : t.priority === 'medium' ? 'var(--amber)' : t.priority === 'low' ? 'var(--blue)' : '';
-    html += '<div class="dw-task-item">';
-    if (prioDot) html += '<span style="width:6px;height:6px;border-radius:50%;background:' + prioDot + ';flex-shrink:0;margin-right:4px;"></span>';
-    html += '<span class="task-name">' + esc(t.name) + '</span>';
-    if (t.estimatedMins) html += '<span class="task-mins">' + t.estimatedMins + 'm</span>';
-    if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';margin-left:4px;">' + t.dueDate + '</span>';
-    html += '<button class="dw-task-btn check" onclick="completeDwTask(\'' + t.id + '\')" title="Complete">&#10003;</button>';
-    html += '<button class="dw-task-btn del" onclick="deleteDwTask(\'' + t.id + '\')" title="Delete">&#10005;</button>';
+  // Clearing tasks section
+  if (clearingTasks.length > 0) {
+    html += '<div style="border-left:3px solid var(--teal);padding-left:8px;margin:8px 0 4px 0;">';
+    html += '<div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px;">Clearing (' + clearingTasks.length + ')</div>';
+    clearingTasks.forEach(t => {
+      html += renderTaskListItem(t, today);
+    });
     html += '</div>';
-  });
-
-  if (deepTasks.length === 0) {
-    html += '<div style="font-size:10px;color:var(--text-faint);padding:4px 0;">No active deep work tasks.</div>';
   }
 
-  html += '</div></div></div>';
-  document.getElementById('dw-tracker').innerHTML = html;
+  if (activeCount === 0) {
+    html += '<div style="font-size:11px;color:var(--text-faint);padding:8px 0;text-align:center;">No active tasks.</div>';
+  }
+
+  // Completed tasks (collapsed)
+  if (completedTasks.length > 0) {
+    html += '<div class="completed-divider" onclick="toggleTaskListCompleted()" style="cursor:pointer;">';
+    html += '<div class="completed-line"></div>';
+    html += '<span class="completed-label"><i class="ph ph-check-circle" style="margin-right:4px;"></i>' + completedTasks.length + ' task' + (completedTasks.length !== 1 ? 's' : '') + ' completed</span>';
+    html += '<span class="completed-chevron" id="tasklist-completed-chevron">&#9654;</span>';
+    html += '</div>';
+    html += '<div id="tasklist-completed" style="display:none;">';
+    completedTasks.forEach(t => {
+      const typeTag = t.type === 'deep' ? '<span style="font-size:9px;color:var(--blue);margin-right:4px;">DEEP</span>' : '<span style="font-size:9px;color:var(--teal);margin-right:4px;">CLR</span>';
+      html += '<div style="display:flex;align-items:center;gap:4px;padding:3px 0;opacity:0.6;">';
+      html += '<span style="color:var(--green);font-size:11px;">&#10003;</span>';
+      html += typeTag;
+      html += '<span style="font-size:12px;text-decoration:line-through;">' + esc(t.name) + '</span>';
+      html += '<span style="font-size:9px;color:var(--text-faint);margin-left:auto;">' + (t.completedDate || '') + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Manage Tasks button
+  html += '<div style="margin-top:8px;text-align:center;">';
+  html += '<button class="btn-sm" onclick="openTriageModal()" style="font-size:11px;color:var(--text-dim);border:1px solid var(--border);padding:4px 12px;border-radius:6px;cursor:pointer;background:none;">Manage Tasks</button>';
+  html += '</div>';
+
+  container.innerHTML = html;
 }
 
-function addDwTaskQuick() {
-  const inp = document.getElementById('dw-task-input');
-  const minsInp = document.getElementById('dw-task-mins-input');
-  const name = inp.value.trim();
+function renderTaskListItem(t, today) {
+  const isOverdue = t.dueDate && t.dueDate < today;
+  const prioDot = t.priority === 'high' ? 'var(--red)' : t.priority === 'medium' ? 'var(--amber)' : t.priority === 'low' ? 'var(--blue)' : '';
+  let html = '<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:12px;">';
+  if (prioDot) html += '<span style="width:6px;height:6px;border-radius:50%;background:' + prioDot + ';flex-shrink:0;"></span>';
+  else html += '<span style="width:6px;flex-shrink:0;"></span>';
+  html += '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(t.name) + '</span>';
+  if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';flex-shrink:0;">' + t.dueDate + '</span>';
+  if (t.estimatedMins) html += '<span style="font-size:9px;color:var(--text-faint);flex-shrink:0;">' + t.estimatedMins + 'm</span>';
+  html += '<button class="dw-task-btn check" onclick="completeTaskFromList(\'' + t.id + '\')" title="Complete" style="flex-shrink:0;">&#10003;</button>';
+  html += '<button class="dw-task-btn del" onclick="deleteTaskFromList(\'' + t.id + '\')" title="Delete" style="flex-shrink:0;">&#10005;</button>';
+  html += '</div>';
+  return html;
+}
+
+let taskListType = 'clearing';
+
+function setTaskListType(type) {
+  taskListType = type;
+  const deepBtn = document.getElementById('tasklist-type-deep');
+  const clearBtn = document.getElementById('tasklist-type-clearing');
+  if (type === 'deep') {
+    deepBtn.style.background = 'var(--blue-bg)';
+    deepBtn.style.color = 'var(--blue)';
+    deepBtn.style.borderColor = 'var(--blue)';
+    clearBtn.style.background = 'none';
+    clearBtn.style.color = 'var(--text-dim)';
+    clearBtn.style.borderColor = 'var(--border)';
+  } else {
+    clearBtn.style.background = 'var(--teal-bg)';
+    clearBtn.style.color = 'var(--teal)';
+    clearBtn.style.borderColor = 'var(--teal)';
+    deepBtn.style.background = 'none';
+    deepBtn.style.color = 'var(--text-dim)';
+    deepBtn.style.borderColor = 'var(--border)';
+  }
+}
+
+function addTaskListItem() {
+  const inp = document.getElementById('tasklist-add-input');
+  const name = inp ? inp.value.trim() : '';
   if (!name) return;
-  const mins = parseInt(minsInp.value) || 30;
-  APP.tasks.push({ id: uid(), name: name, type: 'deep', estimatedMins: mins, priority: null, dueDate: null, status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null });
+  const priority = document.getElementById('tasklist-priority')?.value || null;
+  APP.tasks.push({
+    id: uid(), name: name, type: taskListType,
+    estimatedMins: taskListType === 'deep' ? 30 : null,
+    priority: priority || null, dueDate: null,
+    status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null
+  });
   saveData(APP);
   inp.value = '';
-  renderDeepWork();
+  renderTaskList();
 }
 
-function completeDwTask(taskId) {
+function completeTaskFromList(taskId) {
   const task = APP.tasks.find(t => t.id === taskId);
   if (!task) return;
   task.status = 'done';
   task.completedAt = Date.now();
   task.completedDate = todayStr();
   saveData(APP);
-  renderDeepWork();
+  renderTaskList();
+  renderTriageBody();
 }
 
-function deleteDwTask(taskId) {
+function deleteTaskFromList(taskId) {
   APP.tasks = APP.tasks.filter(t => t.id !== taskId);
   saveData(APP);
-  renderDeepWork();
+  renderTaskList();
+  renderTriageBody();
+}
+
+function toggleTaskListCompleted() {
+  const el = document.getElementById('tasklist-completed');
+  const chev = document.getElementById('tasklist-completed-chevron');
+  if (!el) return;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    if (chev) chev.innerHTML = '&#9660;';
+  } else {
+    el.style.display = 'none';
+    if (chev) chev.innerHTML = '&#9654;';
+  }
 }
 
 function editDeepWorkBlock(idx) {
@@ -2800,7 +2840,7 @@ function saveDeepWorkEdit(idx) {
     saveData(APP);
   }
   closeConfirm();
-  renderDeepWork();
+  renderTaskList();
   renderTimeline();
 }
 
@@ -2811,7 +2851,7 @@ function deleteDeepWorkBlock(idx) {
     saveData(APP);
   }
   closeConfirm();
-  renderDeepWork();
+  renderTaskList();
   renderTimeline();
 }
 
@@ -2847,7 +2887,7 @@ function saveManualDeepWorkBlock() {
   });
   saveData(APP);
   closeConfirm();
-  renderDeepWork();
+  renderTaskList();
   renderTimeline();
 }
 
@@ -2958,6 +2998,17 @@ function timerComplete(timer) {
     if (running) {
       running.endedAt = Date.now();
       running.minutes = actualMins;
+    }
+    // Auto-complete deep work session flow steps
+    if (!APP.flow[d]) APP.flow[d] = {};
+    if (APP.flow[d]['deepwork1'] !== true) {
+      APP.flow[d]['deepwork1'] = true;
+      if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
+      if (!APP.timerCompletions[d]['deepwork1']) APP.timerCompletions[d]['deepwork1'] = { mins: actualMins, completedAt: Date.now() };
+    } else if (APP.flow[d]['deepwork2'] !== true) {
+      APP.flow[d]['deepwork2'] = true;
+      if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
+      if (!APP.timerCompletions[d]['deepwork2']) APP.timerCompletions[d]['deepwork2'] = { mins: actualMins, completedAt: Date.now() };
     }
   }
 
@@ -3087,6 +3138,19 @@ function stopTimer(timerId) {
         running.endedAt = Date.now();
         running.minutes = actualMins;
       }
+      // Auto-complete deep work session flow steps for meaningful runs (45+ min)
+      if (actualMins >= 45) {
+        if (!APP.flow[d]) APP.flow[d] = {};
+        if (APP.flow[d]['deepwork1'] !== true) {
+          APP.flow[d]['deepwork1'] = true;
+          if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
+          if (!APP.timerCompletions[d]['deepwork1']) APP.timerCompletions[d]['deepwork1'] = { mins: actualMins, completedAt: Date.now() };
+        } else if (APP.flow[d]['deepwork2'] !== true) {
+          APP.flow[d]['deepwork2'] = true;
+          if (!APP.timerCompletions[d]) APP.timerCompletions[d] = {};
+          if (!APP.timerCompletions[d]['deepwork2']) APP.timerCompletions[d]['deepwork2'] = { mins: actualMins, completedAt: Date.now() };
+        }
+      }
     }
 
     if (!APP.timerHistory[d]) APP.timerHistory[d] = [];
@@ -3110,6 +3174,7 @@ function getNextDeepWorkBlockNum() {
 }
 
 let pendingDwTaskIds = [];
+let pendingDeepWorkStepId = null;
 
 function showDeepWorkSetup(mins) {
   const deepTasks = sortTasks(APP.tasks.filter(t => t.type === 'deep' && t.status === 'todo'));
@@ -3169,8 +3234,11 @@ function startDeepWorkFromSetup(mins) {
   const checks = document.querySelectorAll('.dw-setup-check:checked');
   pendingDwTaskIds = Array.from(checks).map(cb => cb.value);
 
+  const linkedStep = pendingDeepWorkStepId;
+  pendingDeepWorkStepId = null;
+
   closeConfirm();
-  startTimer('deep-work', mins, blockLabel + ' (' + mins + 'm)', null);
+  startTimer('deep-work', mins, blockLabel + ' (' + mins + 'm)', linkedStep);
 }
 
 function showClearingSetup(mins) {
@@ -3273,67 +3341,6 @@ function renderTimer() {
 // LEFT COLUMN: CATCH-UP LIST
 // ══════════════════════════════════════════════════════════════
 
-function renderCatchup() {
-  const active = APP.tasks.filter(t => t.type === 'clearing' && t.status === 'todo');
-  const completed = APP.tasks.filter(t => t.type === 'clearing' && t.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
-
-  let html = '<div class="quick-input"><input type="text" id="catchup-input" placeholder="Add a clearing task..." onkeydown="if(event.key===\'Enter\')addCatchupTask()"><button onclick="addCatchupTask()">+</button></div>';
-
-  // Active items
-  active.forEach(t => {
-    html += '<div class="catchup-item">' +
-      '<div class="catchup-check" onclick="toggleClearing(\'' + t.id + '\')">' + '</div>' +
-      '<span class="catchup-name">' + esc(t.name) + '</span>' +
-      '<button class="catchup-del" onclick="deleteClearing(\'' + t.id + '\')">&times;</button>' +
-      '</div>';
-  });
-
-  if (active.length === 0) {
-    html += '<div style="font-size:11px;color:var(--text-faint);padding:6px 10px;">No active tasks. Add items to clear.</div>';
-  }
-
-  // Completed items (collapsible)
-  if (completed.length > 0) {
-    html += '<div class="completed-divider" onclick="toggleClearedHistory()" style="cursor:pointer;">' +
-      '<div class="completed-line"></div>' +
-      '<span class="completed-label"><i class="ph ph-check-circle" style="margin-right:4px;"></i>' + completed.length + ' item' + (completed.length !== 1 ? 's' : '') + ' cleared</span>' +
-      '<span class="completed-chevron" id="cleared-chevron">&#9654;</span></div>';
-    html += '<div id="cleared-history" style="display:none;">';
-    completed.forEach(t => {
-      html += '<div class="catchup-item done">' +
-        '<div class="catchup-check" onclick="toggleClearing(\'' + t.id + '\')">&#10003;</div>' +
-        '<span class="catchup-name">' + esc(t.name) + '</span>' +
-        '<span style="font-size:10px;color:var(--text-faint);flex-shrink:0;margin-left:4px;">' + (t.completedDate || '') + '</span>' +
-        '</div>';
-    });
-    html += '</div>';
-  }
-
-  document.getElementById('catchup-container').innerHTML = html;
-}
-
-function toggleClearedHistory() {
-  const el = document.getElementById('cleared-history');
-  const chev = document.getElementById('cleared-chevron');
-  if (el.style.display === 'none') {
-    el.style.display = 'block';
-    chev.innerHTML = '&#9660;';
-  } else {
-    el.style.display = 'none';
-    chev.innerHTML = '&#9654;';
-  }
-}
-
-function addCatchupTask() {
-  const inp = document.getElementById('catchup-input');
-  const name = inp.value.trim();
-  if (!name) return;
-  APP.tasks.push({ id: uid(), name: name, type: 'clearing', estimatedMins: null, priority: null, dueDate: null, status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null });
-  saveData(APP);
-  inp.value = '';
-  renderCatchup();
-}
-
 function toggleClearing(id) {
   const item = APP.tasks.find(t => t.id === id);
   if (!item) return;
@@ -3347,13 +3354,13 @@ function toggleClearing(id) {
     item.completedDate = todayStr();
   }
   saveData(APP);
-  renderCatchup();
+  renderTaskList();
 }
 
 function deleteClearing(id) {
   APP.tasks = APP.tasks.filter(t => t.id !== id);
   saveData(APP);
-  renderCatchup();
+  renderTaskList();
 }
 
 
@@ -3404,8 +3411,9 @@ function renderTimeline() {
   // Gather all events for this day
   const items = [];
 
-  // 1. Flow steps (built-in + custom, merged)
+  // 1. Flow steps (built-in + custom, merged) -- skip steps with no time
   getAllFlowSteps().forEach(step => {
+    if (!step.time) return;
     const isDone = APP.flow[d] && APP.flow[d][step.id] === true;
     items.push({
       type: 'flow',
@@ -3914,65 +3922,7 @@ function adjustGoal(key, event) {
 // RIGHT COLUMN: BACKLOG
 // ══════════════════════════════════════════════════════════════
 
-function renderBacklog() {
-  document.getElementById('backlog-count').textContent = APP.backlog.length + ' items';
-
-  let html = '<div class="quick-input"><input type="text" id="backlog-input" placeholder="What needs to get done?" onkeydown="if(event.key===\'Enter\')addBacklogItem(\'work\')"></div>';
-  html += '<div class="quick-add-cats">' +
-    '<button class="cat-btn work" onclick="addBacklogItem(\'work\')">+ Work</button>' +
-    '<button class="cat-btn personal" onclick="addBacklogItem(\'personal\')">+ Personal</button>' +
-    '<button class="cat-btn chore" onclick="addBacklogItem(\'chore\')">+ Chore</button>' +
-    '</div>';
-
-  APP.backlog.forEach(item => {
-    html += '<div class="backlog-item">' +
-      '<span class="ship-cat-tag ' + item.category + '">' + item.category + '</span>' +
-      '<span class="backlog-name">' + esc(item.name) + '</span>' +
-      '<div class="backlog-actions">' +
-      '<button class="ship-btn" onclick="promoteToShip(\'' + item.id + '\')" title="Promote to Ship">&#8593;</button>' +
-      '<button class="ship-btn del" onclick="deleteBacklog(\'' + item.id + '\')">&#10005;</button>' +
-      '</div></div>';
-  });
-
-  if (APP.backlog.length === 0) {
-    html += '<div style="font-size:11px;color:var(--text-faint);padding:8px 10px;text-align:center;">No items yet</div>';
-  }
-
-  document.getElementById('backlog-container').innerHTML = html;
-}
-
-function addBacklogItem(cat) {
-  const inp = document.getElementById('backlog-input');
-  const name = inp.value.trim();
-  if (!name) return;
-  APP.backlog.push({ id: uid(), name, category: cat, createdAt: todayStr() });
-  saveData(APP);
-  inp.value = '';
-  renderBacklog();
-}
-
-function deleteBacklog(id) {
-  APP.backlog = APP.backlog.filter(b => b.id !== id);
-  saveData(APP);
-  renderBacklog();
-}
-
-function promoteToShip(id) {
-  const item = APP.backlog.find(b => b.id === id);
-  if (!item) return;
-  const cs = APP.ships.filter(s => s.weekOf === getWeekOf());
-  if (cs.length >= 3) {
-    showConfirmDialog('Ships Full', 'You already have 3 ships this week. Finish or remove one first.', [
-      { label: 'OK', cls: 'primary', onclick: 'closeConfirmDialog()' }
-    ]);
-    return;
-  }
-  APP.ships.push({ id: uid(), name: item.name, category: item.category, status: 'not-started', weekOf: getWeekOf() });
-  APP.backlog = APP.backlog.filter(b => b.id !== id);
-  saveData(APP);
-  renderShips();
-  renderBacklog();
-}
+// Backlog functions removed -- section moved to task list
 
 
 // ══════════════════════════════════════════════════════════════
@@ -4104,8 +4054,7 @@ function addTriageTask() {
   });
   saveData(APP);
   renderTriageBody();
-  renderDeepWork();
-  renderCatchup();
+  renderTaskList();
 }
 
 function updateTaskPriority(taskId, priority) {
@@ -4132,16 +4081,14 @@ function completeTask(taskId) {
   task.completedDate = todayStr();
   saveData(APP);
   renderTriageBody();
-  renderDeepWork();
-  renderCatchup();
+  renderTaskList();
 }
 
 function deleteTask(taskId) {
   APP.tasks = APP.tasks.filter(t => t.id !== taskId);
   saveData(APP);
   renderTriageBody();
-  renderDeepWork();
-  renderCatchup();
+  renderTaskList();
 }
 
 
@@ -4258,16 +4205,15 @@ function calc30DayRate(stepId) {
 function renderStreaks() {
   const container = document.getElementById('streaks-container');
   if (!container) return;
+  const streakLabels = { deepwork1: 'DW 1', deepwork2: 'DW 2' };
   let html = '';
   FLOW_STEPS.forEach(step => {
     const streak = calcStreak(step.id);
     const rate = calc30DayRate(step.id);
-    const barBlocks = 10;
-    const filled = Math.round(rate / 10);
-    const barStr = '\u2593'.repeat(filled) + '\u2591'.repeat(barBlocks - filled);
+    const displayName = streakLabels[step.id] || step.label;
     html += '<div class="streak-row">';
     html += '<div class="streak-icon" style="background:' + step.colorBg + ';color:' + step.color + ';"><i class="ph ' + step.icon + '"></i></div>';
-    html += '<span class="streak-name">' + esc(step.label.split(' ')[0]) + '</span>';
+    html += '<span class="streak-name">' + esc(displayName) + '</span>';
     html += '<span class="streak-fire">\uD83D\uDD25 ' + streak + 'd</span>';
     html += '<span class="streak-pct">' + rate + '%</span>';
     html += '<div class="streak-bar"><div class="streak-bar-fill" style="width:' + rate + '%;background:' + step.color + ';"></div></div>';
@@ -4427,7 +4373,7 @@ function addClearingItem(name) {
   if (!name || !name.trim()) return;
   APP.tasks.push({ id: uid(), name: name.trim(), type: 'clearing', estimatedMins: null, priority: null, dueDate: null, status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null });
   saveData(APP);
-  renderCatchup();
+  renderTaskList();
 }
 
 function openCmd() {
@@ -4573,15 +4519,13 @@ function render() {
   renderTopBar();
   renderFlow();
   renderStreaks();
-  renderDeepWork();
+  renderTaskList();
   renderTimer();
-  renderCatchup();
   renderShutdown();
   renderTimeline();
   renderScorecard();
   renderShips();
   renderGoals();
-  renderBacklog();
   updateSyncStatus();
 }
 
@@ -4600,7 +4544,7 @@ setInterval(() => {
     renderTopBar();
     renderFlow();
     renderTimeline();
-    renderDeepWork();
+    renderTaskList();
     updateSyncStatus();
   }
 }, 60000);
