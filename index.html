@@ -1059,6 +1059,22 @@ body {
 .dw-task-btn:hover { border-color: var(--text-dim); color: var(--text); }
 .dw-task-btn.check:hover { border-color: var(--green); color: var(--green); }
 .dw-task-btn.del:hover { border-color: var(--red); color: var(--red); }
+
+/* Task List rows */
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 4px;
+  font-size: 12px;
+  border-radius: 6px;
+  transition: background 0.15s;
+  cursor: default;
+}
+.task-row:hover { background: var(--card-hover); }
+.task-row.drag-over { border-top: 2px solid var(--blue); margin-top: -2px; }
+.task-row[draggable="true"] .task-drag-handle { cursor: grab; }
+.task-row.dragging { opacity: 0.4; }
 .dw-unassigned {
   margin-top: 8px;
   padding-top: 8px;
@@ -2671,20 +2687,20 @@ function renderTaskList() {
 
   // Deep Work tasks section
   if (deepTasks.length > 0) {
-    html += '<div style="border-left:3px solid var(--blue);padding-left:8px;margin:8px 0 4px 0;">';
+    html += '<div class="task-section" data-section="deep" style="border-left:3px solid var(--blue);padding-left:8px;margin:8px 0 4px 0;">';
     html += '<div style="font-size:11px;font-weight:600;color:var(--blue);margin-bottom:4px;">Deep Work (' + deepTasks.length + ')</div>';
     deepTasks.forEach(t => {
-      html += renderTaskListItem(t, today);
+      html += renderTaskListItem(t, today, 'deep');
     });
     html += '</div>';
   }
 
   // Clearing tasks section
   if (clearingTasks.length > 0) {
-    html += '<div style="border-left:3px solid var(--teal);padding-left:8px;margin:8px 0 4px 0;">';
+    html += '<div class="task-section" data-section="clearing" style="border-left:3px solid var(--teal);padding-left:8px;margin:8px 0 4px 0;">';
     html += '<div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px;">Clearing (' + clearingTasks.length + ')</div>';
     clearingTasks.forEach(t => {
-      html += renderTaskListItem(t, today);
+      html += renderTaskListItem(t, today, 'clearing');
     });
     html += '</div>';
   }
@@ -2721,17 +2737,18 @@ function renderTaskList() {
   container.innerHTML = html;
 }
 
-function renderTaskListItem(t, today) {
+function renderTaskListItem(t, today, section) {
   const isOverdue = t.dueDate && t.dueDate < today;
-  const prioDot = t.priority === 'high' ? 'var(--red)' : t.priority === 'medium' ? 'var(--amber)' : t.priority === 'low' ? 'var(--blue)' : '';
-  let html = '<div style="display:flex;align-items:center;gap:4px;padding:3px 0;font-size:12px;">';
-  if (prioDot) html += '<span style="width:6px;height:6px;border-radius:50%;background:' + prioDot + ';flex-shrink:0;"></span>';
-  else html += '<span style="width:6px;flex-shrink:0;"></span>';
-  html += '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(t.name) + '</span>';
+  const prioColor = t.priority === 'high' ? 'var(--red)' : t.priority === 'medium' ? 'var(--amber)' : t.priority === 'low' ? 'var(--green)' : 'var(--border)';
+  const prioLabel = t.priority === 'high' ? 'H' : t.priority === 'medium' ? 'M' : t.priority === 'low' ? 'L' : '';
+  let html = '<div class="task-row" draggable="true" data-task-id="' + t.id + '" data-section="' + section + '" ondragstart="taskDragStart(event)" ondragover="taskDragOver(event)" ondrop="taskDrop(event)" ondragend="taskDragEnd(event)">';
+  html += '<span class="task-drag-handle" title="Drag to reorder"><i class="ph ph-dots-six-vertical" style="font-size:12px;color:var(--text-faint);cursor:grab;"></i></span>';
+  html += '<span class="task-prio-btn" onclick="cycleTaskPriority(\'' + t.id + '\')" title="Click to change priority" style="width:18px;height:18px;border-radius:50%;border:2px solid ' + prioColor + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:8px;font-weight:700;color:' + prioColor + ';">' + prioLabel + '</span>';
+  html += '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">' + esc(t.name) + '</span>';
   if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';flex-shrink:0;">' + t.dueDate + '</span>';
   if (t.estimatedMins) html += '<span style="font-size:9px;color:var(--text-faint);flex-shrink:0;">' + t.estimatedMins + 'm</span>';
-  html += '<button class="dw-task-btn check" onclick="completeTaskFromList(\'' + t.id + '\')" title="Complete" style="flex-shrink:0;">&#10003;</button>';
-  html += '<button class="dw-task-btn del" onclick="deleteTaskFromList(\'' + t.id + '\')" title="Delete" style="flex-shrink:0;">&#10005;</button>';
+  html += '<button class="dw-task-btn check" onclick="event.stopPropagation();completeTaskFromList(\'' + t.id + '\')" title="Complete" style="flex-shrink:0;">&#10003;</button>';
+  html += '<button class="dw-task-btn del" onclick="event.stopPropagation();deleteTaskFromList(\'' + t.id + '\')" title="Delete" style="flex-shrink:0;">&#10005;</button>';
   html += '</div>';
   return html;
 }
@@ -2804,6 +2821,82 @@ function toggleTaskListCompleted() {
     el.style.display = 'none';
     if (chev) chev.innerHTML = '&#9654;';
   }
+}
+
+// ── Priority Cycling ──
+function cycleTaskPriority(taskId) {
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const cycle = [null, 'high', 'medium', 'low'];
+  const idx = cycle.indexOf(task.priority);
+  task.priority = cycle[(idx + 1) % cycle.length];
+  // Reset sortOrder when priority changes so it sorts naturally within new group
+  task.sortOrder = undefined;
+  saveData(APP);
+  renderTaskList();
+}
+
+// ── Drag and Drop Reordering ──
+let dragTaskId = null;
+let dragSection = null;
+
+function taskDragStart(e) {
+  const row = e.target.closest('.task-row');
+  if (!row) return;
+  dragTaskId = row.dataset.taskId;
+  dragSection = row.dataset.section;
+  row.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragTaskId);
+}
+
+function taskDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.target.closest('.task-row');
+  if (!row || row.dataset.section !== dragSection) return;
+  // Clear all drag-over indicators in this section
+  row.closest('.task-section')?.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over'));
+  row.classList.add('drag-over');
+}
+
+function taskDrop(e) {
+  e.preventDefault();
+  const targetRow = e.target.closest('.task-row');
+  if (!targetRow || !dragTaskId) return;
+  const targetId = targetRow.dataset.taskId;
+  if (targetId === dragTaskId || targetRow.dataset.section !== dragSection) { taskDragEnd(); return; }
+
+  // Get the sorted list for this section to determine new order
+  const sectionType = dragSection;
+  const sectionTasks = sortTasks(APP.tasks.filter(t => t.type === sectionType && t.status === 'todo'));
+
+  const dragIdx = sectionTasks.findIndex(t => t.id === dragTaskId);
+  const targetIdx = sectionTasks.findIndex(t => t.id === targetId);
+  if (dragIdx < 0 || targetIdx < 0) { taskDragEnd(); return; }
+
+  // Move the dragged task to the target position
+  const [moved] = sectionTasks.splice(dragIdx, 1);
+  sectionTasks.splice(targetIdx, 0, moved);
+
+  // Assign sortOrder to all tasks in this section to preserve the new order
+  sectionTasks.forEach((t, i) => {
+    const real = APP.tasks.find(x => x.id === t.id);
+    if (real) real.sortOrder = i;
+  });
+
+  saveData(APP);
+  taskDragEnd();
+  renderTaskList();
+}
+
+function taskDragEnd(e) {
+  dragTaskId = null;
+  dragSection = null;
+  document.querySelectorAll('.task-row').forEach(r => {
+    r.classList.remove('dragging');
+    r.classList.remove('drag-over');
+  });
 }
 
 function editDeepWorkBlock(idx) {
@@ -3965,7 +4058,15 @@ function sortTasks(tasks) {
   const today = todayStr();
   const prioOrder = { high: 0, medium: 1, low: 2 };
   return tasks.slice().sort((a, b) => {
-    // Overdue first
+    // Priority first (high>med>low>null)
+    const ap = a.priority ? prioOrder[a.priority] : 3;
+    const bp = b.priority ? prioOrder[b.priority] : 3;
+    if (ap !== bp) return ap - bp;
+    // Within same priority, use manual sortOrder
+    const ao = typeof a.sortOrder === 'number' ? a.sortOrder : 9999;
+    const bo = typeof b.sortOrder === 'number' ? b.sortOrder : 9999;
+    if (ao !== bo) return ao - bo;
+    // Then overdue first
     const aOverdue = a.dueDate && a.dueDate < today ? 1 : 0;
     const bOverdue = b.dueDate && b.dueDate < today ? 1 : 0;
     if (bOverdue !== aOverdue) return bOverdue - aOverdue;
@@ -3973,10 +4074,7 @@ function sortTasks(tasks) {
     if (a.dueDate && b.dueDate) { if (a.dueDate !== b.dueDate) return a.dueDate < b.dueDate ? -1 : 1; }
     else if (a.dueDate && !b.dueDate) return -1;
     else if (!a.dueDate && b.dueDate) return 1;
-    // Priority (high>med>low>null)
-    const ap = a.priority ? prioOrder[a.priority] : 3;
-    const bp = b.priority ? prioOrder[b.priority] : 3;
-    return ap - bp;
+    return 0;
   });
 }
 
