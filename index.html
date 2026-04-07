@@ -2675,12 +2675,12 @@ function renderTaskList() {
   // Quick-add input row
   html += '<div style="display:flex;gap:4px;padding:6px 0;align-items:center;">';
   html += '<input type="text" id="tasklist-add-input" placeholder="Add a task..." style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--font);" onkeydown="if(event.key===\'Enter\')addTaskListItem()">';
-  html += '<div id="tasklist-type-toggle" style="display:flex;gap:2px;">';
-  html += '<button class="btn-sm" id="tasklist-type-clearing" onclick="setTaskListType(\'clearing\')" style="padding:3px 8px;font-size:11px;background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal);border-radius:4px;cursor:pointer;">Clearing</button>';
-  html += '<button class="btn-sm" id="tasklist-type-deep" onclick="setTaskListType(\'deep\')" style="padding:3px 8px;font-size:11px;background:none;color:var(--text-dim);border:1px solid var(--border);border-radius:4px;cursor:pointer;">Deep</button>';
-  html += '</div>';
+  html += '<select id="tasklist-type-select" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:var(--font);" onchange="toggleTaskMinsInput()">';
+  html += '<option value="clearing">Clearing</option><option value="deep">Deep Work</option>';
+  html += '</select>';
+  html += '<input type="number" id="tasklist-mins-input" placeholder="Min" min="1" style="width:50px;font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:var(--font);text-align:center;display:none;" value="30">';
   html += '<select id="tasklist-priority" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:var(--font);">';
-  html += '<option value="">None</option><option value="high">High</option><option value="medium">Med</option><option value="low">Low</option>';
+  html += '<option value="">Priority</option><option value="high">High</option><option value="medium">Med</option><option value="low">Low</option>';
   html += '</select>';
   html += '<button class="btn-sm blue" onclick="addTaskListItem()" style="padding:3px 8px;font-size:13px;">+</button>';
   html += '</div>';
@@ -2753,26 +2753,11 @@ function renderTaskListItem(t, today, section) {
   return html;
 }
 
-let taskListType = 'clearing';
-
-function setTaskListType(type) {
-  taskListType = type;
-  const deepBtn = document.getElementById('tasklist-type-deep');
-  const clearBtn = document.getElementById('tasklist-type-clearing');
-  if (type === 'deep') {
-    deepBtn.style.background = 'var(--blue-bg)';
-    deepBtn.style.color = 'var(--blue)';
-    deepBtn.style.borderColor = 'var(--blue)';
-    clearBtn.style.background = 'none';
-    clearBtn.style.color = 'var(--text-dim)';
-    clearBtn.style.borderColor = 'var(--border)';
-  } else {
-    clearBtn.style.background = 'var(--teal-bg)';
-    clearBtn.style.color = 'var(--teal)';
-    clearBtn.style.borderColor = 'var(--teal)';
-    deepBtn.style.background = 'none';
-    deepBtn.style.color = 'var(--text-dim)';
-    deepBtn.style.borderColor = 'var(--border)';
+function toggleTaskMinsInput() {
+  const typeEl = document.getElementById('tasklist-type-select');
+  const minsEl = document.getElementById('tasklist-mins-input');
+  if (typeEl && minsEl) {
+    minsEl.style.display = typeEl.value === 'deep' ? '' : 'none';
   }
 }
 
@@ -2780,10 +2765,13 @@ function addTaskListItem() {
   const inp = document.getElementById('tasklist-add-input');
   const name = inp ? inp.value.trim() : '';
   if (!name) return;
+  const type = document.getElementById('tasklist-type-select')?.value || 'clearing';
   const priority = document.getElementById('tasklist-priority')?.value || null;
+  const minsEl = document.getElementById('tasklist-mins-input');
+  const estimatedMins = type === 'deep' ? (parseInt(minsEl?.value) || 30) : null;
   APP.tasks.push({
-    id: uid(), name: name, type: taskListType,
-    estimatedMins: taskListType === 'deep' ? 30 : null,
+    id: uid(), name: name, type: type,
+    estimatedMins: estimatedMins,
     priority: priority || null, dueDate: null,
     status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null
   });
