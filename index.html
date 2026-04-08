@@ -2744,7 +2744,7 @@ function renderTaskListItem(t, today, section) {
   let html = '<div class="task-row" draggable="true" data-task-id="' + t.id + '" data-section="' + section + '" ondragstart="taskDragStart(event)" ondragover="taskDragOver(event)" ondrop="taskDrop(event)" ondragend="taskDragEnd(event)">';
   html += '<span class="task-drag-handle" title="Drag to reorder"><i class="ph ph-dots-six-vertical" style="font-size:12px;color:var(--text-faint);cursor:grab;"></i></span>';
   html += '<span class="task-prio-btn" onclick="cycleTaskPriority(\'' + t.id + '\')" title="Click to change priority" style="width:18px;height:18px;border-radius:50%;border:2px solid ' + prioColor + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:8px;font-weight:700;color:' + prioColor + ';">' + prioLabel + '</span>';
-  html += '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;">' + esc(t.name) + '</span>';
+  html += '<span onclick="event.stopPropagation();editTaskName(\'' + t.id + '\')" title="Click to edit" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;cursor:text;">' + esc(t.name) + '</span>';
   if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';flex-shrink:0;">' + t.dueDate + '</span>';
   if (t.estimatedMins) html += '<span style="font-size:9px;color:var(--text-faint);flex-shrink:0;">' + t.estimatedMins + 'm</span>';
   html += '<button class="dw-task-btn check" onclick="event.stopPropagation();completeTaskFromList(\'' + t.id + '\')" title="Complete" style="flex-shrink:0;">&#10003;</button>';
@@ -4115,7 +4115,7 @@ function renderTriageBody() {
       html += '<span style="width:8px;height:8px;border-radius:50%;background:' + prioDot + ';flex-shrink:0;"></span>';
       // Name + badges
       html += '<div style="flex:1;min-width:0;">';
-      html += '<span style="font-size:13px;">' + esc(t.name) + '</span> ' + typeBadge;
+      html += '<span onclick="editTaskName(\'' + t.id + '\')" title="Click to edit" style="font-size:13px;cursor:text;">' + esc(t.name) + '</span> ' + typeBadge;
       if (t.dueDate) {
         html += ' <span style="font-size:10px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';">' + t.dueDate + '</span>';
       }
@@ -4179,6 +4179,21 @@ function updateTaskPriority(taskId, priority) {
   task.priority = priority || null;
   saveData(APP);
   renderTriageBody();
+}
+
+function editTaskName(taskId) {
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const newName = prompt('Edit task name:', task.name);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) return;
+  task.name = trimmed;
+  saveData(APP);
+  renderTaskList();
+  if (document.getElementById('triage-modal')?.classList.contains('open')) {
+    renderTriageBody();
+  }
 }
 
 function updateTaskDue(taskId, dueDate) {
