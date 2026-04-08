@@ -2672,19 +2672,6 @@ function renderTaskList() {
 
   let html = '';
 
-  // Quick-add input row
-  html += '<div style="display:flex;gap:4px;padding:6px 0;align-items:center;">';
-  html += '<input type="text" id="tasklist-add-input" placeholder="Add a task..." style="flex:1;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--font);" onkeydown="if(event.key===\'Enter\')addTaskListItem()">';
-  html += '<select id="tasklist-type-select" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:var(--font);" onchange="toggleTaskMinsInput()">';
-  html += '<option value="clearing">Clearing</option><option value="deep">Deep Work</option>';
-  html += '</select>';
-  html += '<input type="number" id="tasklist-mins-input" placeholder="Min" min="1" style="width:50px;font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:var(--font);text-align:center;display:none;" value="30">';
-  html += '<select id="tasklist-priority" style="font-size:11px;padding:3px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:var(--font);">';
-  html += '<option value="">Priority</option><option value="high">High</option><option value="medium">Med</option><option value="low">Low</option>';
-  html += '</select>';
-  html += '<button class="btn-sm blue" onclick="addTaskListItem()" style="padding:3px 8px;font-size:13px;">+</button>';
-  html += '</div>';
-
   // Deep Work tasks section
   if (deepTasks.length > 0) {
     html += '<div class="task-section" data-section="deep" style="border-left:3px solid var(--blue);padding-left:8px;margin:8px 0 4px 0;">';
