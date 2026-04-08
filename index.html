@@ -2720,10 +2720,11 @@ function renderTaskList() {
     completedTasks.forEach(t => {
       const typeTag = t.type === 'deep' ? '<span style="font-size:9px;color:var(--blue);margin-right:4px;">DEEP</span>' : '<span style="font-size:9px;color:var(--teal);margin-right:4px;">CLR</span>';
       html += '<div style="display:flex;align-items:center;gap:4px;padding:3px 0;opacity:0.6;">';
-      html += '<span style="color:var(--green);font-size:11px;">&#10003;</span>';
+      html += '<button onclick="uncompleteTask(\'' + t.id + '\')" title="Mark not done" style="background:none;border:none;color:var(--green);font-size:11px;cursor:pointer;padding:0;">&#10003;</button>';
       html += typeTag;
       html += '<span style="font-size:12px;text-decoration:line-through;">' + esc(t.name) + '</span>';
       html += '<span style="font-size:9px;color:var(--text-faint);margin-left:auto;">' + (t.completedDate || '') + '</span>';
+      html += '<button class="dw-task-btn del" onclick="deleteTaskFromList(\'' + t.id + '\')" title="Delete" style="flex-shrink:0;">&#10005;</button>';
       html += '</div>';
     });
     html += '</div>';
@@ -4179,6 +4180,19 @@ function updateTaskPriority(taskId, priority) {
   task.priority = priority || null;
   saveData(APP);
   renderTriageBody();
+}
+
+function uncompleteTask(taskId) {
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.status = 'todo';
+  task.completedAt = null;
+  task.completedDate = null;
+  saveData(APP);
+  renderTaskList();
+  if (document.getElementById('triage-modal')?.classList.contains('open')) {
+    renderTriageBody();
+  }
 }
 
 function editTaskName(taskId) {
