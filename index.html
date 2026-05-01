@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Stewardship OS v4</title>
+<title>Stewardship OS</title>
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <style>
 /* ============================================================
-   STEWARDSHIP OS v4 — Desktop-First Daily Operating Dashboard
+   STEWARDSHIP OS v6 - Desktop-First Daily Operating Dashboard
+   90-Day Challenge mode: 7 boolean rules, anchor verses, terminal marker
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -703,6 +704,172 @@ body {
 }
 .silence-btn:hover { color: var(--text); }
 
+/* ── 90-DAY CHALLENGE (Right Col) ── */
+.challenge-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--purple);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.challenge-day {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--purple);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.challenge-day-num {
+  font-size: 32px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1;
+}
+.challenge-day-of {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+.challenge-progress-pct {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.challenge-becoming {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-dim);
+  line-height: 1.45;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+.challenge-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  background: var(--bg);
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.challenge-rule-row:hover { border-color: var(--border); }
+.challenge-rule-row.done {
+  background: rgba(22,163,74,0.08);
+  border-color: rgba(22,163,74,0.3);
+}
+.challenge-rule-row.auto {
+  cursor: default;
+}
+.challenge-rule-row.auto:hover { border-color: transparent; }
+.challenge-rule-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.challenge-rule-row.done .challenge-rule-icon {
+  background: var(--green);
+  color: white;
+}
+.challenge-rule-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.challenge-rule-row.done .challenge-rule-label {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+.challenge-rule-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-faint);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--border-subtle);
+}
+.challenge-grid {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 3px;
+  margin-top: 12px;
+}
+.challenge-square {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--border-subtle);
+  position: relative;
+}
+.challenge-square.done { background: var(--green); }
+.challenge-square.partial { background: var(--amber); }
+.challenge-square.missed { background: var(--red); opacity: 0.4; }
+.challenge-square.future { background: var(--border-subtle); opacity: 0.5; }
+.challenge-square.today {
+  outline: 2px solid var(--purple);
+  outline-offset: 1px;
+}
+.challenge-marker {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--purple-bg);
+  border-radius: 8px;
+  border-left: 3px solid var(--purple);
+}
+.challenge-marker-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--purple);
+  margin-bottom: 4px;
+}
+.challenge-marker-text {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.45;
+}
+.challenge-streak-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+.challenge-stat {
+  text-align: center;
+}
+.challenge-stat-num {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  line-height: 1;
+}
+.challenge-stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
 /* ── VP SALES SCORECARD (Right Col) ── */
 .metric-card {
   background: var(--card);
@@ -1284,13 +1451,16 @@ body {
       Task List <span class="badge" id="task-list-count"></span>
     </div>
     <div id="task-list-container"></div>
-
-    <div id="shutdown-container"></div>
   </div>
 
   <!-- ======== CENTER COLUMN ======== -->
   <div class="col" id="col-center" style="display:flex;flex-direction:column;">
     <div style="flex:1;overflow-y:auto;" id="schedule-scroll">
+      <div class="section-hdr" style="border-left-color: var(--orange);display:flex;justify-content:space-between;align-items:center;">
+        <span>Morning Brief <span class="badge" id="brief-date"></span></span>
+        <button class="btn-sm" style="font-size:11px;padding:3px 8px;" onclick="window.location.reload()" title="Reload the page so the brief script re-executes">Refresh</button>
+      </div>
+      <div id="morning-brief-container" style="font-size:12.5px;margin-bottom:14px;"></div>
       <div class="section-hdr" style="border-left-color: var(--blue);">Today's Schedule</div>
       <div id="timeline-container"></div>
     </div>
@@ -1316,28 +1486,32 @@ body {
 
   <!-- ======== RIGHT COLUMN ======== -->
   <div class="col" id="col-right">
-    <div class="section-hdr" style="border-left-color: var(--teal);">VP Sales Scorecard</div>
-    <div id="scorecard-container"></div>
+    <div class="section-hdr" style="border-left-color: var(--purple);">90-Day Challenge</div>
+    <div id="challenge-container"></div>
 
     <div class="section-hdr" style="border-left-color: var(--blue);">Active Timer</div>
     <div id="timer-card"></div>
 
-    <div class="section-hdr" style="border-left-color: var(--green);">Weekly Ships <span class="badge" id="ships-count"></span></div>
-    <div id="ships-batting"></div>
-    <div id="ships-container"></div>
+    <div class="section-hdr collapse-hdr" style="border-left-color: var(--amber);" onclick="toggleCollapse('streaks')" id="streaks-hdr">
+      Streaks <span class="toggle-icon">&#9654;</span>
+    </div>
+    <div class="collapse-body" id="streaks-body" style="display:none;">
+      <div id="streaks-container"></div>
+    </div>
+
+    <div class="section-hdr collapse-hdr" style="border-left-color: var(--green);" onclick="toggleCollapse('ships')" id="ships-hdr">
+      Weekly Ships <span class="badge" id="ships-count"></span> <span class="toggle-icon">&#9654;</span>
+    </div>
+    <div class="collapse-body" id="ships-body" style="display:none;">
+      <div id="ships-batting"></div>
+      <div id="ships-container"></div>
+    </div>
 
     <div class="section-hdr collapse-hdr" onclick="toggleCollapse('goals')" id="goals-hdr">
       Quarterly Goals (Q2 2026) <span class="toggle-icon">&#9654;</span>
     </div>
-    <div class="collapse-body" id="goals-body">
+    <div class="collapse-body" id="goals-body" style="display:none;">
       <div id="goals-container"></div>
-    </div>
-
-    <div class="section-hdr collapse-hdr" style="border-left-color: var(--amber);" onclick="toggleCollapse('streaks')" id="streaks-hdr">
-      Streaks <span class="toggle-icon">&#9654;</span>
-    </div>
-    <div class="collapse-body" id="streaks-body">
-      <div id="streaks-container"></div>
     </div>
 
     <div style="margin-top:16px;">
@@ -1352,7 +1526,7 @@ body {
 <!-- FOOTER -->
 <!-- ============================================================ -->
 <div class="footer-bar">
-  <div>Whatever you do, work heartily, as for the Lord. -- Col 3:23 (ESV)</div>
+  <div>Whatever you do, work heartily, as for the Lord and not for men. -- Col 3:23 (ESV)</div>
   <div>
     <a onclick="exportData()">Export Data</a>
     <a onclick="importData()">Import Data</a>
@@ -1432,6 +1606,10 @@ body {
   </div>
 </div>
 
+<!-- Morning Brief data. Loaded as a script so it works under file:// protocol.
+     The @morning-brief subagent overwrites this file daily at 9:43 AM via launchd. -->
+<script src="data/morning-brief.js"></script>
+
 <script>
 // ── THEME INIT (must run before DOM renders) ──
 (function() {
@@ -1444,7 +1622,7 @@ body {
 })();
 
 // ══════════════════════════════════════════════════════════════
-// STEWARDSHIP OS v4 — Desktop-First Daily Operating Dashboard
+// STEWARDSHIP OS v6 - Desktop-First Daily Operating Dashboard
 // ══════════════════════════════════════════════════════════════
 
 // ── CONFIG ──
@@ -1498,6 +1676,33 @@ const VERSES = [
   { text: "Do all things without grumbling or disputing.", ref: "Philippians 2:14" },
 ];
 
+// ── ANCHOR VERSES (90-Day Challenge) ──
+// Read every morning in order during Quiet Time.
+const ANCHOR_VERSES = [
+  { ref: "Colossians 3:23-24", text: "Whatever you do, work heartily, as for the Lord and not for men, knowing that from the Lord you will receive the inheritance as your reward. You are serving the Lord Christ." },
+  { ref: "Joshua 24:15",       text: "But as for me and my house, we will serve the Lord." },
+  { ref: "Deuteronomy 6:5-7",  text: "You shall love the Lord your God with all your heart and with all your soul and with all your might. And these words that I command you today shall be on your heart. You shall teach them diligently to your children, and shall talk of them when you sit in your house, and when you walk by the way, and when you lie down, and when you rise." },
+  { ref: "1 Corinthians 16:13-14", text: "Be watchful, stand firm in the faith, act like men, be strong. Let all that you do be done in love." },
+];
+
+// ── 90-DAY CHALLENGE CONFIG ──
+const CHALLENGE = {
+  startDate: '2026-05-02',
+  totalDays: 90,
+  becomingSentence: "I am becoming a man whose work is worship, whose fathering is undivided, whose body sustains both, and whose attention rests on one thing at a time.",
+  terminalMarker: "Heirloom-quality custom-bound Bible (Col 3:23-24 spine, Josh 24:15 cover, Deut 6:5-7 dedication, 1 Cor 16:13-14 inside cover) + kids savings deposit",
+  // 7 boolean rules in chronological order
+  rules: [
+    { id: 'wake6',       label: '6:00 AM wake',           autoFlow: 'wake',     icon: 'ph-sun' },
+    { id: 'quietTime',   label: 'Quiet time',             autoFlow: 'quiet',    icon: 'ph-book-open' },
+    { id: 'workout30',   label: '30-min workout',         autoFlow: 'workout',  icon: 'ph-barbell' },
+    { id: 'deepWork3',   label: 'Three deep work blocks', autoFlow: 'deepwork', icon: 'ph-fire-simple' },
+    { id: 'noPhone6pm',  label: 'No phone after 6 PM',    autoFlow: null,       icon: 'ph-phone-x' },
+    { id: 'ateToPlan',   label: 'Ate to plan',            autoFlow: null,       icon: 'ph-fork-knife' },
+    { id: 'bed10pm',     label: 'In bed by 10 PM',        autoFlow: null,       icon: 'ph-bed' },
+  ],
+};
+
 // ── BIBLE READING PLAN ──
 const READING_PLAN = [
   ...[1,2,3,4,5].map(c => ({ book: "James", chapter: c })),
@@ -1516,13 +1721,14 @@ function getReadingForDate(dateStr) {
 
 // ── FLOW STEPS ──
 const FLOW_STEPS = [
-  { id: "light",      time: "6:30 AM",  label: "Light Therapy",         icon: "ph-sun-dim",            color: "var(--amber)",  colorBg: "var(--amber-bg)" },
-  { id: "bible",      time: "6:35 AM",  label: "Bible Reading",         icon: "ph-book-open",          color: "var(--purple)", colorBg: "var(--purple-bg)" },
-  { id: "walk",       time: "6:40 AM",  label: "Treadmill",             icon: "ph-person-simple-run",  color: "var(--green)",  colorBg: "var(--green-bg)", timerMins: 30, timerType: "treadmill" },
-  { id: "soap",       time: "7:10 AM",  label: "SOAP Journal",          icon: "ph-notebook",           color: "var(--purple)", colorBg: "var(--purple-bg)" },
-  { id: "meditation", time: "10:00 AM", label: "Meditation",            icon: "ph-brain",              color: "var(--purple)", colorBg: "var(--purple-bg)", timerMins: 10, timerType: "meditation" },
+  { id: "wake",       time: "6:00 AM",  label: "Wake Up",               icon: "ph-sun",                color: "var(--amber)",  colorBg: "var(--amber-bg)" },
+  { id: "shower",     time: "6:05 AM",  label: "Shower",                icon: "ph-drop",               color: "var(--blue)",   colorBg: "var(--blue-bg)" },
+  { id: "light",      time: "6:15 AM",  label: "Light Therapy",         icon: "ph-sun-dim",            color: "var(--amber)",  colorBg: "var(--amber-bg)" },
+  { id: "quiet",      time: "6:20 AM",  label: "Quiet Time",            icon: "ph-book-open",          color: "var(--purple)", colorBg: "var(--purple-bg)" },
+  { id: "workout",    time: "10:00 AM", label: "Workout",               icon: "ph-barbell",            color: "var(--green)",  colorBg: "var(--green-bg)", timerMins: 30, timerType: "workout" },
   { id: "deepwork1",  time: "",         label: "Deep Work Session 1",   icon: "ph-fire-simple",        color: "var(--blue)",   colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
   { id: "deepwork2",  time: "",         label: "Deep Work Session 2",   icon: "ph-fire-simple",        color: "var(--blue)",   colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
+  { id: "deepwork3",  time: "",         label: "Deep Work Session 3",   icon: "ph-fire-simple",        color: "var(--blue)",   colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
 ];
 
 // ── DEEP WORK CATEGORIES ──
@@ -1565,7 +1771,8 @@ function loadData() {
       silencedEvents: {}, goalProgress: {}, timerHistory: {},
       customTasks: [], deepWorkTasks: [], clearingItems: [],
       tasks: [], _tasksMigrated: false,
-      weeklyReviews: {}
+      weeklyReviews: {},
+      challenge: {}, quietTimeLog: {}
     };
     Object.keys(defaults).forEach(k => { if (d[k] === undefined) d[k] = defaults[k]; });
     if (!Array.isArray(d.customTasks)) d.customTasks = [];
@@ -1580,7 +1787,8 @@ function loadData() {
     salesMetrics: {}, silencedEvents: {}, goalProgress: {}, timerHistory: {},
     customTasks: [], deepWorkTasks: [], clearingItems: [],
     tasks: [], _tasksMigrated: false,
-    weeklyReviews: {}
+    weeklyReviews: {},
+    challenge: {}, quietTimeLog: {}
   };
 }
 
@@ -1679,7 +1887,8 @@ function tryRestoreFromCloud() {
           silencedEvents: {}, goalProgress: {}, timerHistory: {},
           customTasks: [], deepWorkTasks: [], clearingItems: [],
           tasks: [], _tasksMigrated: false,
-          weeklyReviews: {}
+          weeklyReviews: {},
+          challenge: {}, quietTimeLog: {}
         };
         Object.keys(defaults).forEach(k => {
           if (APP[k] === undefined) APP[k] = defaults[k];
@@ -2112,8 +2321,8 @@ function navDate(delta) {
 function goToToday() { selectedDate = todayStr(); render(); }
 
 function renderTopBar() {
-  // Verse
-  const v = VERSES[dayOfYear() % VERSES.length];
+  // Anchor verse cycles daily through the 4 challenge anchors
+  const v = ANCHOR_VERSES[dayOfYear() % ANCHOR_VERSES.length];
   document.getElementById('verse-area').innerHTML = '"' + esc(v.text) + '"<span class="verse-ref">-- ' + v.ref + ' (ESV)</span>';
 
   // Date
@@ -2252,13 +2461,14 @@ function renderFlow() {
 
 function renderFlowItem(step, isDone, isCurrent, isToday, d, reading, isSkipped) {
   let hint = step.hint || '';
-  if (step.id === 'light') hint = '10K lux. Start the light.';
-  else if (step.id === 'bible') hint = 'Plan suggests: ' + reading.book + ' ' + reading.chapter;
-  else if (step.id === 'walk') hint = '30 min. Turn on treadmill.';
-  else if (step.id === 'soap') hint = 'Reflect on your reading.';
-  else if (step.id === 'meditation') hint = '10 min. Be present.';
+  if (step.id === 'wake') hint = 'Feet on floor. No snooze.';
+  else if (step.id === 'shower') hint = 'Wake the body. Reset.';
+  else if (step.id === 'light') hint = '10K lux. Start the light.';
+  else if (step.id === 'quiet') hint = 'Bible + prayer in physical notebook. Anchor verses below. Plan: ' + reading.book + ' ' + reading.chapter;
+  else if (step.id === 'workout') hint = '30 min. Lift or treadmill.';
   else if (step.id === 'deepwork1') hint = '90 min focus block. Pick tasks from the list below.';
   else if (step.id === 'deepwork2') hint = 'Second focus block. Keep the momentum.';
+  else if (step.id === 'deepwork3') hint = 'Third focus block. Finish strong.';
 
   let timerInfo = '';
   if (isDone && APP.timerCompletions[d] && APP.timerCompletions[d][step.id]) {
@@ -2267,8 +2477,8 @@ function renderFlowItem(step, isDone, isCurrent, isToday, d, reading, isSkipped)
   }
 
   let badge = '';
-  if (step.id === 'meditation' && isDone && APP.meditation[d]) {
-    badge = APP.meditation[d].onTime
+  if (step.id === 'wake' && isDone && APP.wakeTimes && APP.wakeTimes[d]) {
+    badge = APP.wakeTimes[d].onTime
       ? '<span class="flow-badge on-time">ON TIME</span>'
       : '<span class="flow-badge late">LATE</span>';
   }
@@ -2299,8 +2509,7 @@ function renderFlowItem(step, isDone, isCurrent, isToday, d, reading, isSkipped)
   html += '</div>';
 
   // Expand panels for built-in steps
-  if (step.id === 'bible') html += renderBiblePanel(d, isDone);
-  if (step.id === 'soap') html += renderSOAPPanel(d, isDone);
+  if (step.id === 'quiet') html += renderQuietTimePanel(d, isDone);
 
   html += '</div>';
   return html;
@@ -2346,46 +2555,35 @@ function unskipFlowStep(id) {
   renderFlow();
 }
 
-function renderBiblePanel(d, isDone) {
-  if (!APP.bibleLog[d]) APP.bibleLog[d] = { whatRead: '' };
+function renderQuietTimePanel(d, isDone) {
+  if (!APP.quietTimeLog) APP.quietTimeLog = {};
+  if (!APP.quietTimeLog[d]) APP.quietTimeLog[d] = { whatRead: '' };
   const reading = getReadingForDate(d);
   const isOpen = !isDone;
+  let versesHtml = '';
+  ANCHOR_VERSES.forEach((v, i) => {
+    versesHtml +=
+      '<div style="padding:10px 12px;margin-bottom:8px;background:var(--purple-bg);border-left:3px solid var(--purple);border-radius:6px;">' +
+        '<div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Anchor ' + (i + 1) + ' &middot; ' + esc(v.ref) + '</div>' +
+        '<div style="font-size:13px;font-style:italic;line-height:1.5;color:var(--text);">' + esc(v.text) + '</div>' +
+      '</div>';
+  });
   return '<div class="expand-panel ' + (isOpen ? 'open' : '') + '">' +
-    '<div class="field-group"><label class="purple">What did you read?</label>' +
-    '<input type="text" id="bible-what" value="' + esc(APP.bibleLog[d].whatRead) + '" placeholder="' + esc(reading.book + ' ' + reading.chapter) + '" onchange="saveBibleLog()">' +
+    '<div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Anchor Verses (read each morning)</div>' +
+    versesHtml +
+    '<div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;">Reading Plan</div>' +
+    '<div style="font-size:13px;color:var(--text);margin-bottom:10px;">' + esc(reading.book + ' ' + reading.chapter) + ' &middot; <span style="color:var(--text-dim);font-size:11px;">Day ' + reading.planDay + ' of ' + reading.totalDays + '</span></div>' +
+    '<div class="field-group"><label class="purple">What did you read? (optional)</label>' +
+    '<input type="text" id="quiet-what" value="' + esc(APP.quietTimeLog[d].whatRead) + '" placeholder="Bible + prayer happens in your physical notebook. Brief log here optional." onchange="saveQuietTimeLog()">' +
     '</div></div>';
 }
 
-function renderSOAPPanel(d, isDone) {
-  if (!APP.soap[d]) APP.soap[d] = { scripture: '', observation: '', application: '', prayer: '', reading: '' };
-  const s = APP.soap[d];
-  const isOpen = !isDone;
-  return '<div class="expand-panel ' + (isOpen ? 'open' : '') + '">' +
-    '<div class="field-group"><label class="purple">S -- Scripture</label><textarea id="soap-s" placeholder="Copy or summarize the verse that stands out..." onchange="saveSOAP()">' + esc(s.scripture) + '</textarea></div>' +
-    '<div class="field-group"><label class="purple">O -- Observation</label><textarea id="soap-o" placeholder="What is happening? Who is talking?" onchange="saveSOAP()">' + esc(s.observation) + '</textarea></div>' +
-    '<div class="field-group"><label class="purple">A -- Application</label><textarea id="soap-a" placeholder="How does this apply to my life right now?" onchange="saveSOAP()">' + esc(s.application) + '</textarea></div>' +
-    '<div class="field-group"><label class="purple">P -- Prayer</label><textarea id="soap-p" placeholder="Pray based on what you read..." onchange="saveSOAP()">' + esc(s.prayer) + '</textarea></div>' +
-    '<div class="btn-row"><button class="btn-sm purple" onclick="saveSOAP()">Save SOAP</button></div>' +
-    '</div>';
-}
-
-function saveBibleLog() {
+function saveQuietTimeLog() {
   const d = selectedDate;
-  if (!APP.bibleLog[d]) APP.bibleLog[d] = {};
-  const el = document.getElementById('bible-what');
-  if (el) APP.bibleLog[d].whatRead = el.value;
-  saveData(APP);
-}
-
-function saveSOAP() {
-  const d = selectedDate;
-  if (!APP.soap[d]) APP.soap[d] = {};
-  APP.soap[d] = {
-    scripture: document.getElementById('soap-s')?.value || '',
-    observation: document.getElementById('soap-o')?.value || '',
-    application: document.getElementById('soap-a')?.value || '',
-    prayer: document.getElementById('soap-p')?.value || '',
-  };
+  if (!APP.quietTimeLog) APP.quietTimeLog = {};
+  if (!APP.quietTimeLog[d]) APP.quietTimeLog[d] = {};
+  const el = document.getElementById('quiet-what');
+  if (el) APP.quietTimeLog[d].whatRead = el.value;
   saveData(APP);
 }
 
@@ -2402,24 +2600,24 @@ function handleFlowTap(id) {
 
   // Unchecking
   if (isDone) {
-    if (id === 'soap') saveSOAP();
-    if (id === 'bible') saveBibleLog();
+    if (id === 'quiet') saveQuietTimeLog();
     APP.flow[d][id] = false;
     saveData(APP);
     renderFlow();
+    renderChallenge();
     return;
   }
 
   // Save associated panels
-  if (id === 'soap') saveSOAP();
-  if (id === 'bible') saveBibleLog();
+  if (id === 'quiet') saveQuietTimeLog();
 
-  // Meditation on-time tracking
-  if (id === 'meditation' && isToday) {
+  // Wake on-time tracking
+  if (id === 'wake' && isToday) {
     const now = new Date();
-    const targetMin = parseTime('10:00 AM');
+    const targetMin = parseTime('6:00 AM');
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    APP.meditation[d] = { startedAt: Date.now(), onTime: nowMin <= targetMin + 2 };
+    if (!APP.wakeTimes) APP.wakeTimes = {};
+    APP.wakeTimes[d] = { startedAt: Date.now(), onTime: nowMin <= targetMin + 30 };
   }
 
   // Deep-work flow steps open deep work setup
@@ -2467,6 +2665,7 @@ function completeFlowStep(id) {
   APP.flow[d][id] = true;
   saveData(APP);
   renderFlow();
+  renderChallenge();
 }
 
 // ── Custom Task Management ──
@@ -3469,6 +3668,7 @@ function deleteClearing(id) {
 
 function renderShutdown() {
   const c = document.getElementById('shutdown-container');
+  if (!c) return;
   const d = selectedDate;
 
   if (!APP.shutdowns) APP.shutdowns = {};
@@ -3859,7 +4059,8 @@ function renderScorecard() {
   // Meetings
   html += '<div class="metric-card"><div class="metric-info"><div class="metric-label">Meetings Today</div><div class="metric-value">' + weekMeetings + '</div><div class="metric-sub">auto-counted from calendar</div></div></div>';
 
-  document.getElementById('scorecard-container').innerHTML = html;
+  const sc = document.getElementById('scorecard-container');
+  if (sc) sc.innerHTML = html;
 }
 
 function updateMetric(key, val) {
@@ -4306,6 +4507,188 @@ function toggleTheme() {
 
 
 // ══════════════════════════════════════════════════════════════
+// 90-DAY CHALLENGE
+// ══════════════════════════════════════════════════════════════
+
+function challengeDayNumber(dateStr) {
+  // Returns 1-based day number, or 0 if before start, or > totalDays if after
+  const start = parseDate(CHALLENGE.startDate);
+  const target = parseDate(dateStr);
+  const diff = Math.floor((target - start) / 86400000);
+  return diff + 1;
+}
+
+function isRuleAutoDone(ruleId, dateStr) {
+  // Auto-derive rule status from flow step completion
+  const flow = APP.flow[dateStr] || {};
+  switch (ruleId) {
+    case 'wake6': {
+      // Wake step done AND wake time was on time (within 30 min of 6:00)
+      if (flow.wake !== true) return false;
+      const wt = APP.wakeTimes && APP.wakeTimes[dateStr];
+      // If no recorded time (e.g., manually checked later), give credit if step is checked
+      return wt ? wt.onTime : true;
+    }
+    case 'quietTime':
+      return flow.quiet === true;
+    case 'workout30':
+      return flow.workout === true;
+    case 'deepWork3':
+      return flow.deepwork1 === true && flow.deepwork2 === true && flow.deepwork3 === true;
+    default:
+      return null; // null = manual rule, not auto-derived
+  }
+}
+
+function isRuleDone(ruleId, dateStr) {
+  const auto = isRuleAutoDone(ruleId, dateStr);
+  if (auto !== null) return auto;
+  // Manual rules pull from APP.challenge.rules[date][ruleId]
+  if (!APP.challenge) APP.challenge = {};
+  if (!APP.challenge.rules) APP.challenge.rules = {};
+  const day = APP.challenge.rules[dateStr] || {};
+  return day[ruleId] === true;
+}
+
+function toggleChallengeRule(ruleId) {
+  const d = selectedDate;
+  const rule = CHALLENGE.rules.find(r => r.id === ruleId);
+  if (!rule) return;
+  // Auto-derived rules are not manually togglable
+  if (rule.autoFlow !== null) return;
+  if (!APP.challenge) APP.challenge = {};
+  if (!APP.challenge.rules) APP.challenge.rules = {};
+  if (!APP.challenge.rules[d]) APP.challenge.rules[d] = {};
+  APP.challenge.rules[d][ruleId] = !APP.challenge.rules[d][ruleId];
+  saveData(APP);
+  renderChallenge();
+}
+
+function dayCompletionStatus(dateStr) {
+  // Returns 'done' (all 7), 'partial' (some), 'missed' (none and past), 'future', 'today-pending'
+  const dayNum = challengeDayNumber(dateStr);
+  if (dayNum < 1 || dayNum > CHALLENGE.totalDays) return 'out-of-range';
+  const today = todayStr();
+  const isFuture = dateStr > today;
+  if (isFuture) return 'future';
+  let doneCount = 0;
+  CHALLENGE.rules.forEach(r => { if (isRuleDone(r.id, dateStr)) doneCount++; });
+  if (doneCount === CHALLENGE.rules.length) return 'done';
+  if (dateStr === today) return doneCount > 0 ? 'partial' : 'today-pending';
+  if (doneCount === 0) return 'missed';
+  return 'partial';
+}
+
+function calcChallengeStreak() {
+  // Current streak of clean (all-7) days ending today (or yesterday if today incomplete)
+  let streak = 0;
+  let d = todayStr();
+  // If today is not yet complete, start from yesterday
+  if (dayCompletionStatus(d) !== 'done') d = addDays(d, -1);
+  while (true) {
+    const status = dayCompletionStatus(d);
+    if (status === 'done') { streak++; d = addDays(d, -1); }
+    else break;
+    if (challengeDayNumber(d) < 1) break;
+  }
+  return streak;
+}
+
+function calcChallengeCleanDays() {
+  // Total clean days in the challenge so far
+  let count = 0;
+  for (let i = 1; i <= CHALLENGE.totalDays; i++) {
+    const d = addDays(CHALLENGE.startDate, i - 1);
+    if (d > todayStr()) break;
+    if (dayCompletionStatus(d) === 'done') count++;
+  }
+  return count;
+}
+
+function renderChallenge() {
+  const container = document.getElementById('challenge-container');
+  if (!container) return;
+
+  const today = todayStr();
+  const todayDayNum = challengeDayNumber(today);
+  const selectedDayNum = challengeDayNumber(selectedDate);
+  const beforeStart = todayDayNum < 1;
+  const pastEnd = todayDayNum > CHALLENGE.totalDays;
+
+  // Header
+  let dayDisplay;
+  if (beforeStart) {
+    const daysUntil = 1 - todayDayNum;
+    dayDisplay = '<div class="challenge-day-num">' + daysUntil + '</div><span class="challenge-day-of">day' + (daysUntil !== 1 ? 's' : '') + ' until start (' + CHALLENGE.startDate + ')</span>';
+  } else if (pastEnd) {
+    dayDisplay = '<div class="challenge-day-num">DONE</div><span class="challenge-day-of">90 days complete</span>';
+  } else {
+    dayDisplay = '<div class="challenge-day-num">' + todayDayNum + '</div><span class="challenge-day-of">of ' + CHALLENGE.totalDays + '</span>';
+  }
+
+  // Rules for selected date
+  let rulesHtml = '';
+  CHALLENGE.rules.forEach(r => {
+    const done = isRuleDone(r.id, selectedDate);
+    const isAuto = r.autoFlow !== null;
+    const tag = isAuto ? 'AUTO' : 'TAP';
+    rulesHtml += '<div class="challenge-rule-row ' + (done ? 'done' : '') + ' ' + (isAuto ? 'auto' : '') + '" ' +
+      (isAuto ? '' : 'onclick="toggleChallengeRule(\'' + r.id + '\')"') + '>' +
+      '<div class="challenge-rule-icon"><i class="ph ' + r.icon + '"></i></div>' +
+      '<div class="challenge-rule-label">' + esc(r.label) + '</div>' +
+      '<div class="challenge-rule-tag">' + tag + '</div>' +
+      '</div>';
+  });
+
+  // Grid (90 squares, 15 cols x 6 rows)
+  let gridHtml = '';
+  for (let i = 1; i <= CHALLENGE.totalDays; i++) {
+    const d = addDays(CHALLENGE.startDate, i - 1);
+    const status = dayCompletionStatus(d);
+    let cls = 'challenge-square';
+    if (status === 'done') cls += ' done';
+    else if (status === 'partial') cls += ' partial';
+    else if (status === 'missed') cls += ' missed';
+    else if (status === 'future') cls += ' future';
+    else if (status === 'today-pending') cls += ' future';
+    if (d === today) cls += ' today';
+    gridHtml += '<div class="' + cls + '" title="Day ' + i + ' (' + d + '): ' + status + '"></div>';
+  }
+
+  // Stats
+  const cleanDays = calcChallengeCleanDays();
+  const streak = calcChallengeStreak();
+  const elapsedDays = Math.max(0, Math.min(CHALLENGE.totalDays, todayDayNum));
+  const cleanPct = elapsedDays > 0 ? Math.round(cleanDays / elapsedDays * 100) : 0;
+
+  let selectedNote = '';
+  if (selectedDate !== today && selectedDayNum >= 1 && selectedDayNum <= CHALLENGE.totalDays) {
+    selectedNote = '<div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Showing rules for Day ' + selectedDayNum + ' (' + selectedDate + ')</div>';
+  }
+
+  container.innerHTML =
+    '<div class="challenge-panel">' +
+      '<div class="challenge-day">90-Day Challenge &middot; Cycle 1</div>' +
+      '<div style="display:flex;align-items:baseline;gap:6px;">' + dayDisplay + '</div>' +
+      '<div class="challenge-progress-pct">' + cleanDays + ' clean / ' + elapsedDays + ' elapsed (' + cleanPct + '%)</div>' +
+      selectedNote +
+      '<div class="challenge-becoming">' + esc(CHALLENGE.becomingSentence) + '</div>' +
+      '<div style="margin-top:14px;">' + rulesHtml + '</div>' +
+      '<div class="challenge-grid">' + gridHtml + '</div>' +
+      '<div class="challenge-streak-summary">' +
+        '<div class="challenge-stat"><div class="challenge-stat-num">' + streak + '</div><div class="challenge-stat-label">Streak</div></div>' +
+        '<div class="challenge-stat"><div class="challenge-stat-num">' + cleanDays + '</div><div class="challenge-stat-label">Clean Days</div></div>' +
+        '<div class="challenge-stat"><div class="challenge-stat-num">' + (CHALLENGE.totalDays - elapsedDays) + '</div><div class="challenge-stat-label">Remaining</div></div>' +
+      '</div>' +
+      '<div class="challenge-marker">' +
+        '<div class="challenge-marker-label">Terminal Marker (Day 90)</div>' +
+        '<div class="challenge-marker-text">' + esc(CHALLENGE.terminalMarker) + '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+
+// ══════════════════════════════════════════════════════════════
 // STREAKS
 // ══════════════════════════════════════════════════════════════
 
@@ -4492,8 +4875,7 @@ let cmdFilteredCommands = [];
 const COMMANDS = [
   { match: /^(add )?task[: ](.+)/i, label: 'Add Task', icon: 'ph-plus-circle', action: (m) => { closeCmd(); openAddTaskModal(); } },
   { match: /^(start )?(deep ?work|dw)/i, label: 'Start Deep Work (90m)', icon: 'ph-fire-simple', action: () => { closeCmd(); showDeepWorkSetup(90); } },
-  { match: /^(start )?treadmill/i, label: 'Start Treadmill (30m)', icon: 'ph-person-simple-run', action: () => { closeCmd(); startTimer('treadmill', 30, 'Treadmill Walk (30m)', 'walk'); } },
-  { match: /^(start )?meditat/i, label: 'Start Meditation (10m)', icon: 'ph-brain', action: () => { closeCmd(); startTimer('meditation', 10, 'Meditation (10m)', 'meditation'); } },
+  { match: /^(start )?(workout|lift|treadmill)/i, label: 'Start Workout (30m)', icon: 'ph-barbell', action: () => { closeCmd(); startTimer('workout', 30, 'Workout (30m)', 'workout'); } },
   { match: /^(log )?(clear|clearing)[: ](.+)/i, label: 'Add to Clearing List', icon: 'ph-checks', action: (m) => { closeCmd(); addClearingItem(m[3] || m[2]); } },
   { match: /^(add )?ship[: ](.+)/i, label: 'Add Ship', icon: 'ph-rocket', action: (m) => { closeCmd(); openShipModal(); } },
   { match: /^(weekly )?review/i, label: 'Open Weekly Review', icon: 'ph-chart-line-up', action: () => { closeCmd(); openWeeklyReview(); } },
@@ -4650,15 +5032,82 @@ function render() {
   checkWeekRollover();
   renderTopBar();
   renderFlow();
+  renderChallenge();
   renderStreaks();
   renderTaskList();
   renderTimer();
-  renderShutdown();
   renderTimeline();
-  renderScorecard();
   renderShips();
   renderGoals();
+  renderMorningBrief();
   updateSyncStatus();
+}
+
+// ── MORNING BRIEF ──
+// Loads from data/morning-brief.js which sets window.MORNING_BRIEF_DATA.
+// Using a script tag wrapper because fetch() on data/morning-brief.json is
+// blocked under file:// protocol. The .js wrapper works on both file:// and http://.
+// The @morning-brief subagent writes both files on each daily run.
+// Manual refresh reloads the page so the browser re-executes the script tag.
+function renderMorningBrief() {
+  const container = document.getElementById('morning-brief-container');
+  const badge = document.getElementById('brief-date');
+  if (!container) return;
+
+  const renderFromData = (brief) => {
+      if (badge) badge.textContent = brief.date || '';
+      const card = (item, section) => {
+        const so = section === 'versa' ? 'So what for Versa' : 'So what for Ian\'s rig';
+        const srcLabel = item.source_label || 'source';
+        return `
+          <div style="border-left:2px solid var(--orange);padding:6px 10px;margin:6px 0;background:var(--bg-subtle,rgba(254,92,2,0.04));border-radius:4px;">
+            <div style="font-weight:600;margin-bottom:3px;line-height:1.3;">${escapeHtml(item.headline)}</div>
+            <div style="color:var(--text-dim);font-size:11px;margin-bottom:4px;">
+              <a href="${item.source_url}" target="_blank" rel="noopener" style="color:var(--text-dim);text-decoration:underline;">${escapeHtml(srcLabel)}</a>
+            </div>
+            <div style="margin-bottom:3px;"><span style="color:var(--text-dim);">${so}:</span> ${escapeHtml(item.so_what)}</div>
+            <div><span style="color:var(--text-dim);">Action:</span> ${escapeHtml(item.action)}</div>
+          </div>
+        `;
+      };
+      const versaSection = (brief.versa_intel && brief.versa_intel.length)
+        ? brief.versa_intel.map(i => card(i, 'versa')).join('')
+        : '<div style="color:var(--text-dim);font-style:italic;padding:4px 0;">No material events in the last 24 hours.</div>';
+      const toolingSection = (brief.ai_tooling && brief.ai_tooling.length)
+        ? brief.ai_tooling.map(i => card(i, 'tooling')).join('')
+        : '<div style="color:var(--text-dim);font-style:italic;padding:4px 0;">No material tooling updates.</div>';
+      const suppressedItem = (s) => {
+        if (typeof s === 'string') return escapeHtml(s);
+        const lbl = escapeHtml(s.label || 'item');
+        const reason = s.reason ? ` <span style="color:var(--text-dim);">(${escapeHtml(s.reason)})</span>` : '';
+        if (s.source_url) {
+          return `<a href="${s.source_url}" target="_blank" rel="noopener" style="color:var(--text-dim);text-decoration:underline;">${lbl}</a>${reason}`;
+        }
+        return lbl + reason;
+      };
+      const suppressed = (brief.suppressed && brief.suppressed.length)
+        ? `<details style="margin-top:8px;font-size:11px;color:var(--text-dim);"><summary style="cursor:pointer;">Suppressed today (${brief.suppressed.length})</summary><ul style="padding:4px 0 0 18px;margin:0;list-style:disc;">${brief.suppressed.map(s => `<li style="padding:2px 0;">${suppressedItem(s)}</li>`).join('')}</ul></details>`
+        : '';
+      container.innerHTML = `
+        <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;">Versa Intel (${brief.versa_intel ? brief.versa_intel.length : 0})</div>
+        ${versaSection}
+        <div style="color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-top:8px;">Claude + AI Tooling (${brief.ai_tooling ? brief.ai_tooling.length : 0})</div>
+        ${toolingSection}
+        ${suppressed}
+      `;
+  };
+
+  if (window.MORNING_BRIEF_DATA) {
+    renderFromData(window.MORNING_BRIEF_DATA);
+  } else {
+    if (badge) badge.textContent = '';
+    container.innerHTML = `<div style="color:var(--text-dim);font-size:12px;padding:6px 0;">No brief available. The @morning-brief subagent will write data/morning-brief.js at 9:43 AM daily. Hard-refresh the page to reload.</div>`;
+  }
+}
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 // Initial render
@@ -4675,6 +5124,7 @@ setInterval(() => {
   if (selectedDate === todayStr()) {
     renderTopBar();
     renderFlow();
+    renderChallenge();
     renderTimeline();
     renderTaskList();
     updateSyncStatus();
