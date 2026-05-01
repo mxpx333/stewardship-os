@@ -768,6 +768,20 @@ body {
   cursor: default;
 }
 .challenge-rule-row.auto:hover { border-color: transparent; }
+.challenge-rule-row.override-row {
+  margin-left: 24px;
+  margin-top: -2px;
+  margin-bottom: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+.challenge-rule-row.override-row:hover { border-color: var(--purple); }
+.challenge-rule-row.override-row.done {
+  background: rgba(22,163,74,0.06);
+  border-style: solid;
+  border-color: rgba(22,163,74,0.3);
+}
 .challenge-rule-icon {
   width: 24px;
   height: 24px;
@@ -1722,8 +1736,6 @@ function getReadingForDate(dateStr) {
 // ── FLOW STEPS ──
 const FLOW_STEPS = [
   { id: "wake",       time: "6:00 AM",  label: "Wake Up",               icon: "ph-sun",                color: "var(--amber)",  colorBg: "var(--amber-bg)" },
-  { id: "shower",     time: "6:05 AM",  label: "Shower",                icon: "ph-drop",               color: "var(--blue)",   colorBg: "var(--blue-bg)" },
-  { id: "light",      time: "6:15 AM",  label: "Light Therapy",         icon: "ph-sun-dim",            color: "var(--amber)",  colorBg: "var(--amber-bg)" },
   { id: "quiet",      time: "6:20 AM",  label: "Quiet Time",            icon: "ph-book-open",          color: "var(--purple)", colorBg: "var(--purple-bg)" },
   { id: "workout",    time: "10:00 AM", label: "Workout",               icon: "ph-barbell",            color: "var(--green)",  colorBg: "var(--green-bg)", timerMins: 30, timerType: "workout" },
   { id: "deepwork1",  time: "",         label: "Deep Work Session 1",   icon: "ph-fire-simple",        color: "var(--blue)",   colorBg: "var(--blue-bg)", timerMins: 90, timerType: "deep-work" },
@@ -2556,9 +2568,6 @@ function unskipFlowStep(id) {
 }
 
 function renderQuietTimePanel(d, isDone) {
-  if (!APP.quietTimeLog) APP.quietTimeLog = {};
-  if (!APP.quietTimeLog[d]) APP.quietTimeLog[d] = { whatRead: '' };
-  const reading = getReadingForDate(d);
   const isOpen = !isDone;
   let versesHtml = '';
   ANCHOR_VERSES.forEach((v, i) => {
@@ -2568,23 +2577,23 @@ function renderQuietTimePanel(d, isDone) {
         '<div style="font-size:13px;font-style:italic;line-height:1.5;color:var(--text);">' + esc(v.text) + '</div>' +
       '</div>';
   });
+  const becomingHtml =
+    '<div style="padding:10px 12px;margin-bottom:10px;background:rgba(124,58,237,0.06);border:1px dashed var(--purple);border-radius:6px;">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Becoming</div>' +
+      '<div style="font-size:13px;font-style:italic;line-height:1.5;color:var(--text);">' + esc(CHALLENGE.becomingSentence) + '</div>' +
+    '</div>';
   return '<div class="expand-panel ' + (isOpen ? 'open' : '') + '">' +
-    '<div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Anchor Verses (read each morning)</div>' +
-    versesHtml +
-    '<div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;">Reading Plan</div>' +
-    '<div style="font-size:13px;color:var(--text);margin-bottom:10px;">' + esc(reading.book + ' ' + reading.chapter) + ' &middot; <span style="color:var(--text-dim);font-size:11px;">Day ' + reading.planDay + ' of ' + reading.totalDays + '</span></div>' +
-    '<div class="field-group"><label class="purple">What did you read? (optional)</label>' +
-    '<input type="text" id="quiet-what" value="' + esc(APP.quietTimeLog[d].whatRead) + '" placeholder="Bible + prayer happens in your physical notebook. Brief log here optional." onchange="saveQuietTimeLog()">' +
-    '</div></div>';
-}
-
-function saveQuietTimeLog() {
-  const d = selectedDate;
-  if (!APP.quietTimeLog) APP.quietTimeLog = {};
-  if (!APP.quietTimeLog[d]) APP.quietTimeLog[d] = {};
-  const el = document.getElementById('quiet-what');
-  if (el) APP.quietTimeLog[d].whatRead = el.value;
-  saveData(APP);
+    '<details class="quiet-daily-read" style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--card);">' +
+      '<summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:0.8px;list-style:none;display:flex;align-items:center;justify-content:space-between;">' +
+        '<span><i class="ph ph-book-open" style="margin-right:6px;"></i>Read these daily</span>' +
+        '<span style="font-size:11px;color:var(--text-faint);font-weight:500;text-transform:none;letter-spacing:0;">tap to expand</span>' +
+      '</summary>' +
+      '<div style="margin-top:12px;">' +
+        becomingHtml +
+        versesHtml +
+      '</div>' +
+    '</details>' +
+    '</div>';
 }
 
 // ── Flow Tap Handler ──
@@ -2600,16 +2609,12 @@ function handleFlowTap(id) {
 
   // Unchecking
   if (isDone) {
-    if (id === 'quiet') saveQuietTimeLog();
     APP.flow[d][id] = false;
     saveData(APP);
     renderFlow();
     renderChallenge();
     return;
   }
-
-  // Save associated panels
-  if (id === 'quiet') saveQuietTimeLog();
 
   // Wake on-time tracking
   if (id === 'wake' && isToday) {
@@ -4540,9 +4545,16 @@ function isRuleAutoDone(ruleId, dateStr) {
   }
 }
 
+function getManualOverride(ruleId, dateStr) {
+  if (!APP.challenge || !APP.challenge.overrides) return false;
+  const day = APP.challenge.overrides[dateStr] || {};
+  return day[ruleId] === true;
+}
+
 function isRuleDone(ruleId, dateStr) {
   const auto = isRuleAutoDone(ruleId, dateStr);
-  if (auto !== null) return auto;
+  // Auto-derived rules: satisfied if auto fires OR a manual override is set
+  if (auto !== null) return auto || getManualOverride(ruleId, dateStr);
   // Manual rules pull from APP.challenge.rules[date][ruleId]
   if (!APP.challenge) APP.challenge = {};
   if (!APP.challenge.rules) APP.challenge.rules = {};
@@ -4554,12 +4566,22 @@ function toggleChallengeRule(ruleId) {
   const d = selectedDate;
   const rule = CHALLENGE.rules.find(r => r.id === ruleId);
   if (!rule) return;
-  // Auto-derived rules are not manually togglable
+  // Auto-derived rules are not manually togglable through this path
   if (rule.autoFlow !== null) return;
   if (!APP.challenge) APP.challenge = {};
   if (!APP.challenge.rules) APP.challenge.rules = {};
   if (!APP.challenge.rules[d]) APP.challenge.rules[d] = {};
   APP.challenge.rules[d][ruleId] = !APP.challenge.rules[d][ruleId];
+  saveData(APP);
+  renderChallenge();
+}
+
+function toggleManualOverride(ruleId) {
+  const d = selectedDate;
+  if (!APP.challenge) APP.challenge = {};
+  if (!APP.challenge.overrides) APP.challenge.overrides = {};
+  if (!APP.challenge.overrides[d]) APP.challenge.overrides[d] = {};
+  APP.challenge.overrides[d][ruleId] = !APP.challenge.overrides[d][ruleId];
   saveData(APP);
   renderChallenge();
 }
@@ -4629,6 +4651,8 @@ function renderChallenge() {
   // Rules for selected date
   let rulesHtml = '';
   CHALLENGE.rules.forEach(r => {
+    const auto = isRuleAutoDone(r.id, selectedDate);
+    const manualOverride = getManualOverride(r.id, selectedDate);
     const done = isRuleDone(r.id, selectedDate);
     const isAuto = r.autoFlow !== null;
     const tag = isAuto ? 'AUTO' : 'TAP';
@@ -4638,6 +4662,15 @@ function renderChallenge() {
       '<div class="challenge-rule-label">' + esc(r.label) + '</div>' +
       '<div class="challenge-rule-tag">' + tag + '</div>' +
       '</div>';
+    // Three deep work blocks gets a manual TAP override row below it
+    if (r.id === 'deepWork3') {
+      const overrideOn = manualOverride;
+      rulesHtml += '<div class="challenge-rule-row override-row ' + (overrideOn ? 'done' : '') + '" onclick="toggleManualOverride(\'deepWork3\')">' +
+        '<div class="challenge-rule-icon" style="background:transparent;"><i class="ph ph-cursor-click" style="font-size:11px;"></i></div>' +
+        '<div class="challenge-rule-label" style="font-size:12px;color:var(--text-dim);font-weight:500;">Tap to override (count it without 3 timers)</div>' +
+        '<div class="challenge-rule-tag">TAP</div>' +
+        '</div>';
+    }
   });
 
   // Grid (90 squares, 15 cols x 6 rows)
