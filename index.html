@@ -1704,9 +1704,12 @@ html.simple-view #notebook-frame-container iframe {
 })();
 
 // ══════════════════════════════════════════════════════════════
-// STEWARDSHIP OS v6.1.0 - Desktop-First Daily Operating Dashboard
+// STEWARDSHIP OS v6.1.1 - Desktop-First Daily Operating Dashboard
 // v6.1.0 adds Simple View mode (notebook + tasks only) and
 // drag-right-to-indent subtask support in the Task List.
+// v6.1.1 adds parent auto-complete: when every subtask of a parent
+// is done, the parent auto-completes (cascades up). Uncompleting
+// any child re-opens completed ancestors.
 // ══════════════════════════════════════════════════════════════
 
 // ── CONFIG ──
@@ -3065,12 +3068,45 @@ function addTaskListItem() {
   renderTaskList();
 }
 
-function completeTaskFromList(taskId) {
-  const task = APP.tasks.find(t => t.id === taskId);
-  if (!task) return;
+function markTaskDone(task) {
   task.status = 'done';
   task.completedAt = Date.now();
   task.completedDate = todayStr();
+}
+
+function cascadeCompleteParent(task) {
+  let safety = 50;
+  let current = task;
+  while (current && current.parentId && safety-- > 0) {
+    const parent = APP.tasks.find(t => t.id === current.parentId);
+    if (!parent || parent.status === 'done') break;
+    const siblings = APP.tasks.filter(t => t.parentId === parent.id);
+    const allDone = siblings.length > 0 && siblings.every(s => s.status === 'done');
+    if (!allDone) break;
+    markTaskDone(parent);
+    current = parent;
+  }
+}
+
+function cascadeUncompleteParent(task) {
+  let safety = 50;
+  let current = task;
+  while (current && current.parentId && safety-- > 0) {
+    const parent = APP.tasks.find(t => t.id === current.parentId);
+    if (!parent) break;
+    if (parent.status !== 'done') break;
+    parent.status = 'todo';
+    parent.completedAt = null;
+    parent.completedDate = null;
+    current = parent;
+  }
+}
+
+function completeTaskFromList(taskId) {
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  markTaskDone(task);
+  cascadeCompleteParent(task);
   saveData(APP);
   renderTaskList();
   renderTriageBody();
@@ -3651,9 +3687,8 @@ function completeDeepWorkWithoutTimer() {
   Array.from(checks).forEach(cb => {
     const task = APP.tasks.find(t => t.id === cb.value);
     if (task) {
-      task.status = 'done';
-      task.completedAt = Date.now();
-      task.completedDate = todayStr();
+      markTaskDone(task);
+      cascadeCompleteParent(task);
     }
   });
 
@@ -3781,10 +3816,10 @@ function toggleClearing(id) {
     item.status = 'todo';
     item.completedAt = null;
     item.completedDate = null;
+    cascadeUncompleteParent(item);
   } else {
-    item.status = 'done';
-    item.completedAt = Date.now();
-    item.completedDate = todayStr();
+    markTaskDone(item);
+    cascadeCompleteParent(item);
   }
   saveData(APP);
   renderTaskList();
@@ -4512,6 +4547,8 @@ function uncompleteTask(taskId) {
   task.status = 'todo';
   task.completedAt = null;
   task.completedDate = null;
+  // If parent had auto-completed because all children were done, undo that too
+  cascadeUncompleteParent(task);
   saveData(APP);
   renderTaskList();
   if (document.getElementById('triage-modal')?.classList.contains('open')) {
@@ -4545,9 +4582,8 @@ function updateTaskDue(taskId, dueDate) {
 function completeTask(taskId) {
   const task = APP.tasks.find(t => t.id === taskId);
   if (!task) return;
-  task.status = 'done';
-  task.completedAt = Date.now();
-  task.completedDate = todayStr();
+  markTaskDone(task);
+  cascadeCompleteParent(task);
   saveData(APP);
   renderTriageBody();
   renderTaskList();
