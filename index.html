@@ -1254,8 +1254,69 @@ body {
 }
 .task-row:hover { background: var(--card-hover); }
 .task-row.drag-over { border-top: 2px solid var(--blue); margin-top: -2px; }
+.task-row.drop-as-child { background: var(--blue-bg); box-shadow: inset 3px 0 0 var(--blue); }
+.task-row.drop-as-child::after {
+  content: '\2937';
+  margin-left: 4px;
+  color: var(--blue);
+  font-weight: 700;
+}
 .task-row[draggable="true"] .task-drag-handle { cursor: grab; }
 .task-row.dragging { opacity: 0.4; }
+.task-row[data-depth="1"] { margin-left: 18px; }
+.task-row[data-depth="2"] { margin-left: 36px; }
+.task-row[data-depth="3"] { margin-left: 54px; }
+.task-row[data-depth="4"] { margin-left: 72px; }
+.task-row[data-depth="5"] { margin-left: 90px; }
+.task-subtask-tick {
+  color: var(--text-faint);
+  font-size: 11px;
+  margin-right: 2px;
+  flex-shrink: 0;
+}
+
+/* ── SIMPLE VIEW MODE ── */
+html.simple-view .verse-area { display: none !important; }
+html.simple-view .main-grid {
+  grid-template-columns: 1fr 380px;
+}
+html.simple-view #col-left {
+  order: 2;
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+html.simple-view #col-left > .section-hdr:first-of-type,
+html.simple-view #col-left > #flow-container { display: none !important; }
+html.simple-view #col-center {
+  order: 1;
+  padding: 0;
+}
+html.simple-view #col-center > #schedule-scroll { display: none !important; }
+html.simple-view #col-right { display: none !important; }
+html.simple-view #notebook-panel {
+  border-top: none !important;
+  height: calc(100vh - 50px - 36px);
+  display: flex;
+  flex-direction: column;
+}
+html.simple-view #notebook-resize { display: none !important; }
+html.simple-view #notebook-panel > .section-hdr { display: none !important; }
+html.simple-view #notebook-body {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+  padding: 12px;
+}
+html.simple-view #notebook-frame-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+html.simple-view #notebook-frame-container iframe {
+  flex: 1;
+  height: auto !important;
+  min-height: 0;
+}
 .dw-unassigned {
   margin-top: 8px;
   padding-top: 8px;
@@ -1445,6 +1506,9 @@ body {
     <button class="date-arrow" id="date-prev" onclick="navDate(-1)">&#8249;</button>
     <div class="date-label" id="date-label"></div>
     <button class="date-arrow" id="date-next" onclick="navDate(1)">&#8250;</button>
+    <button class="date-arrow" onclick="toggleSimpleView()" id="simple-view-toggle" title="Toggle simple view (notebook + tasks)">
+      <i class="ph ph-rectangle" id="simple-view-icon"></i>
+    </button>
     <button class="date-arrow" onclick="toggleTheme()" id="theme-toggle" title="Toggle dark/light mode">
       <i class="ph ph-moon" id="theme-icon"></i>
     </button>
@@ -1625,18 +1689,24 @@ body {
 <script src="data/morning-brief.js"></script>
 
 <script>
-// ── THEME INIT (must run before DOM renders) ──
+// ── THEME + SIMPLE-VIEW INIT (must run before DOM renders) ──
 (function() {
   const theme = localStorage.getItem('stewardship-theme') || 'light';
   document.documentElement.dataset.theme = theme;
+  const simple = localStorage.getItem('stewardship-simple-view') === '1';
+  if (simple) document.documentElement.classList.add('simple-view');
   document.addEventListener('DOMContentLoaded', () => {
     const icon = document.getElementById('theme-icon');
     if (icon) icon.className = 'ph ' + (theme === 'dark' ? 'ph-sun' : 'ph-moon');
+    const sv = document.getElementById('simple-view-icon');
+    if (sv) sv.className = 'ph ' + (simple ? 'ph-squares-four' : 'ph-rectangle');
   });
 })();
 
 // ══════════════════════════════════════════════════════════════
-// STEWARDSHIP OS v6 - Desktop-First Daily Operating Dashboard
+// STEWARDSHIP OS v6.1.0 - Desktop-First Daily Operating Dashboard
+// v6.1.0 adds Simple View mode (notebook + tasks only) and
+// drag-right-to-indent subtask support in the Task List.
 // ══════════════════════════════════════════════════════════════
 
 // ── CONFIG ──
@@ -2861,14 +2931,34 @@ function getActiveDeepWorkBlockNum() {
   return runningIdx >= 0 ? runningIdx + 1 : null;
 }
 
+function isEffectivelyRoot(task) {
+  if (!task.parentId) return true;
+  const parent = APP.tasks.find(t => t.id === task.parentId);
+  if (!parent) return true;
+  if (parent.status === 'done') return true;
+  return false;
+}
+
+function renderTaskTree(task, depth, today, section) {
+  let html = renderTaskListItem(task, today, section, depth);
+  const children = sortTasks(APP.tasks.filter(c => c.parentId === task.id && c.status === 'todo'));
+  children.forEach(child => {
+    html += renderTaskTree(child, depth + 1, today, section);
+  });
+  return html;
+}
+
 function renderTaskList() {
   const container = document.getElementById('task-list-container');
   if (!container) return;
   const today = todayStr();
-  const deepTasks = sortTasks(APP.tasks.filter(t => t.type === 'deep' && t.status === 'todo'));
-  const clearingTasks = sortTasks(APP.tasks.filter(t => t.type === 'clearing' && t.status === 'todo'));
+  const deepRoots = sortTasks(APP.tasks.filter(t => t.type === 'deep' && t.status === 'todo' && isEffectivelyRoot(t)));
+  const clearingRoots = sortTasks(APP.tasks.filter(t => t.type === 'clearing' && t.status === 'todo' && isEffectivelyRoot(t)));
   const completedTasks = APP.tasks.filter(t => t.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)).slice(0, 20);
-  const activeCount = deepTasks.length + clearingTasks.length;
+  const allActive = APP.tasks.filter(t => t.status === 'todo');
+  const activeCount = allActive.length;
+  const deepCount = allActive.filter(t => t.type === 'deep').length;
+  const clearingCount = allActive.filter(t => t.type === 'clearing').length;
 
   // Update badge
   const badge = document.getElementById('task-list-count');
@@ -2877,21 +2967,21 @@ function renderTaskList() {
   let html = '';
 
   // Deep Work tasks section
-  if (deepTasks.length > 0) {
+  if (deepRoots.length > 0) {
     html += '<div class="task-section" data-section="deep" style="border-left:3px solid var(--blue);padding-left:8px;margin:8px 0 4px 0;">';
-    html += '<div style="font-size:11px;font-weight:600;color:var(--blue);margin-bottom:4px;">Deep Work (' + deepTasks.length + ')</div>';
-    deepTasks.forEach(t => {
-      html += renderTaskListItem(t, today, 'deep');
+    html += '<div style="font-size:11px;font-weight:600;color:var(--blue);margin-bottom:4px;">Deep Work (' + deepCount + ')</div>';
+    deepRoots.forEach(t => {
+      html += renderTaskTree(t, 0, today, 'deep');
     });
     html += '</div>';
   }
 
   // Clearing tasks section
-  if (clearingTasks.length > 0) {
+  if (clearingRoots.length > 0) {
     html += '<div class="task-section" data-section="clearing" style="border-left:3px solid var(--teal);padding-left:8px;margin:8px 0 4px 0;">';
-    html += '<div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px;">Clearing (' + clearingTasks.length + ')</div>';
-    clearingTasks.forEach(t => {
-      html += renderTaskListItem(t, today, 'clearing');
+    html += '<div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px;">Clearing (' + clearingCount + ')</div>';
+    clearingRoots.forEach(t => {
+      html += renderTaskTree(t, 0, today, 'clearing');
     });
     html += '</div>';
   }
@@ -2929,12 +3019,14 @@ function renderTaskList() {
   container.innerHTML = html;
 }
 
-function renderTaskListItem(t, today, section) {
+function renderTaskListItem(t, today, section, depth) {
+  depth = depth || 0;
   const isOverdue = t.dueDate && t.dueDate < today;
   const prioColor = t.priority === 'high' ? 'var(--red)' : t.priority === 'medium' ? 'var(--amber)' : t.priority === 'low' ? 'var(--green)' : 'var(--border)';
   const prioLabel = t.priority === 'high' ? 'H' : t.priority === 'medium' ? 'M' : t.priority === 'low' ? 'L' : '';
-  let html = '<div class="task-row" draggable="true" data-task-id="' + t.id + '" data-section="' + section + '" ondragstart="taskDragStart(event)" ondragover="taskDragOver(event)" ondrop="taskDrop(event)" ondragend="taskDragEnd(event)">';
-  html += '<span class="task-drag-handle" title="Drag to reorder"><i class="ph ph-dots-six-vertical" style="font-size:12px;color:var(--text-faint);cursor:grab;"></i></span>';
+  let html = '<div class="task-row" draggable="true" data-task-id="' + t.id + '" data-section="' + section + '" data-depth="' + depth + '" ondragstart="taskDragStart(event)" ondragover="taskDragOver(event)" ondrop="taskDrop(event)" ondragend="taskDragEnd(event)">';
+  html += '<span class="task-drag-handle" title="Drag right to indent as subtask"><i class="ph ph-dots-six-vertical" style="font-size:12px;color:var(--text-faint);cursor:grab;"></i></span>';
+  if (depth > 0) html += '<span class="task-subtask-tick">↳</span>';
   html += '<span class="task-prio-btn" onclick="cycleTaskPriority(\'' + t.id + '\')" title="Click to change priority" style="width:18px;height:18px;border-radius:50%;border:2px solid ' + prioColor + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:8px;font-weight:700;color:' + prioColor + ';">' + prioLabel + '</span>';
   html += '<span onclick="event.stopPropagation();editTaskName(\'' + t.id + '\')" title="Click to edit" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;cursor:text;">' + esc(t.name) + '</span>';
   if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';flex-shrink:0;">' + t.dueDate + '</span>';
@@ -2965,7 +3057,8 @@ function addTaskListItem() {
     id: uid(), name: name, type: type,
     estimatedMins: estimatedMins,
     priority: priority || null, dueDate: null,
-    status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null
+    status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null,
+    parentId: null
   });
   saveData(APP);
   inp.value = '';
@@ -3030,40 +3123,76 @@ function taskDragStart(e) {
   e.dataTransfer.setData('text/plain', dragTaskId);
 }
 
+function isDescendantTask(potentialDescendant, ancestor) {
+  let current = potentialDescendant;
+  let safety = 50;
+  while (current && current.parentId && safety-- > 0) {
+    if (current.parentId === ancestor.id) return true;
+    current = APP.tasks.find(x => x.id === current.parentId);
+  }
+  return false;
+}
+
 function taskDragOver(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   const row = e.target.closest('.task-row');
-  if (!row || row.dataset.section !== dragSection) return;
-  // Clear all drag-over indicators in this section
-  row.closest('.task-section')?.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over'));
-  row.classList.add('drag-over');
+  if (!row || !dragTaskId) return;
+  if (row.dataset.taskId === dragTaskId) return;
+  document.querySelectorAll('.task-row').forEach(r => {
+    r.classList.remove('drag-over');
+    r.classList.remove('drop-as-child');
+  });
+  const rect = row.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  // Right 50% of row, drop as subtask of this row
+  if (x > rect.width * 0.5) {
+    row.classList.add('drop-as-child');
+  } else {
+    row.classList.add('drag-over');
+  }
 }
 
 function taskDrop(e) {
   e.preventDefault();
   const targetRow = e.target.closest('.task-row');
-  if (!targetRow || !dragTaskId) return;
+  if (!targetRow || !dragTaskId) { taskDragEnd(); return; }
   const targetId = targetRow.dataset.taskId;
-  if (targetId === dragTaskId || targetRow.dataset.section !== dragSection) { taskDragEnd(); return; }
+  if (targetId === dragTaskId) { taskDragEnd(); return; }
 
-  // Get the sorted list for this section to determine new order
-  const sectionType = dragSection;
-  const sectionTasks = sortTasks(APP.tasks.filter(t => t.type === sectionType && t.status === 'todo'));
+  const draggedTask = APP.tasks.find(t => t.id === dragTaskId);
+  const targetTask = APP.tasks.find(t => t.id === targetId);
+  if (!draggedTask || !targetTask) { taskDragEnd(); return; }
 
-  const dragIdx = sectionTasks.findIndex(t => t.id === dragTaskId);
-  const targetIdx = sectionTasks.findIndex(t => t.id === targetId);
-  if (dragIdx < 0 || targetIdx < 0) { taskDragEnd(); return; }
+  // Cycle prevention: target cannot be a descendant of dragged
+  if (isDescendantTask(targetTask, draggedTask)) { taskDragEnd(); return; }
 
-  // Move the dragged task to the target position
-  const [moved] = sectionTasks.splice(dragIdx, 1);
-  sectionTasks.splice(targetIdx, 0, moved);
+  const rect = targetRow.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const asChild = x > rect.width * 0.5;
 
-  // Assign sortOrder to all tasks in this section to preserve the new order
-  sectionTasks.forEach((t, i) => {
-    const real = APP.tasks.find(x => x.id === t.id);
-    if (real) real.sortOrder = i;
-  });
+  if (asChild) {
+    // Make dragged a subtask of target (cross-section allowed)
+    draggedTask.parentId = targetTask.id;
+    draggedTask.sortOrder = undefined;
+  } else {
+    // Sibling reorder. Same section only to avoid cross-type confusion.
+    if (targetRow.dataset.section !== dragSection) { taskDragEnd(); return; }
+    draggedTask.parentId = targetTask.parentId || null;
+    const targetParent = targetTask.parentId || null;
+    const siblings = sortTasks(APP.tasks.filter(t =>
+      (t.parentId || null) === targetParent &&
+      t.status === 'todo'
+    ));
+    const filtered = siblings.filter(t => t.id !== dragTaskId);
+    const targetIdxInSiblings = filtered.findIndex(t => t.id === targetId);
+    if (targetIdxInSiblings < 0) { taskDragEnd(); return; }
+    filtered.splice(targetIdxInSiblings, 0, draggedTask);
+    filtered.forEach((t, i) => {
+      const real = APP.tasks.find(x => x.id === t.id);
+      if (real) real.sortOrder = i;
+    });
+  }
 
   saveData(APP);
   taskDragEnd();
@@ -3076,6 +3205,7 @@ function taskDragEnd(e) {
   document.querySelectorAll('.task-row').forEach(r => {
     r.classList.remove('dragging');
     r.classList.remove('drag-over');
+    r.classList.remove('drop-as-child');
   });
 }
 
@@ -4360,7 +4490,8 @@ function addTriageTask() {
   APP.tasks.push({
     id: uid(), name: name, type: type,
     estimatedMins: mins, priority: priority || null, dueDate: dueDate || null,
-    status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null
+    status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null,
+    parentId: null
   });
   saveData(APP);
   renderTriageBody();
@@ -4508,6 +4639,22 @@ function toggleTheme() {
   document.documentElement.dataset.theme = next;
   localStorage.setItem('stewardship-theme', next);
   document.getElementById('theme-icon').className = 'ph ' + (next === 'dark' ? 'ph-sun' : 'ph-moon');
+}
+
+function toggleSimpleView() {
+  const root = document.documentElement;
+  const nowSimple = !root.classList.contains('simple-view');
+  root.classList.toggle('simple-view', nowSimple);
+  localStorage.setItem('stewardship-simple-view', nowSimple ? '1' : '0');
+  const ic = document.getElementById('simple-view-icon');
+  if (ic) ic.className = 'ph ' + (nowSimple ? 'ph-squares-four' : 'ph-rectangle');
+  // Auto-open the notebook body so the iframe is visible in simple view
+  if (nowSimple) {
+    const body = document.getElementById('notebook-body');
+    if (body) body.style.display = 'block';
+    const chev = document.getElementById('notebook-chevron');
+    if (chev) chev.innerHTML = '&#9660;';
+  }
 }
 
 
