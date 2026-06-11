@@ -1655,6 +1655,16 @@ html.simple-view #notebook-frame-container iframe {
   </div>
 </div>
 
+<div class="modal-overlay" id="history-modal">
+  <div class="modal" style="max-width:760px;width:90vw;">
+    <div class="modal-header">
+      <h2 id="history-modal-title">History</h2>
+      <button class="modal-close" onclick="closeHistoryModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="history-modal-body"></div>
+  </div>
+</div>
+
 <!-- Confirm Modal -->
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal" id="confirm-content"></div>
@@ -1726,11 +1736,13 @@ html.simple-view #notebook-frame-container iframe {
 })();
 
 // ══════════════════════════════════════════════════════════════
-// STEWARDSHIP OS v6.3.1 - Desktop-First Daily Operating Dashboard
-// v6.3.1 adds inline click-to-edit on task names (no more prompt
-// popup) and replaces the End of Day Log questions with Ian's set:
-// distracted/fix, poor investment/fix, worked great/more, and a
-// clean-desk checkbox.
+// STEWARDSHIP OS v6.3.2 - Desktop-First Daily Operating Dashboard
+// v6.3.2 adds a history browser (small clock icon next to each
+// of the three section headers: Deal Move, End of Day Log, Weekly
+// Counters). Opens a modal showing all past entries reverse-
+// chronologically, including the current day/week highlighted.
+// v6.3.1 adds inline click-to-edit on task names and replaces the
+// End of Day Log questions with Ian's set.
 // ──
 // STEWARDSHIP OS v6.3.0 - Desktop-First Daily Operating Dashboard
 // v6.1.0 adds Simple View mode and drag-right-to-indent subtasks.
@@ -3091,6 +3103,103 @@ function saveEodField(field, value) {
   saveData(APP);
 }
 
+// ── History browser ──
+function openHistoryModal(type) {
+  const modal = document.getElementById('history-modal');
+  const title = document.getElementById('history-modal-title');
+  const body  = document.getElementById('history-modal-body');
+  if (!modal || !title || !body) return;
+  const today = todayStr();
+  let html = '';
+  if (type === 'dealMoves') {
+    title.textContent = 'Past #1 Deal Moves';
+    const entries = Object.keys(APP.dealMoves || {})
+      .filter(d => (APP.dealMoves[d] || '').trim())
+      .sort((a, b) => b.localeCompare(a));
+    if (entries.length === 0) {
+      html = '<div style="padding:16px;color:var(--text-faint);text-align:center;">No deal moves logged yet.</div>';
+    } else {
+      html = '<div style="display:flex;flex-direction:column;gap:6px;">';
+      entries.forEach(d => {
+        const isToday = d === today;
+        html += '<div style="display:flex;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:' + (isToday ? 'var(--blue-bg)' : 'var(--card)') + ';">';
+        html += '<div style="min-width:90px;font-size:11px;color:var(--text-dim);font-weight:600;">' + d + (isToday ? ' (today)' : '') + '</div>';
+        html += '<div style="flex:1;font-size:13px;color:var(--text);">' + esc(APP.dealMoves[d]) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+  } else if (type === 'endOfDay') {
+    title.textContent = 'Past End of Day Logs';
+    const entries = Object.keys(APP.endOfDayLogs || {})
+      .filter(d => {
+        const e = APP.endOfDayLogs[d] || {};
+        return (e.distractedFix || '').trim() || (e.poorInvestmentFix || '').trim() || (e.workedGreatMore || '').trim() || e.cleanDesk;
+      })
+      .sort((a, b) => b.localeCompare(a));
+    if (entries.length === 0) {
+      html = '<div style="padding:16px;color:var(--text-faint);text-align:center;">No end-of-day logs yet.</div>';
+    } else {
+      html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+      entries.forEach(d => {
+        const e = APP.endOfDayLogs[d] || {};
+        const isToday = d === today;
+        html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;background:' + (isToday ? 'var(--blue-bg)' : 'var(--card)') + ';">';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:6px;">' + d + (isToday ? ' (today)' : '') + (e.cleanDesk ? ' · <span style="color:var(--green);">✓ desk clean</span>' : '') + '</div>';
+        const field = (label, val) => {
+          if (!val || !val.trim()) return '';
+          let h = '<div style="margin-top:6px;">';
+          h += '<div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">' + label + '</div>';
+          h += '<div style="font-size:12px;color:var(--text);white-space:pre-wrap;">' + esc(val) + '</div>';
+          h += '</div>';
+          return h;
+        };
+        html += field('Distracted / fix', e.distractedFix);
+        html += field('Poor investment / fix', e.poorInvestmentFix);
+        html += field('Worked great / more', e.workedGreatMore);
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+  } else if (type === 'weeklyMetrics') {
+    title.textContent = 'Past Weekly Counters';
+    const wkNow = currentWeekKey();
+    const entries = Object.keys(APP.weeklyMetrics || {}).sort((a, b) => b.localeCompare(a));
+    if (entries.length === 0) {
+      html = '<div style="padding:16px;color:var(--text-faint);text-align:center;">No weekly counters logged yet.</div>';
+    } else {
+      html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+      entries.forEach(wk => {
+        const data = APP.weeklyMetrics[wk] || {};
+        const isCurrent = wk === wkNow;
+        html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;background:' + (isCurrent ? 'var(--blue-bg)' : 'var(--card)') + ';">';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:8px;">' + wk + (isCurrent ? ' (current)' : '') + '</div>';
+        html += '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
+        METRIC_DEFS.forEach(m => {
+          const cur = parseInt(data[m.id]) || 0;
+          const pct = m.target > 0 ? Math.min(100, Math.round((cur / m.target) * 100)) : 0;
+          const onTrack = cur >= m.target;
+          const color = onTrack ? 'var(--green)' : (pct >= 50 ? 'var(--amber)' : 'var(--text-dim)');
+          html += '<tr>';
+          html += '<td style="padding:3px 6px 3px 0;color:var(--text-dim);">' + m.label + '</td>';
+          html += '<td style="padding:3px 0;text-align:right;font-weight:700;color:' + color + ';white-space:nowrap;">' + cur + ' / ' + m.target + m.unit + ' &nbsp;<span style="color:var(--text-faint);font-weight:400;font-size:10px;">' + pct + '%</span></td>';
+          html += '</tr>';
+        });
+        html += '</table>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+  }
+  body.innerHTML = html;
+  modal.classList.add('open');
+}
+
+function closeHistoryModal() {
+  const modal = document.getElementById('history-modal');
+  if (modal) modal.classList.remove('open');
+}
+
 // ── Bucket helper for moving tasks between Today / Future ──
 function moveTaskBucket(taskId, bucket) {
   const task = APP.tasks.find(t => t.id === taskId);
@@ -3138,7 +3247,10 @@ function renderTaskList() {
 
   // ── Today's #1 Deal Move ──
   const dealMove = APP.dealMoves[today] || '';
-  html += '<div class="section-hdr" style="border-left-color:var(--purple);margin-top:0;">Today\'s #1 Deal Move</div>';
+  html += '<div class="section-hdr" style="border-left-color:var(--purple);margin-top:0;display:flex;justify-content:space-between;align-items:center;">';
+  html += '<span>Today\'s #1 Deal Move</span>';
+  html += '<button onclick="openHistoryModal(\'dealMoves\')" title="Past deal moves" style="background:none;border:none;color:var(--text-faint);cursor:pointer;padding:0 4px;font-size:14px;line-height:1;"><i class="ph ph-clock-counter-clockwise"></i></button>';
+  html += '</div>';
   html += '<input type="text" id="deal-move-input" value="' + esc(dealMove) + '" placeholder="Specific account + specific action" onchange="saveDealMove(this.value)" oninput="saveDealMove(this.value)" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);margin-bottom:12px;box-sizing:border-box;">';
 
   // ── Today task list ──
@@ -3159,7 +3271,10 @@ function renderTaskList() {
   const eod = APP.endOfDayLogs[today] || {};
   const taStyle = 'width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);min-height:50px;resize:vertical;box-sizing:border-box;';
   const lblStyle = 'font-size:10px;color:var(--text-dim);font-weight:600;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.3px;';
-  html += '<div class="section-hdr" style="border-left-color:var(--amber);margin-top:16px;">End of Day Log</div>';
+  html += '<div class="section-hdr" style="border-left-color:var(--amber);margin-top:16px;display:flex;justify-content:space-between;align-items:center;">';
+  html += '<span>End of Day Log</span>';
+  html += '<button onclick="openHistoryModal(\'endOfDay\')" title="Past end-of-day logs" style="background:none;border:none;color:var(--text-faint);cursor:pointer;padding:0 4px;font-size:14px;line-height:1;"><i class="ph ph-clock-counter-clockwise"></i></button>';
+  html += '</div>';
   html += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">';
   html += '<div><label style="' + lblStyle + '">What distracted me / how can I change that?</label>';
   html += '<textarea oninput="saveEodField(\'distractedFix\',this.value)" style="' + taStyle + '">' + esc(eod.distractedFix || '') + '</textarea></div>';
@@ -3190,7 +3305,10 @@ function renderTaskList() {
 
   // ── Weekly Counters ──
   const wk = getWeekMetrics();
-  html += '<div class="section-hdr" style="border-left-color:var(--green);margin-top:16px;">Weekly Counters <span class="badge">' + currentWeekKey() + '</span></div>';
+  html += '<div class="section-hdr" style="border-left-color:var(--green);margin-top:16px;display:flex;justify-content:space-between;align-items:center;">';
+  html += '<span>Weekly Counters <span class="badge">' + currentWeekKey() + '</span></span>';
+  html += '<button onclick="openHistoryModal(\'weeklyMetrics\')" title="Past weeks" style="background:none;border:none;color:var(--text-faint);cursor:pointer;padding:0 4px;font-size:14px;line-height:1;"><i class="ph ph-clock-counter-clockwise"></i></button>';
+  html += '</div>';
   html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">';
   METRIC_DEFS.forEach(m => {
     const cur = parseInt(wk[m.id]) || 0;
