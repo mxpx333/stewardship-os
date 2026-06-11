@@ -1525,9 +1525,6 @@ html.simple-view #notebook-frame-container iframe {
     <div class="section-hdr">Daily Routine <span class="badge" id="flow-count"></span></div>
     <div id="flow-container"></div>
 
-    <div class="section-hdr" style="border-left-color: var(--teal);">
-      Task List <span class="badge" id="task-list-count"></span>
-    </div>
     <div id="task-list-container"></div>
 
     <div class="section-hdr" style="border-left-color: var(--purple);margin-top:16px;cursor:pointer;" onclick="toggleAudio()">
@@ -1729,16 +1726,19 @@ html.simple-view #notebook-frame-container iframe {
 })();
 
 // ══════════════════════════════════════════════════════════════
-// STEWARDSHIP OS v6.2.0 - Desktop-First Daily Operating Dashboard
-// v6.1.0 adds Simple View mode (notebook + tasks only) and
-// drag-right-to-indent subtask support in the Task List.
-// v6.1.1 adds parent auto-complete: when every subtask of a parent
-// is done, the parent auto-completes (cascades up). Uncompleting
-// any child re-opens completed ancestors.
-// v6.2.0 adds the Focus Audio panel: paste a YouTube URL (video or
-// playlist) at the bottom of the left column and it loops on repeat
-// while you work. Auto-opens on reload so you only click play once
-// per session.
+// STEWARDSHIP OS v6.3.0 - Desktop-First Daily Operating Dashboard
+// v6.1.0 adds Simple View mode and drag-right-to-indent subtasks.
+// v6.1.1 adds parent auto-complete cascade.
+// v6.2.0 adds the Focus Audio panel (YouTube embed, loops).
+// v6.3.0 replaces the Deep/Clearing task list with the executive-
+// selling dashboard: Today's #1 Deal Move input, flat Today list
+// with inline quick-add, End of Day log (3 fields), Future / Not
+// Today parking lot, and Weekly Counters for the 5 input metrics
+// (LinkedIn / outbound / conversations / deals touched / accounts
+// mapped) with progress bars. Tasks gained a "bucket" field (today
+// or future). Drag-to-indent now also moves tasks across buckets.
+// YouTube embed switched to youtube-nocookie.com to avoid the
+// "playback paused because account in use elsewhere" error.
 // ══════════════════════════════════════════════════════════════
 
 // ── CONFIG ──
@@ -1886,7 +1886,8 @@ function loadData() {
       customTasks: [], deepWorkTasks: [], clearingItems: [],
       tasks: [], _tasksMigrated: false,
       weeklyReviews: {},
-      challenge: {}, quietTimeLog: {}
+      challenge: {}, quietTimeLog: {},
+      dealMoves: {}, endOfDayLogs: {}, weeklyMetrics: {}
     };
     Object.keys(defaults).forEach(k => { if (d[k] === undefined) d[k] = defaults[k]; });
     if (!Array.isArray(d.customTasks)) d.customTasks = [];
@@ -1902,7 +1903,8 @@ function loadData() {
     customTasks: [], deepWorkTasks: [], clearingItems: [],
     tasks: [], _tasksMigrated: false,
     weeklyReviews: {},
-    challenge: {}, quietTimeLog: {}
+    challenge: {}, quietTimeLog: {},
+    dealMoves: {}, endOfDayLogs: {}, weeklyMetrics: {}
   };
 }
 
@@ -2002,7 +2004,8 @@ function tryRestoreFromCloud() {
           customTasks: [], deepWorkTasks: [], clearingItems: [],
           tasks: [], _tasksMigrated: false,
           weeklyReviews: {},
-          challenge: {}, quietTimeLog: {}
+          challenge: {}, quietTimeLog: {},
+          dealMoves: {}, endOfDayLogs: {}, weeklyMetrics: {}
         };
         Object.keys(defaults).forEach(k => {
           if (APP[k] === undefined) APP[k] = defaults[k];
@@ -2971,6 +2974,11 @@ function isEffectivelyRoot(task) {
   return false;
 }
 
+function taskBucket(task) {
+  // Tasks default to 'today'. 'future' is the parking lot.
+  return task.bucket === 'future' ? 'future' : 'today';
+}
+
 function renderTaskTree(task, depth, today, section) {
   let html = renderTaskListItem(task, today, section, depth);
   const children = sortTasks(APP.tasks.filter(c => c.parentId === task.id && c.status === 'todo'));
@@ -2980,47 +2988,173 @@ function renderTaskTree(task, depth, today, section) {
   return html;
 }
 
+// ── Weekly metric helpers ──
+function currentWeekKey() {
+  // Returns "YYYY-Www" using Monday-start ISO-style weeks.
+  const d = parseDate(todayStr());
+  const day = d.getDay() || 7;
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - (day - 1));
+  const year = monday.getFullYear();
+  const jan1 = new Date(year, 0, 1);
+  const diffDays = Math.floor((monday - jan1) / 86400000);
+  const week = Math.floor(diffDays / 7) + 1;
+  return year + '-W' + String(week).padStart(2, '0');
+}
+
+const METRIC_DEFS = [
+  { id: 'linkedin',       label: 'LinkedIn / target contacts added', target: 70, unit: '' },
+  { id: 'outbound',       label: 'Personalized outbound touches',    target: 25, unit: '' },
+  { id: 'convos',         label: 'Live conversations',               target: 5,  unit: '' },
+  { id: 'dealsTouched',   label: '% active deals touched',           target: 80, unit: '%' },
+  { id: 'accountsMapped', label: 'New target accounts mapped',       target: 3,  unit: '' }
+];
+
+function getWeekMetrics() {
+  const wk = currentWeekKey();
+  if (!APP.weeklyMetrics[wk]) APP.weeklyMetrics[wk] = {};
+  return APP.weeklyMetrics[wk];
+}
+
+function adjustMetric(id, delta) {
+  const wk = getWeekMetrics();
+  const cur = parseInt(wk[id]) || 0;
+  wk[id] = Math.max(0, cur + delta);
+  saveData(APP);
+  renderTaskList();
+}
+
+function setMetric(id, value) {
+  const wk = getWeekMetrics();
+  const n = parseInt(value);
+  wk[id] = isNaN(n) ? 0 : Math.max(0, n);
+  saveData(APP);
+  renderTaskList();
+}
+
+// ── Daily field helpers ──
+function saveDealMove(value) {
+  APP.dealMoves[todayStr()] = (value || '').trim();
+  saveData(APP);
+}
+
+function saveEodField(field, value) {
+  const d = todayStr();
+  if (!APP.endOfDayLogs[d]) APP.endOfDayLogs[d] = {};
+  APP.endOfDayLogs[d][field] = (value || '').trim();
+  saveData(APP);
+}
+
+// ── Bucket helper for moving tasks between Today / Future ──
+function moveTaskBucket(taskId, bucket) {
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  task.bucket = bucket;
+  saveData(APP);
+  renderTaskList();
+}
+
+// ── Quick add (inline, in the Today section) ──
+function addQuickTask(bucket) {
+  const inp = document.getElementById('quick-add-' + bucket);
+  const name = inp ? inp.value.trim() : '';
+  if (!name) return;
+  APP.tasks.push({
+    id: uid(), name: name, type: 'deep',
+    estimatedMins: null, priority: null, dueDate: null,
+    status: 'todo', createdAt: todayStr(), completedAt: null, completedDate: null,
+    parentId: null, bucket: bucket || 'today'
+  });
+  saveData(APP);
+  if (inp) inp.value = '';
+  renderTaskList();
+  if (inp) inp.focus();
+}
+
+function quickAddKey(e, bucket) {
+  if (e.key === 'Enter') { addQuickTask(bucket); }
+}
+
 function renderTaskList() {
   const container = document.getElementById('task-list-container');
   if (!container) return;
   const today = todayStr();
-  const deepRoots = sortTasks(APP.tasks.filter(t => t.type === 'deep' && t.status === 'todo' && isEffectivelyRoot(t)));
-  const clearingRoots = sortTasks(APP.tasks.filter(t => t.type === 'clearing' && t.status === 'todo' && isEffectivelyRoot(t)));
-  const completedTasks = APP.tasks.filter(t => t.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)).slice(0, 20);
-  const allActive = APP.tasks.filter(t => t.status === 'todo');
-  const activeCount = allActive.length;
-  const deepCount = allActive.filter(t => t.type === 'deep').length;
-  const clearingCount = allActive.filter(t => t.type === 'clearing').length;
 
-  // Update badge
+  const todayRoots  = sortTasks(APP.tasks.filter(t => t.status === 'todo' && taskBucket(t) === 'today'  && isEffectivelyRoot(t)));
+  const futureRoots = sortTasks(APP.tasks.filter(t => t.status === 'todo' && taskBucket(t) === 'future' && isEffectivelyRoot(t)));
+  const completedTasks = APP.tasks.filter(t => t.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)).slice(0, 20);
+  const activeCount = APP.tasks.filter(t => t.status === 'todo').length;
+
   const badge = document.getElementById('task-list-count');
   if (badge) badge.textContent = activeCount;
 
   let html = '';
 
-  // Deep Work tasks section
-  if (deepRoots.length > 0) {
-    html += '<div class="task-section" data-section="deep" style="border-left:3px solid var(--blue);padding-left:8px;margin:8px 0 4px 0;">';
-    html += '<div style="font-size:11px;font-weight:600;color:var(--blue);margin-bottom:4px;">Deep Work (' + deepCount + ')</div>';
-    deepRoots.forEach(t => {
-      html += renderTaskTree(t, 0, today, 'deep');
-    });
-    html += '</div>';
-  }
+  // ── Today's #1 Deal Move ──
+  const dealMove = APP.dealMoves[today] || '';
+  html += '<div class="section-hdr" style="border-left-color:var(--purple);margin-top:0;">Today\'s #1 Deal Move</div>';
+  html += '<input type="text" id="deal-move-input" value="' + esc(dealMove) + '" placeholder="Specific account + specific action" onchange="saveDealMove(this.value)" oninput="saveDealMove(this.value)" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);margin-bottom:12px;box-sizing:border-box;">';
 
-  // Clearing tasks section
-  if (clearingRoots.length > 0) {
-    html += '<div class="task-section" data-section="clearing" style="border-left:3px solid var(--teal);padding-left:8px;margin:8px 0 4px 0;">';
-    html += '<div style="font-size:11px;font-weight:600;color:var(--teal);margin-bottom:4px;">Clearing (' + clearingCount + ')</div>';
-    clearingRoots.forEach(t => {
-      html += renderTaskTree(t, 0, today, 'clearing');
-    });
-    html += '</div>';
+  // ── Today task list ──
+  html += '<div class="section-hdr" style="border-left-color:var(--blue);">Today <span class="badge">' + todayRoots.length + '</span></div>';
+  html += '<div style="display:flex;gap:4px;margin-bottom:6px;">';
+  html += '<input type="text" id="quick-add-today" placeholder="Add a task and press Enter..." onkeydown="quickAddKey(event,\'today\')" style="flex:1;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);">';
+  html += '<button class="btn-sm blue" onclick="addQuickTask(\'today\')" style="font-size:11px;padding:4px 10px;">Add</button>';
+  html += '</div>';
+  html += '<div class="task-section" data-section="today" style="margin:4px 0;">';
+  if (todayRoots.length === 0) {
+    html += '<div style="font-size:11px;color:var(--text-faint);padding:6px 0;">No tasks. Add one above.</div>';
+  } else {
+    todayRoots.forEach(t => { html += renderTaskTree(t, 0, today, 'today'); });
   }
+  html += '</div>';
 
-  if (activeCount === 0) {
-    html += '<div style="font-size:11px;color:var(--text-faint);padding:8px 0;text-align:center;">No active tasks.</div>';
+  // ── End of Day Log ──
+  const eod = APP.endOfDayLogs[today] || {};
+  html += '<div class="section-hdr" style="border-left-color:var(--amber);margin-top:16px;">End of Day Log</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">';
+  html += '<textarea placeholder="3 deal moves I shipped today..." onchange="saveEodField(\'shipped\',this.value)" oninput="saveEodField(\'shipped\',this.value)" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);min-height:54px;resize:vertical;box-sizing:border-box;">' + esc(eod.shipped || '') + '</textarea>';
+  html += '<input type="text" placeholder="Tomorrow\'s #1 deal move" value="' + esc(eod.tomorrow || '') + '" onchange="saveEodField(\'tomorrow\',this.value)" oninput="saveEodField(\'tomorrow\',this.value)" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);box-sizing:border-box;">';
+  html += '<input type="text" placeholder="What distracted me today" value="' + esc(eod.distracted || '') + '" onchange="saveEodField(\'distracted\',this.value)" oninput="saveEodField(\'distracted\',this.value)" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);box-sizing:border-box;">';
+  html += '</div>';
+
+  // ── Future / Not Today ──
+  html += '<div class="section-hdr" style="border-left-color:var(--text-faint);">Future / Not Today <span class="badge">' + futureRoots.length + '</span></div>';
+  html += '<div style="display:flex;gap:4px;margin-bottom:6px;">';
+  html += '<input type="text" id="quick-add-future" placeholder="Park something for later..." onkeydown="quickAddKey(event,\'future\')" style="flex:1;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);">';
+  html += '<button class="btn-sm" onclick="addQuickTask(\'future\')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);background:none;color:var(--text-dim);">Park</button>';
+  html += '</div>';
+  html += '<div class="task-section" data-section="future" style="margin:4px 0;">';
+  if (futureRoots.length === 0) {
+    html += '<div style="font-size:11px;color:var(--text-faint);padding:6px 0;">Nothing parked.</div>';
+  } else {
+    futureRoots.forEach(t => { html += renderTaskTree(t, 0, today, 'future'); });
   }
+  html += '</div>';
+
+  // ── Weekly Counters ──
+  const wk = getWeekMetrics();
+  html += '<div class="section-hdr" style="border-left-color:var(--green);margin-top:16px;">Weekly Counters <span class="badge">' + currentWeekKey() + '</span></div>';
+  html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">';
+  METRIC_DEFS.forEach(m => {
+    const cur = parseInt(wk[m.id]) || 0;
+    const pct = m.target > 0 ? Math.min(100, Math.round((cur / m.target) * 100)) : 0;
+    const onTrack = cur >= m.target;
+    const barColor = onTrack ? 'var(--green)' : (pct >= 50 ? 'var(--amber)' : 'var(--blue)');
+    html += '<div style="display:flex;flex-direction:column;gap:3px;">';
+    html += '<div style="display:flex;align-items:center;gap:4px;font-size:11px;">';
+    html += '<span style="flex:1;color:var(--text-dim);">' + m.label + '</span>';
+    html += '<button onclick="adjustMetric(\'' + m.id + '\',-1)" style="width:20px;height:20px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text-dim);cursor:pointer;font-size:13px;line-height:1;">&minus;</button>';
+    html += '<input type="number" value="' + cur + '" onchange="setMetric(\'' + m.id + '\',this.value)" style="width:42px;text-align:center;font-size:11px;padding:2px;border:1px solid var(--border);border-radius:4px;background:var(--card);color:var(--text);font-family:var(--font);">';
+    html += '<button onclick="adjustMetric(\'' + m.id + '\',1)" style="width:20px;height:20px;border:1px solid var(--border);border-radius:4px;background:none;color:var(--text-dim);cursor:pointer;font-size:13px;line-height:1;">+</button>';
+    html += '<span style="font-size:10px;color:var(--text-faint);min-width:38px;text-align:right;">/ ' + m.target + m.unit + '</span>';
+    html += '</div>';
+    html += '<div style="height:3px;background:var(--border-subtle);border-radius:2px;overflow:hidden;">';
+    html += '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';transition:width 0.2s;"></div>';
+    html += '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
 
   // Completed tasks (collapsed)
   if (completedTasks.length > 0) {
@@ -3063,6 +3197,10 @@ function renderTaskListItem(t, today, section, depth) {
   html += '<span onclick="event.stopPropagation();editTaskName(\'' + t.id + '\')" title="Click to edit" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;cursor:text;">' + esc(t.name) + '</span>';
   if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';flex-shrink:0;">' + t.dueDate + '</span>';
   if (t.estimatedMins) html += '<span style="font-size:9px;color:var(--text-faint);flex-shrink:0;">' + t.estimatedMins + 'm</span>';
+  const otherBucket = taskBucket(t) === 'today' ? 'future' : 'today';
+  const bucketIcon = otherBucket === 'future' ? '&#8594;' : '&#8593;';
+  const bucketTitle = otherBucket === 'future' ? 'Move to Future' : 'Move to Today';
+  html += '<button class="dw-task-btn" onclick="event.stopPropagation();moveTaskBucket(\'' + t.id + '\',\'' + otherBucket + '\')" title="' + bucketTitle + '" style="flex-shrink:0;color:var(--text-faint);">' + bucketIcon + '</button>';
   html += '<button class="dw-task-btn check" onclick="event.stopPropagation();completeTaskFromList(\'' + t.id + '\')" title="Complete" style="flex-shrink:0;">&#10003;</button>';
   html += '<button class="dw-task-btn del" onclick="event.stopPropagation();deleteTaskFromList(\'' + t.id + '\')" title="Delete" style="flex-shrink:0;">&#10005;</button>';
   html += '</div>';
@@ -3237,13 +3375,15 @@ function taskDrop(e) {
   const asChild = x > rect.width * 0.5;
 
   if (asChild) {
-    // Make dragged a subtask of target (cross-section allowed)
     draggedTask.parentId = targetTask.id;
     draggedTask.sortOrder = undefined;
+    // Subtask inherits parent's bucket
+    if (targetTask.bucket) draggedTask.bucket = targetTask.bucket;
+    else draggedTask.bucket = 'today';
   } else {
-    // Sibling reorder. Same section only to avoid cross-type confusion.
-    if (targetRow.dataset.section !== dragSection) { taskDragEnd(); return; }
+    // Sibling reorder. Inherit target's bucket so cross-bucket drag moves correctly.
     draggedTask.parentId = targetTask.parentId || null;
+    draggedTask.bucket = taskBucket(targetTask);
     const targetParent = targetTask.parentId || null;
     const siblings = sortTasks(APP.tasks.filter(t =>
       (t.parentId || null) === targetParent &&
@@ -4187,13 +4327,14 @@ function extractYouTubePlaylist(url) {
 function buildYouTubeEmbedSrc(url) {
   const playlistId = extractYouTubePlaylist(url);
   const videoId = extractYouTubeId(url);
-  // If a playlist is present, embed as a playlist (YouTube loops playlists with loop=1)
+  // youtube-nocookie.com strips the user's YouTube session cookies, which
+  // avoids the "playback paused because your account is being used in
+  // another location" error from simultaneous-playback restrictions.
   if (playlistId) {
-    return 'https://www.youtube.com/embed/videoseries?list=' + playlistId + '&autoplay=1&loop=1';
+    return 'https://www.youtube-nocookie.com/embed/videoseries?list=' + playlistId + '&autoplay=1&loop=1';
   }
-  // Single video: loop=1 requires playlist=VIDEO_ID with the same ID
   if (videoId) {
-    return 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&loop=1&playlist=' + videoId;
+    return 'https://www.youtube-nocookie.com/embed/' + videoId + '?autoplay=1&loop=1&playlist=' + videoId;
   }
   return null;
 }
