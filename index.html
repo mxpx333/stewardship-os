@@ -1736,7 +1736,12 @@ html.simple-view #notebook-frame-container iframe {
 })();
 
 // ══════════════════════════════════════════════════════════════
-// STEWARDSHIP OS v6.3.2 - Desktop-First Daily Operating Dashboard
+// STEWARDSHIP OS v6.3.3 - Desktop-First Daily Operating Dashboard
+// v6.3.3: Today's completed tasks now stay inline with strikethrough
+// + dimmed opacity until local midnight (when completedDate stops
+// matching today's date, render filter drops them). Check button
+// swaps to an undo arrow on done tasks. Quick-add input keeps
+// focus after Enter so you can keep typing the next task.
 // v6.3.2 adds a history browser (small clock icon next to each
 // of the three section headers: Deal Move, End of Day Log, Weekly
 // Counters). Opens a modal showing all past entries reverse-
@@ -2988,7 +2993,10 @@ function isEffectivelyRoot(task) {
   if (!task.parentId) return true;
   const parent = APP.tasks.find(t => t.id === task.parentId);
   if (!parent) return true;
-  if (parent.status === 'done') return true;
+  // If the parent was completed today it is still rendered inline (strikethrough),
+  // so the child stays nested under it. Only float orphans up when the parent
+  // was completed on a prior day (and has dropped off the visible Today list).
+  if (parent.status === 'done' && parent.completedDate !== todayStr()) return true;
   return false;
 }
 
@@ -3037,7 +3045,11 @@ function startInlineEdit(event, taskId) {
 
 function renderTaskTree(task, depth, today, section) {
   let html = renderTaskListItem(task, today, section, depth);
-  const children = sortTasks(APP.tasks.filter(c => c.parentId === task.id && c.status === 'todo'));
+  // Children visible if still todo or completed today (mirrors top-level filter).
+  const children = sortTasks(APP.tasks.filter(c =>
+    c.parentId === task.id &&
+    (c.status === 'todo' || (c.status === 'done' && c.completedDate === today))
+  ));
   children.forEach(child => {
     html += renderTaskTree(child, depth + 1, today, section);
   });
@@ -3221,9 +3233,10 @@ function addQuickTask(bucket) {
     parentId: null, bucket: bucket || 'today'
   });
   saveData(APP);
-  if (inp) inp.value = '';
   renderTaskList();
-  if (inp) inp.focus();
+  // renderTaskList replaces the input DOM node, so re-query and refocus.
+  const fresh = document.getElementById('quick-add-' + bucket);
+  if (fresh) { fresh.value = ''; fresh.focus(); }
 }
 
 function quickAddKey(e, bucket) {
@@ -3235,9 +3248,15 @@ function renderTaskList() {
   if (!container) return;
   const today = todayStr();
 
-  const todayRoots  = sortTasks(APP.tasks.filter(t => t.status === 'todo' && taskBucket(t) === 'today'  && isEffectivelyRoot(t)));
-  const futureRoots = sortTasks(APP.tasks.filter(t => t.status === 'todo' && taskBucket(t) === 'future' && isEffectivelyRoot(t)));
-  const completedTasks = APP.tasks.filter(t => t.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)).slice(0, 20);
+  // Tasks shown in the bucket lists: still-todo, OR completed-today (so today's
+  // wins stay visible until local midnight, when completedDate !== today and they
+  // naturally drop off the inline list).
+  const visibleInBucket = (t) => t.status === 'todo' || (t.status === 'done' && t.completedDate === today);
+  const todayRoots  = sortTasks(APP.tasks.filter(t => visibleInBucket(t) && taskBucket(t) === 'today'  && isEffectivelyRoot(t)));
+  const futureRoots = sortTasks(APP.tasks.filter(t => visibleInBucket(t) && taskBucket(t) === 'future' && isEffectivelyRoot(t)));
+  // Bottom Completed history excludes today's completions to avoid double-render
+  // (today's are inline above with strikethrough).
+  const completedTasks = APP.tasks.filter(t => t.status === 'done' && t.completedDate !== today).sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0)).slice(0, 20);
   const activeCount = APP.tasks.filter(t => t.status === 'todo').length;
 
   const badge = document.getElementById('task-list-count');
@@ -3361,21 +3380,29 @@ function renderTaskList() {
 
 function renderTaskListItem(t, today, section, depth) {
   depth = depth || 0;
-  const isOverdue = t.dueDate && t.dueDate < today;
+  const isDone = t.status === 'done';
+  const isOverdue = !isDone && t.dueDate && t.dueDate < today;
   const prioColor = t.priority === 'high' ? 'var(--red)' : t.priority === 'medium' ? 'var(--amber)' : t.priority === 'low' ? 'var(--green)' : 'var(--border)';
   const prioLabel = t.priority === 'high' ? 'H' : t.priority === 'medium' ? 'M' : t.priority === 'low' ? 'L' : '';
-  let html = '<div class="task-row" draggable="true" data-task-id="' + t.id + '" data-section="' + section + '" data-depth="' + depth + '" ondragstart="taskDragStart(event)" ondragover="taskDragOver(event)" ondrop="taskDrop(event)" ondragend="taskDragEnd(event)">';
-  html += '<span class="task-drag-handle" title="Drag right to indent as subtask"><i class="ph ph-dots-six-vertical" style="font-size:12px;color:var(--text-faint);cursor:grab;"></i></span>';
+  const rowStyle = isDone ? 'opacity:0.55;' : '';
+  const nameStyle = 'flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;cursor:text;' + (isDone ? 'text-decoration:line-through;' : '');
+  const handleCursor = isDone ? 'default' : 'grab';
+  let html = '<div class="task-row" draggable="' + (isDone ? 'false' : 'true') + '" data-task-id="' + t.id + '" data-section="' + section + '" data-depth="' + depth + '" data-done="' + (isDone ? '1' : '0') + '" ondragstart="taskDragStart(event)" ondragover="taskDragOver(event)" ondrop="taskDrop(event)" ondragend="taskDragEnd(event)" style="' + rowStyle + '">';
+  html += '<span class="task-drag-handle" title="Drag right to indent as subtask"><i class="ph ph-dots-six-vertical" style="font-size:12px;color:var(--text-faint);cursor:' + handleCursor + ';"></i></span>';
   if (depth > 0) html += '<span class="task-subtask-tick">↳</span>';
   html += '<span class="task-prio-btn" onclick="cycleTaskPriority(\'' + t.id + '\')" title="Click to change priority" style="width:18px;height:18px;border-radius:50%;border:2px solid ' + prioColor + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:8px;font-weight:700;color:' + prioColor + ';">' + prioLabel + '</span>';
-  html += '<span class="task-name" onclick="startInlineEdit(event,\'' + t.id + '\')" title="Click to edit" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;cursor:text;">' + esc(t.name) + '</span>';
+  html += '<span class="task-name" onclick="startInlineEdit(event,\'' + t.id + '\')" title="Click to edit" style="' + nameStyle + '">' + esc(t.name) + '</span>';
   if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';flex-shrink:0;">' + t.dueDate + '</span>';
   if (t.estimatedMins) html += '<span style="font-size:9px;color:var(--text-faint);flex-shrink:0;">' + t.estimatedMins + 'm</span>';
   const otherBucket = taskBucket(t) === 'today' ? 'future' : 'today';
   const bucketIcon = otherBucket === 'future' ? '&#8594;' : '&#8593;';
   const bucketTitle = otherBucket === 'future' ? 'Move to Future' : 'Move to Today';
   html += '<button class="dw-task-btn" onclick="event.stopPropagation();moveTaskBucket(\'' + t.id + '\',\'' + otherBucket + '\')" title="' + bucketTitle + '" style="flex-shrink:0;color:var(--text-faint);">' + bucketIcon + '</button>';
-  html += '<button class="dw-task-btn check" onclick="event.stopPropagation();completeTaskFromList(\'' + t.id + '\')" title="Complete" style="flex-shrink:0;">&#10003;</button>';
+  if (isDone) {
+    html += '<button class="dw-task-btn check" onclick="event.stopPropagation();uncompleteTask(\'' + t.id + '\')" title="Undo" style="flex-shrink:0;color:var(--text-dim);">&#8634;</button>';
+  } else {
+    html += '<button class="dw-task-btn check" onclick="event.stopPropagation();completeTaskFromList(\'' + t.id + '\')" title="Complete" style="flex-shrink:0;">&#10003;</button>';
+  }
   html += '<button class="dw-task-btn del" onclick="event.stopPropagation();deleteTaskFromList(\'' + t.id + '\')" title="Delete" style="flex-shrink:0;">&#10005;</button>';
   html += '</div>';
   return html;
