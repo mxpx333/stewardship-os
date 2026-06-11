@@ -1726,6 +1726,12 @@ html.simple-view #notebook-frame-container iframe {
 })();
 
 // ══════════════════════════════════════════════════════════════
+// STEWARDSHIP OS v6.3.1 - Desktop-First Daily Operating Dashboard
+// v6.3.1 adds inline click-to-edit on task names (no more prompt
+// popup) and replaces the End of Day Log questions with Ian's set:
+// distracted/fix, poor investment/fix, worked great/more, and a
+// clean-desk checkbox.
+// ──
 // STEWARDSHIP OS v6.3.0 - Desktop-First Daily Operating Dashboard
 // v6.1.0 adds Simple View mode and drag-right-to-indent subtasks.
 // v6.1.1 adds parent auto-complete cascade.
@@ -2979,6 +2985,44 @@ function taskBucket(task) {
   return task.bucket === 'future' ? 'future' : 'today';
 }
 
+function startInlineEdit(event, taskId) {
+  event.stopPropagation();
+  const span = event.currentTarget;
+  if (!span) return;
+  const row = span.closest('.task-row');
+  const task = APP.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const currentName = task.name;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentName;
+  input.className = 'task-name task-name-editing';
+  input.style.cssText = 'flex:1;min-width:0;font-size:12px;background:var(--card);border:1px solid var(--blue);border-radius:4px;padding:2px 6px;color:var(--text);font-family:var(--font);outline:none;box-sizing:border-box;';
+  if (row) row.setAttribute('draggable', 'false');
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  let finished = false;
+  const finish = (save) => {
+    if (finished) return;
+    finished = true;
+    if (row) row.setAttribute('draggable', 'true');
+    if (save) {
+      const newName = input.value.trim();
+      if (newName && newName !== currentName) {
+        task.name = newName;
+        saveData(APP);
+      }
+    }
+    renderTaskList();
+  };
+  input.addEventListener('blur', () => finish(true));
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+}
+
 function renderTaskTree(task, depth, today, section) {
   let html = renderTaskListItem(task, today, section, depth);
   const children = sortTasks(APP.tasks.filter(c => c.parentId === task.id && c.status === 'todo'));
@@ -3033,15 +3077,17 @@ function setMetric(id, value) {
 }
 
 // ── Daily field helpers ──
+// Saved values are not trimmed during oninput so trailing spaces are
+// preserved mid-typing. Booleans (checkboxes) are stored as-is.
 function saveDealMove(value) {
-  APP.dealMoves[todayStr()] = (value || '').trim();
+  APP.dealMoves[todayStr()] = value == null ? '' : value;
   saveData(APP);
 }
 
 function saveEodField(field, value) {
   const d = todayStr();
   if (!APP.endOfDayLogs[d]) APP.endOfDayLogs[d] = {};
-  APP.endOfDayLogs[d][field] = (value || '').trim();
+  APP.endOfDayLogs[d][field] = value;
   saveData(APP);
 }
 
@@ -3111,11 +3157,21 @@ function renderTaskList() {
 
   // ── End of Day Log ──
   const eod = APP.endOfDayLogs[today] || {};
+  const taStyle = 'width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);min-height:50px;resize:vertical;box-sizing:border-box;';
+  const lblStyle = 'font-size:10px;color:var(--text-dim);font-weight:600;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.3px;';
   html += '<div class="section-hdr" style="border-left-color:var(--amber);margin-top:16px;">End of Day Log</div>';
-  html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">';
-  html += '<textarea placeholder="3 deal moves I shipped today..." onchange="saveEodField(\'shipped\',this.value)" oninput="saveEodField(\'shipped\',this.value)" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);min-height:54px;resize:vertical;box-sizing:border-box;">' + esc(eod.shipped || '') + '</textarea>';
-  html += '<input type="text" placeholder="Tomorrow\'s #1 deal move" value="' + esc(eod.tomorrow || '') + '" onchange="saveEodField(\'tomorrow\',this.value)" oninput="saveEodField(\'tomorrow\',this.value)" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);box-sizing:border-box;">';
-  html += '<input type="text" placeholder="What distracted me today" value="' + esc(eod.distracted || '') + '" onchange="saveEodField(\'distracted\',this.value)" oninput="saveEodField(\'distracted\',this.value)" style="width:100%;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-family:var(--font);box-sizing:border-box;">';
+  html += '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">';
+  html += '<div><label style="' + lblStyle + '">What distracted me / how can I change that?</label>';
+  html += '<textarea oninput="saveEodField(\'distractedFix\',this.value)" style="' + taStyle + '">' + esc(eod.distractedFix || '') + '</textarea></div>';
+  html += '<div><label style="' + lblStyle + '">What was a poor investment of time / how can I change that?</label>';
+  html += '<textarea oninput="saveEodField(\'poorInvestmentFix\',this.value)" style="' + taStyle + '">' + esc(eod.poorInvestmentFix || '') + '</textarea></div>';
+  html += '<div><label style="' + lblStyle + '">What worked great / how can I do more of that?</label>';
+  html += '<textarea oninput="saveEodField(\'workedGreatMore\',this.value)" style="' + taStyle + '">' + esc(eod.workedGreatMore || '') + '</textarea></div>';
+  const cleanDone = !!eod.cleanDesk;
+  html += '<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:4px 0;">';
+  html += '<input type="checkbox" ' + (cleanDone ? 'checked' : '') + ' onchange="saveEodField(\'cleanDesk\',this.checked)" style="width:16px;height:16px;cursor:pointer;">';
+  html += '<span style="color:' + (cleanDone ? 'var(--text-faint)' : 'var(--text)') + ';text-decoration:' + (cleanDone ? 'line-through' : 'none') + ';">Clean desk / desktop</span>';
+  html += '</label>';
   html += '</div>';
 
   // ── Future / Not Today ──
@@ -3194,7 +3250,7 @@ function renderTaskListItem(t, today, section, depth) {
   html += '<span class="task-drag-handle" title="Drag right to indent as subtask"><i class="ph ph-dots-six-vertical" style="font-size:12px;color:var(--text-faint);cursor:grab;"></i></span>';
   if (depth > 0) html += '<span class="task-subtask-tick">↳</span>';
   html += '<span class="task-prio-btn" onclick="cycleTaskPriority(\'' + t.id + '\')" title="Click to change priority" style="width:18px;height:18px;border-radius:50%;border:2px solid ' + prioColor + ';display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:8px;font-weight:700;color:' + prioColor + ';">' + prioLabel + '</span>';
-  html += '<span onclick="event.stopPropagation();editTaskName(\'' + t.id + '\')" title="Click to edit" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;cursor:text;">' + esc(t.name) + '</span>';
+  html += '<span class="task-name" onclick="startInlineEdit(event,\'' + t.id + '\')" title="Click to edit" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;cursor:text;">' + esc(t.name) + '</span>';
   if (t.dueDate) html += '<span style="font-size:9px;color:' + (isOverdue ? 'var(--red)' : 'var(--text-faint)') + ';flex-shrink:0;">' + t.dueDate + '</span>';
   if (t.estimatedMins) html += '<span style="font-size:9px;color:var(--text-faint);flex-shrink:0;">' + t.estimatedMins + 'm</span>';
   const otherBucket = taskBucket(t) === 'today' ? 'future' : 'today';
