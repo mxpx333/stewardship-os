@@ -1278,8 +1278,23 @@ body {
 /* ── SIMPLE VIEW MODE ── */
 html.simple-view .verse-area { display: none !important; }
 html.simple-view .main-grid {
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: 1fr var(--simple-right-w, 380px);
 }
+#simple-view-splitter {
+  display: none;
+  position: fixed;
+  top: 50px;
+  bottom: 0;
+  width: 8px;
+  margin-left: -4px;
+  background: transparent;
+  cursor: col-resize;
+  z-index: 50;
+  transition: background 0.15s;
+}
+#simple-view-splitter:hover,
+#simple-view-splitter.dragging { background: var(--blue); }
+html.simple-view #simple-view-splitter { display: block; }
 html.simple-view #col-left {
   order: 2;
   border-right: none;
@@ -1506,6 +1521,9 @@ html.simple-view #notebook-frame-container iframe {
     <button class="date-arrow" id="date-prev" onclick="navDate(-1)">&#8249;</button>
     <div class="date-label" id="date-label"></div>
     <button class="date-arrow" id="date-next" onclick="navDate(1)">&#8250;</button>
+    <button class="date-arrow" onclick="openArchiveModal()" id="archive-toggle" title="Archive: browse all past data">
+      <i class="ph ph-archive"></i>
+    </button>
     <button class="date-arrow" onclick="toggleSimpleView()" id="simple-view-toggle" title="Toggle simple view (notebook + tasks)">
       <i class="ph ph-rectangle" id="simple-view-icon"></i>
     </button>
@@ -1665,6 +1683,43 @@ html.simple-view #notebook-frame-container iframe {
   </div>
 </div>
 
+<div id="simple-view-splitter" onmousedown="startSimpleSplitterDrag(event)" title="Drag to resize"></div>
+
+<div class="modal-overlay" id="archive-modal">
+  <div class="modal" style="max-width:960px;width:95vw;max-height:90vh;">
+    <div class="modal-header">
+      <h2>Archive</h2>
+      <button class="modal-close" onclick="closeArchiveModal()">&times;</button>
+    </div>
+    <div id="archive-tabs" style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:10px;flex-wrap:wrap;">
+      <button class="archive-tab" data-tab="daily" onclick="switchArchiveTab('daily')">Daily Recap</button>
+      <button class="archive-tab" data-tab="tasks" onclick="switchArchiveTab('tasks')">Completed Tasks</button>
+      <button class="archive-tab" data-tab="weekly" onclick="switchArchiveTab('weekly')">Weekly Counters</button>
+      <button class="archive-tab" data-tab="dealMoves" onclick="switchArchiveTab('dealMoves')">Deal Moves</button>
+      <button class="archive-tab" data-tab="eod" onclick="switchArchiveTab('eod')">End of Day</button>
+      <div style="flex:1;"></div>
+      <button class="archive-tab" onclick="exportData()" title="Download full JSON backup" style="border-color:var(--green);color:var(--green);"><i class="ph ph-download-simple"></i> Export JSON</button>
+    </div>
+    <div class="modal-body" id="archive-body" style="max-height:70vh;"></div>
+  </div>
+</div>
+
+<style>
+.archive-tab {
+  background: none;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: var(--font);
+}
+.archive-tab:hover { color: var(--text); background: var(--card-hover); }
+.archive-tab.active { background: var(--card); color: var(--text); border-color: var(--blue); font-weight: 700; }
+</style>
+
 <!-- Confirm Modal -->
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal" id="confirm-content"></div>
@@ -1716,6 +1771,11 @@ html.simple-view #notebook-frame-container iframe {
   document.documentElement.dataset.theme = theme;
   const simple = localStorage.getItem('stewardship-simple-view') === '1';
   if (simple) document.documentElement.classList.add('simple-view');
+  // Apply saved right-column width before paint so simple view doesn't flash.
+  const savedW = parseInt(localStorage.getItem('stewardship-simple-right-w'));
+  if (savedW && savedW >= 280 && savedW <= 800) {
+    document.documentElement.style.setProperty('--simple-right-w', savedW + 'px');
+  }
   document.addEventListener('DOMContentLoaded', () => {
     const icon = document.getElementById('theme-icon');
     if (icon) icon.className = 'ph ' + (theme === 'dark' ? 'ph-sun' : 'ph-moon');
@@ -1732,11 +1792,17 @@ html.simple-view #notebook-frame-container iframe {
       if (typeof audioOpen !== 'undefined') audioOpen = true;
       if (typeof renderAudio === 'function') renderAudio();
     }
+    if (typeof initSimpleViewSplitter === 'function') initSimpleViewSplitter();
   });
 })();
 
 // ══════════════════════════════════════════════════════════════
-// STEWARDSHIP OS v6.3.3 - Desktop-First Daily Operating Dashboard
+// STEWARDSHIP OS v6.4.0 - Desktop-First Daily Operating Dashboard
+// v6.4.0: New Archive top-bar button opens a tabbed history of
+// everything (daily recap, completed tasks, weekly counters, deal
+// moves, EOD logs, plus a JSON export). Simple view gained a
+// drag-to-resize splitter on the boundary of the right column;
+// width persists in localStorage.
 // v6.3.3: Today's completed tasks now stay inline with strikethrough
 // + dimmed opacity until local midnight (when completedDate stops
 // matching today's date, render filter drops them). Check button
@@ -3210,6 +3276,225 @@ function openHistoryModal(type) {
 function closeHistoryModal() {
   const modal = document.getElementById('history-modal');
   if (modal) modal.classList.remove('open');
+}
+
+// ── Archive (everything-in-one-place browser) ──
+let archiveActiveTab = 'daily';
+
+function openArchiveModal() {
+  const modal = document.getElementById('archive-modal');
+  if (!modal) return;
+  modal.classList.add('open');
+  switchArchiveTab(archiveActiveTab);
+}
+
+function closeArchiveModal() {
+  const modal = document.getElementById('archive-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function switchArchiveTab(tab) {
+  archiveActiveTab = tab;
+  document.querySelectorAll('.archive-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+  renderArchiveTab(tab);
+}
+
+function renderArchiveTab(tab) {
+  const body = document.getElementById('archive-body');
+  if (!body) return;
+  if (tab === 'daily') body.innerHTML = renderArchiveDaily();
+  else if (tab === 'tasks') body.innerHTML = renderArchiveTasks();
+  else if (tab === 'weekly') body.innerHTML = renderArchiveWeekly();
+  else if (tab === 'dealMoves') body.innerHTML = renderArchiveDealMoves();
+  else if (tab === 'eod') body.innerHTML = renderArchiveEod();
+}
+
+function archiveCollectDates() {
+  const dates = new Set();
+  Object.keys(APP.dealMoves || {}).forEach(d => { if ((APP.dealMoves[d] || '').trim()) dates.add(d); });
+  Object.keys(APP.endOfDayLogs || {}).forEach(d => {
+    const e = APP.endOfDayLogs[d] || {};
+    if ((e.distractedFix || '').trim() || (e.poorInvestmentFix || '').trim() || (e.workedGreatMore || '').trim() || e.cleanDesk) dates.add(d);
+  });
+  APP.tasks.forEach(t => { if (t.completedDate) dates.add(t.completedDate); });
+  Object.keys(APP.flow || {}).forEach(d => {
+    const f = APP.flow[d] || {};
+    if (Object.values(f).some(v => v === true || (v && typeof v === 'object'))) dates.add(d);
+  });
+  return Array.from(dates).sort((a, b) => b.localeCompare(a));
+}
+
+function renderArchiveDaily() {
+  const today = todayStr();
+  const dates = archiveCollectDates();
+  if (dates.length === 0) {
+    return '<div style="padding:24px;color:var(--text-faint);text-align:center;">No data yet. Start using the dashboard and your daily history will accumulate here.</div>';
+  }
+  let html = '<div style="display:flex;flex-direction:column;gap:14px;">';
+  dates.forEach(d => {
+    const isToday = d === today;
+    const dealMove = (APP.dealMoves[d] || '').trim();
+    const eod = APP.endOfDayLogs[d] || {};
+    const flow = APP.flow[d] || {};
+    const completed = APP.tasks.filter(t => t.status === 'done' && t.completedDate === d).sort((a, b) => (a.completedAt || 0) - (b.completedAt || 0));
+    const flowDone = Object.keys(flow).filter(k => flow[k] === true || (flow[k] && flow[k].done)).length;
+    html += '<div style="border:1px solid var(--border);border-radius:8px;padding:12px;background:' + (isToday ? 'var(--blue-bg)' : 'var(--card)') + ';">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;border-bottom:1px solid var(--border-subtle);padding-bottom:6px;">';
+    html += '<div style="font-size:13px;font-weight:700;color:var(--text);">' + d + (isToday ? ' <span style="color:var(--blue);font-size:11px;font-weight:600;">today</span>' : '') + '</div>';
+    html += '<div style="font-size:10px;color:var(--text-faint);">';
+    if (completed.length > 0) html += '<span style="margin-left:8px;">' + completed.length + ' task' + (completed.length !== 1 ? 's' : '') + ' done</span>';
+    if (flowDone > 0) html += '<span style="margin-left:8px;">' + flowDone + ' flow steps</span>';
+    if (eod.cleanDesk) html += '<span style="margin-left:8px;color:var(--green);">✓ desk clean</span>';
+    html += '</div>';
+    html += '</div>';
+    if (dealMove) {
+      html += '<div style="margin-bottom:8px;">';
+      html += '<div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">#1 Deal Move</div>';
+      html += '<div style="font-size:12px;color:var(--text);">' + esc(dealMove) + '</div>';
+      html += '</div>';
+    }
+    if (completed.length > 0) {
+      html += '<div style="margin-bottom:8px;">';
+      html += '<div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">Tasks Completed</div>';
+      html += '<ul style="margin:0;padding:0 0 0 18px;font-size:12px;color:var(--text);">';
+      completed.forEach(t => { html += '<li>' + esc(t.name) + '</li>'; });
+      html += '</ul>';
+      html += '</div>';
+    }
+    const eodFields = [
+      ['distractedFix',     'Distracted / fix'],
+      ['poorInvestmentFix', 'Poor investment / fix'],
+      ['workedGreatMore',   'Worked great / more']
+    ];
+    eodFields.forEach(pair => {
+      const val = (eod[pair[0]] || '').trim();
+      if (val) {
+        html += '<div style="margin-bottom:6px;">';
+        html += '<div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">' + pair[1] + '</div>';
+        html += '<div style="font-size:12px;color:var(--text);white-space:pre-wrap;">' + esc(val) + '</div>';
+        html += '</div>';
+      }
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderArchiveTasks() {
+  const completed = APP.tasks.filter(t => t.status === 'done')
+    .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+  if (completed.length === 0) {
+    return '<div style="padding:24px;color:var(--text-faint);text-align:center;">No completed tasks yet.</div>';
+  }
+  // Group by date
+  const byDate = {};
+  completed.forEach(t => {
+    const d = t.completedDate || 'unknown';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(t);
+  });
+  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+  dates.forEach(d => {
+    html += '<div style="border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--card);">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--text-dim);">' + d + '</div>';
+    html += '<div style="font-size:10px;color:var(--text-faint);">' + byDate[d].length + ' completed</div>';
+    html += '</div>';
+    html += '<ul style="margin:0;padding:0 0 0 18px;font-size:12px;color:var(--text);">';
+    byDate[d].forEach(t => { html += '<li>' + esc(t.name) + '</li>'; });
+    html += '</ul>';
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderArchiveWeekly() {
+  const wkNow = currentWeekKey();
+  const entries = Object.keys(APP.weeklyMetrics || {}).sort((a, b) => b.localeCompare(a));
+  if (entries.length === 0) {
+    return '<div style="padding:24px;color:var(--text-faint);text-align:center;">No weekly counters logged yet.</div>';
+  }
+  let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+  entries.forEach(wk => {
+    const data = APP.weeklyMetrics[wk] || {};
+    const isCurrent = wk === wkNow;
+    html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;background:' + (isCurrent ? 'var(--blue-bg)' : 'var(--card)') + ';">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:8px;">' + wk + (isCurrent ? ' (current)' : '') + '</div>';
+    html += '<table style="width:100%;font-size:12px;border-collapse:collapse;">';
+    METRIC_DEFS.forEach(m => {
+      const cur = parseInt(data[m.id]) || 0;
+      const pct = m.target > 0 ? Math.min(100, Math.round((cur / m.target) * 100)) : 0;
+      const onTrack = cur >= m.target;
+      const color = onTrack ? 'var(--green)' : (pct >= 50 ? 'var(--amber)' : 'var(--text-dim)');
+      html += '<tr>';
+      html += '<td style="padding:3px 6px 3px 0;color:var(--text-dim);">' + m.label + '</td>';
+      html += '<td style="padding:3px 0;text-align:right;font-weight:700;color:' + color + ';white-space:nowrap;">' + cur + ' / ' + m.target + m.unit + ' &nbsp;<span style="color:var(--text-faint);font-weight:400;font-size:10px;">' + pct + '%</span></td>';
+      html += '</tr>';
+    });
+    html += '</table>';
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderArchiveDealMoves() {
+  const today = todayStr();
+  const entries = Object.keys(APP.dealMoves || {})
+    .filter(d => (APP.dealMoves[d] || '').trim())
+    .sort((a, b) => b.localeCompare(a));
+  if (entries.length === 0) {
+    return '<div style="padding:24px;color:var(--text-faint);text-align:center;">No deal moves logged yet.</div>';
+  }
+  let html = '<div style="display:flex;flex-direction:column;gap:6px;">';
+  entries.forEach(d => {
+    const isToday = d === today;
+    html += '<div style="display:flex;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:' + (isToday ? 'var(--blue-bg)' : 'var(--card)') + ';">';
+    html += '<div style="min-width:90px;font-size:11px;color:var(--text-dim);font-weight:600;">' + d + (isToday ? ' (today)' : '') + '</div>';
+    html += '<div style="flex:1;font-size:13px;color:var(--text);">' + esc(APP.dealMoves[d]) + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderArchiveEod() {
+  const today = todayStr();
+  const entries = Object.keys(APP.endOfDayLogs || {})
+    .filter(d => {
+      const e = APP.endOfDayLogs[d] || {};
+      return (e.distractedFix || '').trim() || (e.poorInvestmentFix || '').trim() || (e.workedGreatMore || '').trim() || e.cleanDesk;
+    })
+    .sort((a, b) => b.localeCompare(a));
+  if (entries.length === 0) {
+    return '<div style="padding:24px;color:var(--text-faint);text-align:center;">No end-of-day logs yet.</div>';
+  }
+  let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+  entries.forEach(d => {
+    const e = APP.endOfDayLogs[d] || {};
+    const isToday = d === today;
+    html += '<div style="border:1px solid var(--border);border-radius:8px;padding:10px;background:' + (isToday ? 'var(--blue-bg)' : 'var(--card)') + ';">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--text-dim);margin-bottom:6px;">' + d + (isToday ? ' (today)' : '') + (e.cleanDesk ? ' · <span style="color:var(--green);">✓ desk clean</span>' : '') + '</div>';
+    const field = (label, val) => {
+      if (!val || !val.trim()) return '';
+      let h = '<div style="margin-top:6px;">';
+      h += '<div style="font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">' + label + '</div>';
+      h += '<div style="font-size:12px;color:var(--text);white-space:pre-wrap;">' + esc(val) + '</div>';
+      h += '</div>';
+      return h;
+    };
+    html += field('Distracted / fix', e.distractedFix);
+    html += field('Poor investment / fix', e.poorInvestmentFix);
+    html += field('Worked great / more', e.workedGreatMore);
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
 }
 
 // ── Bucket helper for moving tasks between Today / Future ──
@@ -5159,6 +5444,55 @@ function toggleSimpleView() {
     const chev = document.getElementById('notebook-chevron');
     if (chev) chev.innerHTML = '&#9660;';
   }
+  positionSimpleSplitter();
+}
+
+// ── Simple view splitter (drag to resize the right column) ──
+let simpleSplitterDragging = false;
+
+function initSimpleViewSplitter() {
+  const stored = parseInt(localStorage.getItem('stewardship-simple-right-w'));
+  if (stored && stored >= 280 && stored <= 800) {
+    document.documentElement.style.setProperty('--simple-right-w', stored + 'px');
+  }
+  positionSimpleSplitter();
+  window.addEventListener('resize', positionSimpleSplitter);
+}
+
+function positionSimpleSplitter() {
+  const splitter = document.getElementById('simple-view-splitter');
+  if (!splitter) return;
+  const styleVal = getComputedStyle(document.documentElement).getPropertyValue('--simple-right-w');
+  const w = parseInt(styleVal) || 380;
+  splitter.style.right = w + 'px';
+}
+
+function startSimpleSplitterDrag(e) {
+  if (!document.documentElement.classList.contains('simple-view')) return;
+  e.preventDefault();
+  simpleSplitterDragging = true;
+  document.body.style.cursor = 'col-resize';
+  const splitter = document.getElementById('simple-view-splitter');
+  if (splitter) splitter.classList.add('dragging');
+  const onMove = (ev) => {
+    if (!simpleSplitterDragging) return;
+    const w = Math.max(280, Math.min(800, window.innerWidth - ev.clientX));
+    document.documentElement.style.setProperty('--simple-right-w', w + 'px');
+    positionSimpleSplitter();
+  };
+  const onUp = () => {
+    if (!simpleSplitterDragging) return;
+    simpleSplitterDragging = false;
+    document.body.style.cursor = '';
+    if (splitter) splitter.classList.remove('dragging');
+    const wStr = getComputedStyle(document.documentElement).getPropertyValue('--simple-right-w');
+    const w = parseInt(wStr);
+    if (w) localStorage.setItem('stewardship-simple-right-w', String(w));
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  };
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
 }
 
 
