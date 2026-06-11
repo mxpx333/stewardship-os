@@ -1792,12 +1792,30 @@ html.simple-view #notebook-frame-container iframe {
       if (typeof audioOpen !== 'undefined') audioOpen = true;
       if (typeof renderAudio === 'function') renderAudio();
     }
+    // Auto-open and render the Running Notebook if a URL is saved.
+    // The URL itself has always persisted in localStorage; the iframe just
+    // was not being re-rendered on page load, so the setup form showed and
+    // it looked as if the URL had been wiped.
+    if (localStorage.getItem('stewardship-notebook-url')) {
+      const nbBody = document.getElementById('notebook-body');
+      const nbChev = document.getElementById('notebook-chevron');
+      if (nbBody) nbBody.style.display = 'block';
+      if (nbChev) nbChev.innerHTML = '&#9660;';
+      if (typeof notebookOpen !== 'undefined') notebookOpen = true;
+      if (typeof renderNotebook === 'function') renderNotebook();
+    }
     if (typeof initSimpleViewSplitter === 'function') initSimpleViewSplitter();
   });
 })();
 
 // ══════════════════════════════════════════════════════════════
-// STEWARDSHIP OS v6.4.0 - Desktop-First Daily Operating Dashboard
+// STEWARDSHIP OS v6.4.1 - Desktop-First Daily Operating Dashboard
+// v6.4.1: Notebook URL now auto-restores on every page load. The
+// URL was always persisted in localStorage, but the iframe was
+// not re-rendered until the user clicked the chevron, so the setup
+// form showed and looked as if the URL had been wiped on refresh.
+// Now: on init, if a saved URL exists, the notebook body auto-
+// opens, the iframe renders, and the chevron flips to down.
 // v6.4.0: New Archive top-bar button opens a tabbed history of
 // everything (daily recap, completed tasks, weekly counters, deal
 // moves, EOD logs, plus a JSON export). Simple view gained a
